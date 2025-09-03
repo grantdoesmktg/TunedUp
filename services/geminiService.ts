@@ -1,11 +1,19 @@
 import { GoogleGenAI } from "@google/genai";
 import type { CarInput, AIResponse, GroundingChunk } from '../types';
 
-// FIX: Aligned with @google/genai coding guidelines.
-// The API key is sourced directly from `process.env.API_KEY` and the GoogleGenAI client
-// is initialized directly, assuming the key is always available in the environment.
-// This resolves the TypeScript error with `import.meta.env` and removes mock/fallback logic.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// FIX: Per Gemini API guidelines, use process.env.API_KEY to access the API key.
+// This resolves the TypeScript error 'Property 'env' does not exist on type 'ImportMeta''.
+const apiKey = process.env.API_KEY;
+
+if (!apiKey) {
+  // This warning appears in the developer console if the key is missing.
+  // FIX: Updated warning message to reference API_KEY.
+  console.warn("API_KEY is not set. The application will not be able to connect to the Gemini API.");
+}
+
+// The GoogleGenAI constructor can handle an undefined key, but it's safer to ensure it's a string.
+// If the key is missing, the estimatePerformance function will throw a clear error before this is used improperly.
+const ai = new GoogleGenAI({ apiKey: apiKey || "" });
 
 const generatePrompt = (carInput: CarInput): string => {
   const { make, model, year, trim, drivetrain, transmission, modifications, tireType, fuelType, launchTechnique } = carInput;
@@ -62,6 +70,11 @@ const generatePrompt = (carInput: CarInput): string => {
 };
 
 export const estimatePerformance = async (carInput: CarInput): Promise<AIResponse> => {
+   if (!apiKey) {
+    // FIX: Updated error message to reference API_KEY.
+    throw new Error("API key is not configured. Please set the API_KEY environment variable.");
+  }
+  
   try {
     const prompt = generatePrompt(carInput);
     const response = await ai.models.generateContent({
