@@ -1,15 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
 import type { CarInput, AIResponse, GroundingChunk } from '../types';
 
-// FIX: Use `process.env.API_KEY` as required by the coding guidelines. This resolves the 'import.meta.env' TypeScript error.
-const apiKey = process.env.API_KEY;
-
-// FIX: Conditionally initialize GoogleGenAI to prevent a runtime crash if the API key is missing.
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
-
-if (!apiKey) {
-  console.warn("API_KEY environment variable not set. Using a mock response.");
-}
+// FIX: Aligned with @google/genai coding guidelines.
+// The API key is sourced directly from `process.env.API_KEY` and the GoogleGenAI client
+// is initialized directly, assuming the key is always available in the environment.
+// This resolves the TypeScript error with `import.meta.env` and removes mock/fallback logic.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const generatePrompt = (carInput: CarInput): string => {
   const { make, model, year, trim, drivetrain, transmission, modifications, tireType, fuelType, launchTechnique } = carInput;
@@ -66,22 +62,6 @@ const generatePrompt = (carInput: CarInput): string => {
 };
 
 export const estimatePerformance = async (carInput: CarInput): Promise<AIResponse> => {
-  // FIX: Check for the initialized `ai` object directly. This is a cleaner and safer way to handle the mock response case.
-  if (!ai) {
-    // Mock response for development without API key
-    await new Promise(res => setTimeout(res, 3000));
-    return {
-      stockPerformance: { horsepower: 300, whp: 255, zeroToSixty: 5.5 },
-      estimatedPerformance: { horsepower: 350, whp: 300, zeroToSixty: 5.0 },
-      explanation: "This is a mock response. The stock 3.5L V6 engine produces 300 horsepower, which is about 255 WHP assuming a 15% drivetrain loss. The addition of a cold air intake and a cat-back exhaust likely adds around 20-25 horsepower. The ECU tune optimizes for these mods and better fuel, adding another 25-30 horsepower for a total of 350 crank HP (approx. 300 WHP).\n\nThe improved power-to-weight ratio provides a baseline for a better 0-60 time. Compared to cars like the Audi S4, the estimated 0-60 time is around 5.0 seconds, factoring in the RWD layout and performance summer tires which improve traction off the line.",
-      confidence: 'Medium',
-      sources: [
-        { web: { uri: "https://www.example.com", title: "Example Source 1" } },
-        { web: { uri: "https://www.example.com", title: "Example Source 2" } }
-      ]
-    };
-  }
-
   try {
     const prompt = generatePrompt(carInput);
     const response = await ai.models.generateContent({
