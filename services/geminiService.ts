@@ -1,17 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 import type { CarInput, AIResponse, GroundingChunk } from '../types';
 
-// FIX: Per coding guidelines, the API key must be obtained exclusively from `process.env.API_KEY`.
-// This resolves the TypeScript error `Property 'env' does not exist on type 'ImportMeta'`.
-const apiKey = process.env.API_KEY;
+// Use VITE_ prefixed environment variable for client-side access
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
 let ai: GoogleGenAI | null = null;
 if (apiKey) {
   ai = new GoogleGenAI({ apiKey });
 } else {
-  // This warning will appear in the developer console if the key is missing.
-  // FIX: Updated warning message to reference the correct environment variable `API_KEY`.
-  console.warn("API_KEY environment variable is not set. The application will not be able to connect to the Google GenAI API.");
+  console.warn("VITE_GEMINI_API_KEY environment variable is not set. The application will not be able to connect to the Google GenAI API.");
 }
 
 const createPrompts = (carInput: CarInput): { systemInstruction: string, userPrompt: string } => {
@@ -67,9 +64,7 @@ const createPrompts = (carInput: CarInput): { systemInstruction: string, userPro
 
 export const estimatePerformance = async (carInput: CarInput): Promise<AIResponse> => {
    if (!ai) {
-    // This error will be shown to the user in the UI if the key is not configured.
-    // FIX: Updated error message to reference the correct environment variable `API_KEY`.
-    throw new Error("API key is not configured. Please set the API_KEY environment variable in your deployment settings.");
+    throw new Error("API key is not configured. Please set the VITE_GEMINI_API_KEY environment variable in your deployment settings.");
   }
   
   try {
