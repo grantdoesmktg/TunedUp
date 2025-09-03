@@ -1,11 +1,15 @@
 import { GoogleGenAI } from "@google/genai";
 import type { CarInput, AIResponse, GroundingChunk } from '../types';
 
-if (!process.env.API_KEY) {
+// FIX: Use `process.env.API_KEY` as required by the coding guidelines. This resolves the 'import.meta.env' TypeScript error.
+const apiKey = process.env.API_KEY;
+
+// FIX: Conditionally initialize GoogleGenAI to prevent a runtime crash if the API key is missing.
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+
+if (!apiKey) {
   console.warn("API_KEY environment variable not set. Using a mock response.");
 }
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
 const generatePrompt = (carInput: CarInput): string => {
   const { make, model, year, trim, drivetrain, transmission, modifications, tireType, fuelType, launchTechnique } = carInput;
@@ -16,7 +20,7 @@ const generatePrompt = (carInput: CarInput): string => {
     You MUST use Google Search to find the stock (factory) specifications for the car provided. This includes crank horsepower, curb weight, and 0-60 mph time. If the user provides Drivetrain or Transmission, prioritize that information, but verify it. If not provided, find the most common configuration. Also, estimate the stock wheel horsepower (WHP) by assuming a standard drivetrain loss (e.g., 15% for RWD/FWD, 20-25% for AWD).
 
     **Step 2: Modification Impact**
-    Analyze the provided list of modifications and their likely impact on crank horsepower and WHP. Be specific in your reasoning.
+    Analyze the provided list of modifications and their likely impact on crank horsepower and WHP. Be specific in your reasoning. Consider synergistic effects where multiple complementary mods (e.g., intake + downpipe + tune) yield more power than the sum of their parts. Lean towards the optimistic but still realistic side of estimates when a build is well-thought-out.
 
     **Step 3: Advanced 0-60 Estimation**
     Do not simply guess the new 0-60 time. You must follow this process:
@@ -62,7 +66,8 @@ const generatePrompt = (carInput: CarInput): string => {
 };
 
 export const estimatePerformance = async (carInput: CarInput): Promise<AIResponse> => {
-  if (!process.env.API_KEY) {
+  // FIX: Check for the initialized `ai` object directly. This is a cleaner and safer way to handle the mock response case.
+  if (!ai) {
     // Mock response for development without API key
     await new Promise(res => setTimeout(res, 3000));
     return {

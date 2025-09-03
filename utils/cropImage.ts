@@ -13,6 +13,7 @@ const createImage = (url: string): Promise<HTMLImageElement> =>
  * This function was adapted from the one in the ReadMe of https://github.com/DominicTobias/react-image-crop
  * @param {File} imageSrc - Image File url
  * @param {Object} pixelCrop - pixelCrop Object provided by react-easy-crop
+ * @returns {Promise<string|null>} A promise that resolves with the cropped image as a Base64 data URL.
  */
 export default async function getCroppedImg(
   imageSrc: string,
@@ -43,14 +44,6 @@ export default async function getCroppedImg(
     pixelCrop.height
   );
 
-  // As a blob
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((file) => {
-      if (file) {
-        resolve(URL.createObjectURL(file));
-      } else {
-        reject(new Error('Canvas is empty'));
-      }
-    }, 'image/jpeg');
-  });
+  // Return the cropped image as a Base64 data URL
+  return canvas.toDataURL('image/jpeg');
 }
