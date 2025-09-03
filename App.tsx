@@ -213,7 +213,8 @@ const App: React.FC = () => {
         {renderContent()}
       </main>
       <footer className="text-center py-4 text-textSecondary text-sm">
-        <p>Powered by Google Gemini. Estimates are for entertainment purposes only.</p>
+        {/* FIX: Updated attribution from OpenAI to Google AI. */}
+        <p>Powered by Google AI. Estimates are for entertainment purposes only.</p>
       </footer>
     </div>
   );
