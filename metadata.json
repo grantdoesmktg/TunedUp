@@ -1,0 +1,5 @@
+{
+  "name": "TunedUp",
+  "description": "A tool for car enthusiasts to estimate performance improvements from modifications. Enter your car's details and a list of mods to calculate the new estimated horsepower and 0-60 mph time.",
+  "requestFramePermissions": []
+}
