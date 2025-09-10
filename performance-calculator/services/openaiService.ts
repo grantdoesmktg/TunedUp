@@ -59,13 +59,18 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
     4. NEVER be conservative - if a modification is known to produce substantial gains, reflect that accurately
     5. Consider supporting modifications (fuel, ignition, etc.) and their enabling effects
 
+    CRITICAL CALCULATION ORDER:
+    1. Start with stock horsepower
+    2. Add ALL hardware modifications first (intake, exhaust, turbo, internals, etc.)
+    3. Apply ECU tune percentage to the MODIFIED horsepower total (not stock)
+    
     MODIFICATION GAIN GUIDELINES (be aggressive but realistic):
     - Cold air intake: 5-15hp baseline, more with tune
     - Downpipe: 15-35hp on turbocharged engines
     - Full exhaust systems: 10-25hp naturally aspirated, 15-40hp turbocharged
-    - ECU tune: 15-30% power increase on turbocharged engines, 5-15% on naturally aspirated
     - Turbo upgrades: 50-150+ horsepower depending on size and supporting modifications
     - Internal engine modifications: Calculate based on compression ratio, displacement, and flow improvements
+    - ECU tune: Apply 15-30% gain to the TOTAL after all other mods (turbocharged), 5-15% (naturally aspirated)
 
     **PHASE 3: CORRECT CALCULATION METHODOLOGY**
     
@@ -93,7 +98,7 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
     Your explanation MUST include:
     - The exact weight specification and where it comes from
     - Confirmation that you used the EXACT trim specified by the user
-    - Step-by-step calculation showing: Stock Crank HP + Modifications = New Crank HP
+    - Step-by-step calculation showing: Stock HP + Hardware Mods + (Tune % × Modified HP) = Final Crank HP
     - Calculation showing how wheel HP was derived from crank HP
     - Power-to-weight calculation: Weight ÷ Crank HP = lbs/hp (must be >1, typically 6-15)
     - Detailed breakdown of each modification's power gain with technical justification
