@@ -74,17 +74,17 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
     1. **CRANK HORSEPOWER CALCULATION:**
        - Start with stock CRANK horsepower
        - Add modification gains to get new CRANK horsepower
-       - Example: 300hp stock + 100hp mods = 400hp crank
+       - Formula: Stock Crank HP + Total Modification Gains = New Crank HP
     
     2. **WHEEL HORSEPOWER CALCULATION:**
        - Apply drivetrain loss AFTER calculating crank horsepower
        - FWD/RWD: ~15% loss, AWD: ~20-25% loss
-       - Example: 400hp crank × 0.85 = 340hp wheel (for FWD/RWD)
+       - Formula: New Crank HP × (1 - loss percentage) = Wheel HP
     
     3. **POWER-TO-WEIGHT RATIO:**
        - Use CRANK horsepower (not wheel horsepower)
        - Formula: Vehicle Weight ÷ Crank Horsepower = lbs/hp
-       - Example: 3200 lbs ÷ 400hp = 8.0 lbs/hp (NOT 1.11!)
+       - Result should be 6-15 lbs/hp for most cars (NOT 1.11 or other impossible values!)
     
     4. **0-60 TIME CALCULATION:**
        - Use power-to-weight ratio for baseline estimate
@@ -119,6 +119,10 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
     3. You MUST use the exact trim specified by user - DO NOT SUBSTITUTE
     4. Show your math: Stock HP + Mod gains = Total Crank HP
     5. Apply drivetrain loss ONLY to get wheel HP: Crank HP × (1-loss%)
+    6. DO NOT copy formula examples - calculate with ACTUAL numbers for THIS car
+    7. Every calculation must use the real horsepower YOU calculated, not example numbers
+    
+    CRITICAL: DO NOT use any example numbers in your calculations. Use only the actual specifications and modifications for this specific vehicle.
     
     WORK HARD. RESEARCH THOROUGHLY. PROVIDE EXACT DATA. NO APPROXIMATIONS.
     DOUBLE-CHECK ALL CALCULATIONS BEFORE SUBMITTING.
