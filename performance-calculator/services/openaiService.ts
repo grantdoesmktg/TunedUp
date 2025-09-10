@@ -42,13 +42,14 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
     MANDATORY ANALYSIS PROTOCOL - NO SHORTCUTS ALLOWED
 
     **PHASE 1: EXACT FACTORY SPECIFICATION RESEARCH**
-    You MUST find and state the EXACT factory specifications for this specific vehicle configuration:
+    You MUST find and state the EXACT factory specifications for this SPECIFIC vehicle configuration:
     - EXACT curb weight in pounds (not "approximately" or "around" - the precise manufacturer specification)
-    - EXACT factory horsepower and torque ratings
+    - EXACT factory CRANK horsepower and torque ratings (NOT wheel horsepower)
     - EXACT factory 0-60 mph time from manufacturer or verified automotive publications
     - EXACT engine displacement, configuration, and boost levels (if applicable)
     
-    If trim level affects specifications, you MUST identify the correct engine/drivetrain combination and provide those exact specs.
+    CRITICAL: If user specifies a trim level, you MUST use that EXACT trim - do NOT substitute or assume different trims.
+    Research the specifications for the user-specified trim only.
 
     **PHASE 2: AGGRESSIVE MODIFICATION POWER ANALYSIS** 
     For EACH modification listed, you MUST:
@@ -66,22 +67,39 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
     - Turbo upgrades: 50-150+ horsepower depending on size and supporting modifications
     - Internal engine modifications: Calculate based on compression ratio, displacement, and flow improvements
 
-    **PHASE 3: PRECISE 0-60 CALCULATION**
-    1. Calculate EXACT power-to-weight ratio using precise weight and new horsepower
-    2. Use advanced formulas considering drivetrain type, transmission, tires, and launch technique
-    3. Compare against documented real-world times from similar power-to-weight vehicles
-    4. Apply specific corrections for:
-       - AWD vs RWD vs FWD launch characteristics
-       - Tire compound and size effects on grip
-       - Launch control and technique factors
-       - Fuel octane and knock resistance effects
+    **PHASE 3: CORRECT CALCULATION METHODOLOGY**
+    
+    CRITICAL CALCULATION RULES - FOLLOW EXACTLY:
+    
+    1. **CRANK HORSEPOWER CALCULATION:**
+       - Start with stock CRANK horsepower
+       - Add modification gains to get new CRANK horsepower
+       - Example: 300hp stock + 100hp mods = 400hp crank
+    
+    2. **WHEEL HORSEPOWER CALCULATION:**
+       - Apply drivetrain loss AFTER calculating crank horsepower
+       - FWD/RWD: ~15% loss, AWD: ~20-25% loss
+       - Example: 400hp crank × 0.85 = 340hp wheel (for FWD/RWD)
+    
+    3. **POWER-TO-WEIGHT RATIO:**
+       - Use CRANK horsepower (not wheel horsepower)
+       - Formula: Vehicle Weight ÷ Crank Horsepower = lbs/hp
+       - Example: 3200 lbs ÷ 400hp = 8.0 lbs/hp (NOT 1.11!)
+    
+    4. **0-60 TIME CALCULATION:**
+       - Use power-to-weight ratio for baseline estimate
+       - Apply corrections for drivetrain, tires, launch technique
+       - Compare against documented times for similar power-to-weight vehicles
 
     **PHASE 4: TECHNICAL VALIDATION**
     Your explanation MUST include:
     - The exact weight specification and where it comes from
-    - Detailed breakdown of power gains per modification with technical justification
+    - Confirmation that you used the EXACT trim specified by the user
+    - Step-by-step calculation showing: Stock Crank HP + Modifications = New Crank HP
+    - Calculation showing: New Crank HP × (1 - drivetrain loss%) = Wheel HP
+    - Power-to-weight calculation: Weight ÷ Crank HP = lbs/hp (must be >1, typically 6-15)
+    - Detailed breakdown of each modification's power gain with technical justification
     - Specific comparisons to documented dyno results or similar builds
-    - Mathematical validation of 0-60 time using power-to-weight formulas
 
     **TARGET VEHICLE SPECIFICATIONS:**
     - Make: ${make}
@@ -95,7 +113,15 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
     - Fuel Type: ${fuelType === 'Not Specified' ? 'Assume premium fuel if turbocharged' : fuelType}
     - Launch Technique: ${launchTechnique === 'Not Specified' ? 'Assume optimal launch' : launchTechnique}
 
+    **MANDATORY ERROR CHECKS - VERIFY BEFORE RESPONDING:**
+    1. Power-to-weight ratio MUST be >1 (typically 6-15 lbs/hp for cars)
+    2. Wheel HP MUST be less than Crank HP (due to drivetrain loss)
+    3. You MUST use the exact trim specified by user - DO NOT SUBSTITUTE
+    4. Show your math: Stock HP + Mod gains = Total Crank HP
+    5. Apply drivetrain loss ONLY to get wheel HP: Crank HP × (1-loss%)
+    
     WORK HARD. RESEARCH THOROUGHLY. PROVIDE EXACT DATA. NO APPROXIMATIONS.
+    DOUBLE-CHECK ALL CALCULATIONS BEFORE SUBMITTING.
   `;
   
   return { systemPrompt, userPrompt };
