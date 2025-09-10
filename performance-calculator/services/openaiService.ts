@@ -129,6 +129,8 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
   return { systemPrompt, userPrompt };
 };
 
+// Function tool for fetching specs (OpenAI will simulate this research)
+
 export const estimatePerformance = async (carInput: CarInput): Promise<AIResponse> => {
    if (!openai) {
     throw new Error("API key is not configured. Please set the VITE_OPENAI_API_KEY environment variable in your deployment settings.");
@@ -137,16 +139,128 @@ export const estimatePerformance = async (carInput: CarInput): Promise<AIRespons
   try {
     const { systemPrompt, userPrompt } = createPrompts(carInput);
     
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      temperature: 0.3,
-      max_tokens: 3000,
-      response_format: { type: "json_object" }
-    });
+    // Try o3 model first, fallback to gpt-4o if not available
+    let response: any;
+    try {
+      response = await openai.chat.completions.create({
+        model: "o3-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 3000,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "perf_schema",
+            strict: true,
+            schema: {
+              type: "object",
+              required: ["stockPerformance", "estimatedPerformance", "explanation", "confidence"],
+              properties: {
+                stockPerformance: {
+                  type: "object",
+                  required: ["horsepower", "whp", "zeroToSixty"],
+                  properties: {
+                    horsepower: { type: "number" },
+                    whp: { type: "number" },
+                    zeroToSixty: { type: "number" }
+                  },
+                  additionalProperties: false
+                },
+                estimatedPerformance: {
+                  type: "object", 
+                  required: ["horsepower", "whp", "zeroToSixty"],
+                  properties: {
+                    horsepower: { type: "number" },
+                    whp: { type: "number" },
+                    zeroToSixty: { type: "number" }
+                  },
+                  additionalProperties: false
+                },
+                explanation: { type: "string" },
+                confidence: { 
+                  type: "string", 
+                  enum: ["Low", "Medium", "High"] 
+                }
+              },
+              additionalProperties: false
+            }
+          }
+        },
+        tools: [{
+          type: "function",
+          function: {
+            name: "fetch_exact_specs",
+            description: "Research and return exact factory specifications for a specific vehicle configuration. Use this to get precise weight, horsepower, and performance data.",
+            parameters: {
+              type: "object",
+              properties: {
+                year: { type: "integer" },
+                make: { type: "string" },
+                model: { type: "string" },
+                trim: { type: "string" }
+              },
+              required: ["year", "make", "model", "trim"],
+              additionalProperties: false
+            },
+            strict: true
+          }
+        }]
+      });
+    } catch (o3Error) {
+      console.log("o3-mini not available, falling back to gpt-4o:", o3Error);
+      // Fallback to gpt-4o with structured schema
+      response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 3000,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "perf_schema",
+            strict: true,
+            schema: {
+              type: "object",
+              required: ["stockPerformance", "estimatedPerformance", "explanation", "confidence"],
+              properties: {
+                stockPerformance: {
+                  type: "object",
+                  required: ["horsepower", "whp", "zeroToSixty"],
+                  properties: {
+                    horsepower: { type: "number" },
+                    whp: { type: "number" },
+                    zeroToSixty: { type: "number" }
+                  },
+                  additionalProperties: false
+                },
+                estimatedPerformance: {
+                  type: "object", 
+                  required: ["horsepower", "whp", "zeroToSixty"],
+                  properties: {
+                    horsepower: { type: "number" },
+                    whp: { type: "number" },
+                    zeroToSixty: { type: "number" }
+                  },
+                  additionalProperties: false
+                },
+                explanation: { type: "string" },
+                confidence: { 
+                  type: "string", 
+                  enum: ["Low", "Medium", "High"] 
+                }
+              },
+              additionalProperties: false
+            }
+          }
+        }
+      });
+    }
 
     const content = response.choices[0]?.message?.content;
     if (!content) {
@@ -154,6 +268,11 @@ export const estimatePerformance = async (carInput: CarInput): Promise<AIRespons
     }
     
     const data = JSON.parse(content);
+    
+    // Validate the response structure
+    if (!data.stockPerformance || !data.estimatedPerformance || !data.explanation || !data.confidence) {
+      throw new Error("AI response missing required fields.");
+    }
     
     // OpenAI doesn't provide sources like Gemini, so we'll return an empty array
     return { ...data, sources: [] };
