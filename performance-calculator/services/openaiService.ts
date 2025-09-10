@@ -89,10 +89,17 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
        - Formula: Vehicle Weight ÷ Crank Horsepower = lbs/hp
        - Result should be 6-15 lbs/hp for most cars (NOT 1.11 or other impossible values!)
     
-    4. **0-60 TIME CALCULATION:**
-       - Use power-to-weight ratio for baseline estimate
-       - Apply corrections for drivetrain, tires, launch technique
-       - Compare against documented times for similar power-to-weight vehicles
+    4. **0-60 TIME CALCULATION - MANDATORY DETAILED ANALYSIS:**
+       - Calculate EXACT power-to-weight ratio (Weight ÷ Crank HP)
+       - Use established power-to-weight formulas for baseline 0-60 estimate
+       - Research and compare against 3+ real vehicles with similar power-to-weight ratios
+       - Apply specific corrections for:
+         * Drivetrain type (AWD launches faster than RWD/FWD)
+         * Transmission type (manual vs automatic vs DCT)
+         * Tire compound and grip levels
+         * Launch control systems
+       - The 0-60 time MUST change significantly based on power increases
+       - Stock vs modified 0-60 times should show substantial improvement (typically 0.5-2.0+ seconds faster)
 
     **PHASE 4: TECHNICAL VALIDATION**
     Your explanation MUST include:
@@ -101,6 +108,11 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
     - Step-by-step calculation showing: Stock HP + Hardware Mods + (Tune % × Modified HP) = Final Crank HP
     - Calculation showing how wheel HP was derived from crank HP
     - Power-to-weight calculation: Weight ÷ Crank HP = lbs/hp (must be >1, typically 6-15)
+    - Detailed 0-60 time analysis showing:
+      * Stock power-to-weight ratio and corresponding 0-60 estimate
+      * Modified power-to-weight ratio and corresponding 0-60 estimate
+      * Specific vehicle comparisons with similar ratios
+      * Corrections applied for drivetrain, transmission, tires, launch technique
     - Detailed breakdown of each modification's power gain with technical justification
     - Specific comparisons to documented dyno results or similar builds
 
@@ -124,6 +136,9 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
     5. Calculate wheel HP appropriately based on drivetrain type
     6. DO NOT copy formula examples - calculate with ACTUAL numbers for THIS car
     7. Every calculation must use the real horsepower YOU calculated, not example numbers
+    8. 0-60 times MUST be different between stock and modified versions
+    9. Modified 0-60 time MUST be faster (lower number) than stock 0-60 time
+    10. Significant power increases (50+ hp) should result in 0.5+ second improvements in 0-60
     
     CRITICAL: DO NOT use any example numbers in your calculations. Use only the actual specifications and modifications for this specific vehicle.
     
