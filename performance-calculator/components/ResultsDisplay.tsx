@@ -6,7 +6,6 @@ import { ClockIcon } from './icons/ClockIcon';
 interface ResultsDisplayProps {
   results: AIResponse;
   carInput: CarInput;
-  onSaveBuild: () => void;
   onGoBack: () => void;
 }
 
@@ -86,7 +85,7 @@ const ConfidenceBadge: React.FC<{ confidence: AIResponse['confidence'] | null | 
     );
 };
 
-export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, carInput, onSaveBuild, onGoBack }) => {
+export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, carInput, onGoBack }) => {
   const { stockPerformance, estimatedPerformance, explanation, sources, confidence } = results;
 
   const hpDiff = estimatedPerformance.horsepower - stockPerformance.horsepower;
@@ -149,16 +148,10 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, carInpu
           </div>
         )}
 
-        <div className="mt-8 pt-6 border-t border-divider flex flex-col sm:flex-row gap-4">
-          <button
-            onClick={onSaveBuild}
-            className="w-full px-6 py-3 bg-primary text-background font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-all"
-          >
-            Save Build
-          </button>
+        <div className="mt-8 pt-6 border-t border-divider flex justify-center">
           <button
             onClick={onGoBack}
-            className="w-full px-6 py-3 bg-divider text-textSecondary font-semibold rounded-lg hover:bg-divider/80 transition-all"
+            className="px-8 py-3 bg-primary text-background font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-all"
           >
             New Estimate
           </button>
