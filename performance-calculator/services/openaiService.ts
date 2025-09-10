@@ -77,9 +77,7 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
        - Formula: Stock Crank HP + Total Modification Gains = New Crank HP
     
     2. **WHEEL HORSEPOWER CALCULATION:**
-       - Apply drivetrain loss AFTER calculating crank horsepower
-       - FWD/RWD: ~15% loss, AWD: ~20-25% loss
-       - Formula: New Crank HP × (1 - loss percentage) = Wheel HP
+       - Calculate wheel horsepower based on crank horsepower and drivetrain type
     
     3. **POWER-TO-WEIGHT RATIO:**
        - Use CRANK horsepower (not wheel horsepower)
@@ -96,7 +94,7 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
     - The exact weight specification and where it comes from
     - Confirmation that you used the EXACT trim specified by the user
     - Step-by-step calculation showing: Stock Crank HP + Modifications = New Crank HP
-    - Calculation showing: New Crank HP × (1 - drivetrain loss%) = Wheel HP
+    - Calculation showing how wheel HP was derived from crank HP
     - Power-to-weight calculation: Weight ÷ Crank HP = lbs/hp (must be >1, typically 6-15)
     - Detailed breakdown of each modification's power gain with technical justification
     - Specific comparisons to documented dyno results or similar builds
@@ -118,7 +116,7 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
     2. Wheel HP MUST be less than Crank HP (due to drivetrain loss)
     3. You MUST use the exact trim specified by user - DO NOT SUBSTITUTE
     4. Show your math: Stock HP + Mod gains = Total Crank HP
-    5. Apply drivetrain loss ONLY to get wheel HP: Crank HP × (1-loss%)
+    5. Calculate wheel HP appropriately based on drivetrain type
     6. DO NOT copy formula examples - calculate with ACTUAL numbers for THIS car
     7. Every calculation must use the real horsepower YOU calculated, not example numbers
     
