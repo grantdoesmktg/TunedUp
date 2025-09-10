@@ -12,7 +12,8 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-easy-crop": "^5.1.0",
-    "@google/genai": "^1.16.0"
+    "openai": "^4.71.0",
+    "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
