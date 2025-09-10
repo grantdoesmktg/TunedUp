@@ -138,13 +138,13 @@ export const estimatePerformance = async (carInput: CarInput): Promise<AIRespons
     const { systemPrompt, userPrompt } = createPrompts(carInput);
     
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
       temperature: 0.3,
-      max_tokens: 2000,
+      max_tokens: 3000,
       response_format: { type: "json_object" }
     });
 
