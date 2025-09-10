@@ -32,21 +32,3 @@ export interface AIResponse {
   sources?: GroundingChunk[];
 }
 
-export interface User {
-  firstName: string;
-  lastName: string;
-  email: string;
-  location?: string;
-  profilePictureUrl?: string;
-  bannerPictureUrl?: string;
-  bio?: string;
-  garageStatus?: string;
-}
-
-export interface Build {
-  id: string;
-  carInput: CarInput;
-  aiResponse: AIResponse;
-}
-
-export type View = 'form' | 'loading' | 'results' | 'profile';
