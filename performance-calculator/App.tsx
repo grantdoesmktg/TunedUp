@@ -5,7 +5,7 @@ import { InputForm } from './components/InputForm';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ResultsDisplay } from './components/ResultsDisplay';
 import { Profile } from './components/Profile';
-import { estimatePerformance } from './services/geminiService';
+import { estimatePerformance } from './services/openaiService';
 import { DRIVETRAIN_OPTIONS, TRANSMISSION_OPTIONS, TIRE_TYPE_OPTIONS, FUEL_TYPE_OPTIONS, LAUNCH_TECHNIQUE_OPTIONS } from './constants';
 
 const INITIAL_CAR_INPUT: CarInput = {

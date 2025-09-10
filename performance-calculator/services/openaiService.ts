@@ -1,20 +1,23 @@
-import { GoogleGenAI } from "@google/genai";
-import type { CarInput, AIResponse, GroundingChunk } from '../types';
+import OpenAI from 'openai';
+import type { CarInput, AIResponse } from '../types';
 
 // Use VITE_ prefixed environment variable for client-side access
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
 
-let ai: GoogleGenAI | null = null;
+let openai: OpenAI | null = null;
 if (apiKey) {
-  ai = new GoogleGenAI({ apiKey });
+  openai = new OpenAI({
+    apiKey,
+    dangerouslyAllowBrowser: true // Required for client-side usage
+  });
 } else {
-  console.warn("VITE_GEMINI_API_KEY environment variable is not set. The application will not be able to connect to the Google GenAI API.");
+  console.warn("VITE_OPENAI_API_KEY environment variable is not set. The application will not be able to connect to the OpenAI API.");
 }
 
-const createPrompts = (carInput: CarInput): { systemInstruction: string, userPrompt: string } => {
+const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: string } => {
   const { make, model, year, trim, drivetrain, transmission, modifications, tireType, fuelType, launchTechnique } = carInput;
   
-  const systemInstruction = `
+  const systemPrompt = `
     You are an expert automotive performance analyst. Your task is to analyze a given car and a list of modifications to estimate its new performance metrics with high accuracy.
 
     You MUST return your response as a single, valid JSON object. Do not include any text, code block formatting, or explanations outside of the JSON object itself.
@@ -32,7 +35,7 @@ const createPrompts = (carInput: CarInput): { systemInstruction: string, userPro
     Analyze the following car and modifications.
 
     **Step 1: Baseline Analysis**
-    Use your extensive internal knowledge base and web search capabilities to find the stock (factory) specifications for the car provided. This includes crank horsepower, curb weight, and 0-60 mph time. If the user provides Drivetrain or Transmission, prioritize that information. If not provided, find the most common configuration. Also, estimate the stock wheel horsepower (WHP) by assuming a standard drivetrain loss (e.g., 15% for RWD/FWD, 20-25% for AWD).
+    Use your extensive knowledge base to find the stock (factory) specifications for the car provided. This includes crank horsepower, curb weight, and 0-60 mph time. If the user provides Drivetrain or Transmission, prioritize that information. If not provided, find the most common configuration. Also, estimate the stock wheel horsepower (WHP) by assuming a standard drivetrain loss (e.g., 15% for RWD/FWD, 20-25% for AWD).
 
     **Step 2: Modification Impact**
     Analyze the provided list of modifications and their likely impact on crank horsepower and WHP. Be specific in your reasoning. Consider synergistic effects where multiple complementary mods (e.g., intake + downpipe + tune) yield more power than the sum of their parts. Lean towards the optimistic but still realistic side of estimates when a build is well-thought-out.
@@ -59,43 +62,39 @@ const createPrompts = (carInput: CarInput): { systemInstruction: string, userPro
     - Launch Technique: ${launchTechnique === 'Not Specified' ? 'Not provided' : launchTechnique}
   `;
   
-  return { systemInstruction, userPrompt };
+  return { systemPrompt, userPrompt };
 };
 
 export const estimatePerformance = async (carInput: CarInput): Promise<AIResponse> => {
-   if (!ai) {
-    throw new Error("API key is not configured. Please set the VITE_GEMINI_API_KEY environment variable in your deployment settings.");
+   if (!openai) {
+    throw new Error("API key is not configured. Please set the VITE_OPENAI_API_KEY environment variable in your deployment settings.");
   }
   
   try {
-    const { systemInstruction, userPrompt } = createPrompts(carInput);
-    const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: userPrompt,
-        config: {
-          systemInstruction,
-          tools: [{googleSearch: {}}],
-        }
+    const { systemPrompt, userPrompt } = createPrompts(carInput);
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.1,
+      response_format: { type: "json_object" }
     });
 
-    const content = response.text;
+    const content = response.choices[0]?.message?.content;
     if (!content) {
         throw new Error("Received an empty response from the AI.");
     }
     
-    // The model may return the JSON wrapped in ```json ... ```, so we need to extract it.
-    const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
-    const match = content.match(jsonRegex);
-    const jsonString = (match ? match[1] : content).trim();
-
-    const data = JSON.parse(jsonString);
+    const data = JSON.parse(content);
     
-    const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks as GroundingChunk[] | undefined;
-
-    return { ...data, sources: sources || [] };
+    // OpenAI doesn't provide sources like Gemini, so we'll return an empty array
+    return { ...data, sources: [] };
 
   } catch (error) {
-    console.error("Error calling Google GenAI API:", error);
+    console.error("Error calling OpenAI API:", error);
     if (error instanceof SyntaxError) {
       throw new Error("Failed to parse JSON response from the AI. The model may have returned an invalid format.");
     }
