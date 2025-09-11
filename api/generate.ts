@@ -9,6 +9,8 @@ interface CarSpec {
   color: string;
   wheelsColor: string;
   addModel: boolean;
+  deBadged: boolean;
+  chromeDelete: boolean;
   position: 'front' | 'quarter' | 'three-quarter' | 'back';
   details: string;
 }
@@ -125,6 +127,15 @@ function renderPrompt(promptSpec: PromptSpec): string {
       vintage_film: ', with vintage film color grading and nostalgic retro tones'
     };
     prompt += palettePrompts[scene.paletteKey as keyof typeof palettePrompts] || '';
+  }
+  
+  // Add styling modifications
+  if (car.deBadged) {
+    prompt += ', with all badges and emblems removed for a clean debadged look';
+  }
+  
+  if (car.chromeDelete) {
+    prompt += ', with all chrome trim replaced with black or body-colored accents (chrome delete)';
   }
   
   // Add model if requested

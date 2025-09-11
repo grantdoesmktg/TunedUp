@@ -5,6 +5,8 @@ export interface CarSpec {
   color: string;
   wheelsColor: string;
   addModel: boolean;
+  deBadged: boolean;
+  chromeDelete: boolean;
   position: 'front' | 'quarter' | 'three-quarter' | 'back';
   details: string;
 }
