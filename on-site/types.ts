@@ -5,7 +5,8 @@ export interface CarSpec {
   color: string;
   wheelsColor: string;
   addModel: boolean;
-  position: 'front' | 'back';
+  position: 'front' | 'quarter' | 'three-quarter' | 'back';
+  details: string;
 }
 
 export interface LocationPreset {
