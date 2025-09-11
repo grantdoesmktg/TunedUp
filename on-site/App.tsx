@@ -23,7 +23,8 @@ const OnSiteApp: React.FC = () => {
     color: 'Red',
     wheelsColor: 'Black',
     addModel: false,
-    position: 'front'
+    position: 'front',
+    details: ''
   });
 
   const [selectedPresets, setSelectedPresets] = useState<{
@@ -133,7 +134,7 @@ const OnSiteApp: React.FC = () => {
   return (
     <div className="onsite-app">
       <div className="app-header">
-        <h1>TunedUp On-Site</h1>
+        <h1>On-Site</h1>
         <p>Generate custom car images with AI</p>
       </div>
 
@@ -210,10 +211,12 @@ const OnSiteApp: React.FC = () => {
               <select
                 id="position"
                 value={carSpec.position}
-                onChange={(e) => setCarSpec(prev => ({ ...prev, position: e.target.value as 'front' | 'back' }))}
+                onChange={(e) => setCarSpec(prev => ({ ...prev, position: e.target.value as 'front' | 'quarter' | 'three-quarter' | 'back' }))}
               >
-                <option value="front">Front View</option>
-                <option value="back">Back View</option>
+                <option value="front">Front - Direct front view</option>
+                <option value="quarter">1/4 - Front corner angle</option>
+                <option value="three-quarter">3/4 - Rear corner angle</option>
+                <option value="back">Back - Direct rear view</option>
               </select>
             </div>
           </div>
@@ -228,6 +231,28 @@ const OnSiteApp: React.FC = () => {
                 />
                 Add Model
               </label>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="details">Additional Details</label>
+              <input
+                id="details"
+                type="text"
+                value={carSpec.details}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.length <= 50) {
+                    setCarSpec(prev => ({ ...prev, details: value }));
+                  }
+                }}
+                placeholder="e.g., lowered, custom rims, spoiler"
+                maxLength={50}
+              />
+              <small className="character-count">
+                {carSpec.details.length}/50 characters
+              </small>
             </div>
           </div>
         </div>

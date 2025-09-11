@@ -9,7 +9,8 @@ interface CarSpec {
   color: string;
   wheelsColor: string;
   addModel: boolean;
-  position: 'front' | 'back';
+  position: 'front' | 'quarter' | 'three-quarter' | 'back';
+  details: string;
 }
 
 interface PromptSpec {
@@ -50,7 +51,20 @@ const MODEL_DESCRIPTIONS = {
   german_city: "a modern German woman in sleek minimalist clothing, confident pose beside the car"
 };
 
-const NEGATIVE_PROMPT = "nudity, inappropriate content, nsfw, explicit, offensive, low quality, blurry, distorted, ugly";
+const NEGATIVE_PROMPT = `
+nudity, inappropriate content, nsfw, explicit, offensive, low quality, blurry, distorted, ugly,
+text overlays, watermarks, logos, extra limbs, distorted wheels, unrealistic proportions, floating objects, 
+blurred edges, double exposures, overexposed highlights, oversaturated neon unless explicitly asked, 
+cartoonish or plastic look, glitchy reflections, extra fingers or malformed hands, uncanny valley faces. 
+Render tires fully round and properly seated, paint and reflections physically plausible, 
+no artifacts or half-rendered backgrounds.
+`;
+
+const QUALITY_PROMPT = `
+Render in ultra-high quality, crisp and detailed, realistic lighting and reflections, 
+accurate car body proportions, well-defined wheels and tires, cinematic depth of field, 
+sharp focus on the car, natural environment integration, and a coherent, professional photography look.
+`;
 
 function renderPrompt(promptSpec: PromptSpec): string {
   const { car, scene, camera, style } = promptSpec;
@@ -58,9 +72,25 @@ function renderPrompt(promptSpec: PromptSpec): string {
   // Base car description
   let prompt = `A ${car.year} ${car.make} ${car.model} in ${car.color.toLowerCase()} color with ${car.wheelsColor.toLowerCase()} wheels`;
   
-  // Position
-  const position = car.position === 'front' ? 'front three-quarter view' : 'rear three-quarter view';
-  prompt += `, photographed from ${position}`;
+  // Position - refined camera angles
+  let positionDescription: string;
+  switch (car.position) {
+    case 'front':
+      positionDescription = 'straight-on front view, directly facing the front grille and headlights';
+      break;
+    case 'quarter':
+      positionDescription = 'front quarter angle, positioned at the front corner near the headlight with visibility down the side and across the front';
+      break;
+    case 'three-quarter':
+      positionDescription = 'rear three-quarter angle, positioned at the rear corner near the taillight looking down the side and across the rear';
+      break;
+    case 'back':
+      positionDescription = 'straight-on rear view, directly facing the back of the car showing taillights and rear details';
+      break;
+    default:
+      positionDescription = 'front three-quarter view';
+  }
+  prompt += `, photographed from ${positionDescription}`;
   
   // Location
   if (scene.locationKey) {
@@ -104,6 +134,11 @@ function renderPrompt(promptSpec: PromptSpec): string {
     prompt += `, with ${modelDescription}`;
   }
   
+  // Add custom details if provided
+  if (car.details && car.details.trim()) {
+    prompt += `, ${car.details.trim()}`;
+  }
+  
   // Camera settings
   if (camera) {
     prompt += `, shot with ${camera.focalLength}mm focal length`;
@@ -128,8 +163,9 @@ function renderPrompt(promptSpec: PromptSpec): string {
     }
   }
   
-  // Add quality descriptors
-  prompt += ', high quality, detailed, professional automotive photography, 4K resolution';
+  // Add quality descriptors and license plate requirement
+  prompt += ', with license plate completely blacked out or obscured for privacy';
+  prompt += ', ' + QUALITY_PROMPT.trim();
   
   return prompt;
 }
@@ -183,14 +219,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Use Gemini 2.5 Flash Image for actual image generation
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image-preview" });
 
-    // Create the image generation prompt with negative prompt
-    const fullPrompt = `${prompt}
+    // Create structured JSON prompt for better results
+    const jsonPrompt = {
+      prompt: prompt,
+      negative_prompt: NEGATIVE_PROMPT.trim(),
+      width: imageParams.width,
+      height: imageParams.height,
+      seed: imageParams.seed || null,
+      style: "photorealistic automotive photography",
+      quality: "ultra-high",
+      format: "PNG"
+    };
 
-Negative prompt: ${NEGATIVE_PROMPT}`;
+    console.log('Sending JSON prompt to Gemini 2.5 Flash Image:', JSON.stringify(jsonPrompt, null, 2).substring(0, 200) + '...');
 
-    console.log('Sending prompt to Gemini 2.5 Flash Image:', fullPrompt.substring(0, 100) + '...');
-
-    const result = await model.generateContent([fullPrompt]);
+    const result = await model.generateContent([JSON.stringify(jsonPrompt)]);
     const response = result.response;
 
     // Extract image data from Gemini response
@@ -219,8 +262,7 @@ Negative prompt: ${NEGATIVE_PROMPT}`;
       imageBase64 = await generatePlaceholderImage(
         imageParams.width, 
         imageParams.height, 
-        promptSpec, 
-        'Gemini image generation response format changed'
+        promptSpec
       );
     }
 
