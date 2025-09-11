@@ -26,7 +26,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, isLoading, currentI
       {currentImage && !isLoading && (
         <div className="current-image">
           <img 
-            src={`data:image/png;base64,${currentImage}`} 
+            src={currentImage.startsWith('data:') ? currentImage : `data:image/png;base64,${currentImage}`}
             alt="Generated car"
             className="main-image"
           />
@@ -47,7 +47,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, isLoading, currentI
             {images.slice(-3).reverse().map((image) => (
               <div key={image.id} className="gallery-item">
                 <img 
-                  src={`data:image/png;base64,${image.blob}`} 
+                  src={image.blob.startsWith('data:') ? image.blob : `data:image/png;base64,${image.blob}`}
                   alt={`Generated on ${new Date(image.timestamp).toLocaleDateString()}`}
                   className="gallery-thumbnail"
                 />
