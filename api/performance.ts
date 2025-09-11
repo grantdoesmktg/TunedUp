@@ -35,132 +35,45 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
   const { make, model, year, trim, drivetrain, transmission, modifications, tireType, fuelType, launchTechnique } = carInput;
   
   const systemPrompt = `
-    You are a professional automotive engineer and performance analyst with access to comprehensive automotive databases and technical specifications. You MUST provide EXACT, PRECISE data - no approximations, estimates, or "about" values are acceptable.
+    You are a professional automotive engineer and performance analyst. Research factory specifications and estimate realistic performance gains from modifications.
 
-    CRITICAL REQUIREMENTS:
-    1. You MUST find the EXACT factory specifications including precise weight, horsepower, and 0-60 times
-    2. You MUST be aggressive and realistic about modification power gains - many builds produce significant power
-    3. You MUST justify every number with specific technical reasoning
-    4. You MUST provide precise weights to the exact pound, not ranges or approximations
-    5. NEVER underestimate power gains from well-planned modification lists
-
-    You MUST return your response as a single, valid JSON object. Do not include any text, code block formatting, or explanations outside of the JSON object itself.
-    
-    Required JSON Output Schema:
+    Return your response as a single, valid JSON object:
     {
       "stockPerformance": { "horsepower": number, "whp": number, "zeroToSixty": number },
       "estimatedPerformance": { "horsepower": number, "whp": number, "zeroToSixty": number },
-      "explanation": "string (Detailed explanation covering your entire process, including exact specifications found, specific power gains per modification, and technical justification for all numbers)",
-      "confidence": "'Low' | 'Medium' | 'High'"
+      "explanation": "string (Formatted explanation with bullet points)",
+      "confidence": "Low" | "Medium" | "High"
     }
   `;
 
   const userPrompt = `
-    MANDATORY ANALYSIS PROTOCOL - NO SHORTCUTS ALLOWED
+    Analyze the performance of this vehicle with the specified modifications:
 
-    **PHASE 1: EXACT FACTORY SPECIFICATION RESEARCH**
-    You MUST find and state the EXACT factory specifications for this SPECIFIC vehicle configuration:
-    - EXACT curb weight in pounds (not "approximately" or "around" - the precise manufacturer specification)
-    - EXACT factory CRANK horsepower and torque ratings (NOT wheel horsepower)
-    - EXACT factory 0-60 mph time from manufacturer or verified automotive publications
-    - EXACT engine displacement, configuration, and boost levels (if applicable)
-    
-    CRITICAL: If user specifies a trim level, you MUST use that EXACT trim - do NOT substitute or assume different trims.
-    Research the specifications for the user-specified trim only.
+    **Vehicle**: ${year} ${make} ${model}${trim ? ` ${trim}` : ''}
+    **Drivetrain**: ${drivetrain === 'Not Specified' ? 'Research factory options' : drivetrain}
+    **Transmission**: ${transmission === 'Not Specified' ? 'Research available options' : transmission}
+    **Modifications**: ${modifications || 'Stock'}
+    **Tire Type**: ${tireType === 'Not Specified' ? 'Performance tires' : tireType}
+    **Fuel**: ${fuelType === 'Not Specified' ? 'Premium if turbocharged' : fuelType}
+    **Launch**: ${launchTechnique === 'Not Specified' ? 'Optimal launch' : launchTechnique}
 
-    **PHASE 2: AGGRESSIVE MODIFICATION POWER ANALYSIS** 
-    For EACH modification listed, you MUST:
-    1. Calculate the specific horsepower gain for that modification on this engine platform
-    2. Research known power gains from dyno results and real-world examples
-    3. Account for synergistic effects when multiple mods work together
-    4. NEVER be conservative - if a modification is known to produce substantial gains, reflect that accurately
-    5. Consider supporting modifications (fuel, ignition, etc.) and their enabling effects
+    **Analysis Requirements**:
+    1. Research factory specifications (weight, horsepower, 0-60 time)
+    2. Estimate realistic power gains from each modification
+    3. Calculate wheel horsepower based on drivetrain losses
+    4. Estimate 0-60 time improvement based on power-to-weight ratio changes
 
-    CRITICAL CALCULATION ORDER:
-    1. Start with stock horsepower
-    2. Add ALL hardware modifications first (intake, exhaust, turbo, internals, etc.)
-    3. Apply ECU tune percentage to the MODIFIED horsepower total (not stock)
-    
-    MODIFICATION GAIN GUIDELINES (be aggressive but realistic):
-    - Cold air intake: 5-15hp baseline, more with tune
-    - Downpipe: 15-35hp on turbocharged engines
-    - Full exhaust systems: 10-25hp naturally aspirated, 15-40hp turbocharged
-    - Turbo upgrades: 50-150+ horsepower depending on size and supporting modifications
-    - Internal engine modifications: Calculate based on compression ratio, displacement, and flow improvements
-    - ECU tune: Apply 15-30% gain to the TOTAL after all other mods (turbocharged), 5-15% (naturally aspirated)
+    **Explanation Format** (use bullet points):
+    • **Vehicle Specs**: Factory weight, horsepower, and 0-60 time
+    • **Power Gains**: Breakdown of each modification's contribution
+    • **Final Numbers**: Total crank HP, wheel HP, estimated 0-60 time
+    • **Methodology**: Brief explanation of calculations and assumptions
 
-    **PHASE 3: CORRECT CALCULATION METHODOLOGY**
-    
-    CRITICAL CALCULATION RULES - FOLLOW EXACTLY:
-    
-    1. **CRANK HORSEPOWER CALCULATION:**
-       - Start with stock CRANK horsepower
-       - Add modification gains to get new CRANK horsepower
-       - Formula: Stock Crank HP + Total Modification Gains = New Crank HP
-    
-    2. **WHEEL HORSEPOWER CALCULATION:**
-       - Calculate wheel horsepower based on crank horsepower and drivetrain type
-    
-    3. **POWER-TO-WEIGHT RATIO:**
-       - Use CRANK horsepower (not wheel horsepower)
-       - Formula: Vehicle Weight ÷ Crank Horsepower = lbs/hp
-       - Result should be 6-15 lbs/hp for most cars (NOT 1.11 or other impossible values!)
-    
-    4. **0-60 TIME CALCULATION - MANDATORY DETAILED ANALYSIS:**
-       - Calculate EXACT power-to-weight ratio (Weight ÷ Crank HP)
-       - Use established power-to-weight formulas for baseline 0-60 estimate
-       - Research and compare against 3+ real vehicles with similar power-to-weight ratios
-       - Apply specific corrections for:
-         * Drivetrain type (AWD launches faster than RWD/FWD)
-         * Transmission type (manual vs automatic vs DCT)
-         * Tire compound and grip levels
-         * Launch control systems
-       - The 0-60 time MUST change significantly based on power increases
-       - Stock vs modified 0-60 times should show substantial improvement (typically 0.5-2.0+ seconds faster)
-
-    **PHASE 4: TECHNICAL VALIDATION**
-    Your explanation MUST include:
-    - The exact weight specification and where it comes from
-    - Confirmation that you used the EXACT trim specified by the user
-    - Step-by-step calculation showing: Stock HP + Hardware Mods + (Tune % × Modified HP) = Final Crank HP
-    - Calculation showing how wheel HP was derived from crank HP
-    - Power-to-weight calculation: Weight ÷ Crank HP = lbs/hp (must be >1, typically 6-15)
-    - Detailed 0-60 time analysis showing:
-      * Stock power-to-weight ratio and corresponding 0-60 estimate
-      * Modified power-to-weight ratio and corresponding 0-60 estimate
-      * Specific vehicle comparisons with similar ratios
-      * Corrections applied for drivetrain, transmission, tires, launch technique
-    - Detailed breakdown of each modification's power gain with technical justification
-    - Specific comparisons to documented dyno results or similar builds
-
-    **TARGET VEHICLE SPECIFICATIONS:**
-    - Make: ${make}
-    - Model: ${model}  
-    - Year: ${year}
-    - Trim: ${trim || 'Research most common/performance trim'}
-    - Drivetrain: ${drivetrain === 'Not Specified' ? 'Research factory drivetrain options' : drivetrain}
-    - Transmission: ${transmission === 'Not Specified' ? 'Research available transmissions' : transmission}
-    - Modifications: ${modifications}
-    - Tire Type: ${tireType === 'Not Specified' ? 'Assume performance tires' : tireType}
-    - Fuel Type: ${fuelType === 'Not Specified' ? 'Assume premium fuel if turbocharged' : fuelType}
-    - Launch Technique: ${launchTechnique === 'Not Specified' ? 'Assume optimal launch' : launchTechnique}
-
-    **MANDATORY ERROR CHECKS - VERIFY BEFORE RESPONDING:**
-    1. Power-to-weight ratio MUST be >1 (typically 6-15 lbs/hp for cars)
-    2. Wheel HP MUST be less than Crank HP (due to drivetrain loss)
-    3. You MUST use the exact trim specified by user - DO NOT SUBSTITUTE
-    4. Show your math: Stock HP + Mod gains = Total Crank HP
-    5. Calculate wheel HP appropriately based on drivetrain type
-    6. DO NOT copy formula examples - calculate with ACTUAL numbers for THIS car
-    7. Every calculation must use the real horsepower YOU calculated, not example numbers
-    8. 0-60 times MUST be different between stock and modified versions
-    9. Modified 0-60 time MUST be faster (lower number) than stock 0-60 time
-    10. Significant power increases (50+ hp) should result in 0.5+ second improvements in 0-60
-    
-    CRITICAL: DO NOT use any example numbers in your calculations. Use only the actual specifications and modifications for this specific vehicle.
-    
-    WORK HARD. RESEARCH THOROUGHLY. PROVIDE EXACT DATA. NO APPROXIMATIONS.
-    DOUBLE-CHECK ALL CALCULATIONS BEFORE SUBMITTING.
+    **Guidelines**:
+    - Be realistic but not overly conservative with modification gains
+    - Account for synergies between modifications
+    - Use proper formatting with bullet points (•) and sub-points (-)
+    - No \\n\\n characters - use clean line breaks
   `;
   
   return { systemPrompt, userPrompt };
@@ -217,39 +130,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       generationConfig: {
         temperature: 0.3,
         maxOutputTokens: 3000,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "object",
-          required: ["stockPerformance", "estimatedPerformance", "explanation", "confidence"],
-          properties: {
-            stockPerformance: {
-              type: "object",
-              required: ["horsepower", "whp", "zeroToSixty"],
-              properties: {
-                horsepower: { type: "number" },
-                whp: { type: "number" },
-                zeroToSixty: { type: "number" }
-              },
-              additionalProperties: false
-            },
-            estimatedPerformance: {
-              type: "object", 
-              required: ["horsepower", "whp", "zeroToSixty"],
-              properties: {
-                horsepower: { type: "number" },
-                whp: { type: "number" },
-                zeroToSixty: { type: "number" }
-              },
-              additionalProperties: false
-            },
-            explanation: { type: "string" },
-            confidence: { 
-              type: "string", 
-              enum: ["Low", "Medium", "High"] 
-            }
-          },
-          additionalProperties: false
-        }
+        responseMimeType: "application/json"
       }
     });
 
