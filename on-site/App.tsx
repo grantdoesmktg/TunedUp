@@ -23,6 +23,8 @@ const OnSiteApp: React.FC = () => {
     color: 'Red',
     wheelsColor: 'Black',
     addModel: false,
+    deBadged: false,
+    chromeDelete: false,
     position: 'front',
     details: ''
   });
@@ -230,6 +232,28 @@ const OnSiteApp: React.FC = () => {
                   onChange={(e) => setCarSpec(prev => ({ ...prev, addModel: e.target.checked }))}
                 />
                 Add Model
+              </label>
+            </div>
+            
+            <div className="form-group checkbox-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={carSpec.deBadged}
+                  onChange={(e) => setCarSpec(prev => ({ ...prev, deBadged: e.target.checked }))}
+                />
+                De-Badged
+              </label>
+            </div>
+            
+            <div className="form-group checkbox-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={carSpec.chromeDelete}
+                  onChange={(e) => setCarSpec(prev => ({ ...prev, chromeDelete: e.target.checked }))}
+                />
+                Chrome Delete
               </label>
             </div>
           </div>
