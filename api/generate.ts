@@ -180,40 +180,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Initialize Gemini AI
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
-    // For now, since Gemini 2.5 Flash Image might not be available yet,
-    // let's use the text model and create a placeholder response
-    // When Gemini image generation becomes available, replace this with:
-    // const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image-preview" });
-    
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    // Use Gemini 2.5 Flash Image for actual image generation
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image-preview" });
 
-    // Create a detailed prompt for text generation (as a fallback)
-    const textPrompt = `Create a detailed description for an AI image generator based on this car specification: ${prompt}
-    
-    The image should be exactly ${imageParams.width}x${imageParams.height} pixels.
-    ${imageParams.seed ? `Use seed ${imageParams.seed} for reproducible results.` : ''}
-    
-    Focus on automotive photography techniques and realistic rendering.`;
+    // Create the image generation prompt with negative prompt
+    const fullPrompt = `${prompt}
 
-    const result = await model.generateContent(textPrompt);
+Negative prompt: ${NEGATIVE_PROMPT}`;
+
+    console.log('Sending prompt to Gemini 2.5 Flash Image:', fullPrompt.substring(0, 100) + '...');
+
+    const result = await model.generateContent([fullPrompt]);
     const response = result.response;
-    const textDescription = response.text();
 
-    console.log('Gemini response received:', textDescription.substring(0, 100) + '...');
-
-    // Since we can't generate actual images yet with Gemini 2.5 Flash Image,
-    // we'll create a sophisticated placeholder that uses the AI response
-    const placeholder = await generatePlaceholderImage(
-      imageParams.width, 
-      imageParams.height, 
-      promptSpec, 
-      textDescription
-    );
+    // Extract image data from Gemini response
+    // Note: The exact response format may need adjustment based on Gemini's actual API
+    let imageBase64: string;
+    
+    if (response.candidates && response.candidates[0] && response.candidates[0].content) {
+      const candidate = response.candidates[0];
+      
+      // Check if there's an image part in the response
+      if (candidate.content.parts) {
+        const imagePart = candidate.content.parts.find((part: any) => part.inlineData);
+        
+        if (imagePart && imagePart.inlineData) {
+          imageBase64 = imagePart.inlineData.data;
+          console.log('Successfully extracted image from Gemini response');
+        } else {
+          throw new Error('No image data found in Gemini response');
+        }
+      } else {
+        throw new Error('No content parts found in Gemini response');
+      }
+    } else {
+      // Fallback: create placeholder if Gemini doesn't return expected format
+      console.warn('Gemini response format unexpected, creating placeholder');
+      imageBase64 = await generatePlaceholderImage(
+        imageParams.width, 
+        imageParams.height, 
+        promptSpec, 
+        'Gemini image generation response format changed'
+      );
+    }
 
     return res.status(200).json({
-      image: placeholder,
+      image: imageBase64,
       prompt: prompt,
-      description: textDescription,
       timestamp: Date.now()
     });
 
@@ -244,7 +257,7 @@ async function generatePlaceholderImage(
   width: number, 
   height: number, 
   promptSpec: PromptSpec, 
-  description: string
+  description?: string
 ): Promise<string> {
   // Create a more sophisticated placeholder using SVG converted to base64
   // This will show actual car information instead of a transparent pixel
