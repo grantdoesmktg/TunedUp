@@ -246,23 +246,69 @@ async function generatePlaceholderImage(
   promptSpec: PromptSpec, 
   description: string
 ): Promise<string> {
-  // This creates a sophisticated Canvas-based placeholder
-  // In production, this would be replaced with actual Gemini image generation
+  // Create a more sophisticated placeholder using SVG converted to base64
+  // This will show actual car information instead of a transparent pixel
   
-  return new Promise((resolve) => {
-    // Since we're in a Node.js environment, we need to use a different approach
-    // For now, we'll return a base64 encoded simple image
-    // In production, you could use libraries like `canvas` or `sharp` for server-side image generation
-    
-    // Create a simple base64 PNG (1x1 transparent pixel, scaled conceptually)
-    const transparentPixel = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
-    
-    // For a more sophisticated placeholder, you could:
-    // 1. Use the `canvas` npm package to create server-side images
-    // 2. Generate colored rectangles based on car specifications
-    // 3. Add text overlays with car details
-    // 4. Create gradients based on selected palettes
-    
-    resolve(transparentPixel);
-  });
+  const carInfo = `${promptSpec.car.year} ${promptSpec.car.make} ${promptSpec.car.model}`;
+  const carColor = promptSpec.car.color.toLowerCase();
+  
+  // Choose background color based on car color
+  const colorMap: { [key: string]: string } = {
+    'red': '#dc2626',
+    'blue': '#2563eb', 
+    'black': '#1f2937',
+    'white': '#f9fafb',
+    'silver': '#9ca3af',
+    'gray': '#6b7280',
+    'grey': '#6b7280',
+    'green': '#16a34a',
+    'yellow': '#eab308',
+    'orange': '#ea580c',
+    'purple': '#9333ea',
+    'brown': '#a16207',
+    'gold': '#d97706',
+    'bronze': '#92400e'
+  };
+  
+  const backgroundColor = colorMap[carColor] || '#3b82f6';
+  
+  // Generate SVG placeholder
+  const svg = `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:${backgroundColor};stop-opacity:1" />
+          <stop offset="100%" style="stop-color:${backgroundColor}CC;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grad1)"/>
+      <rect x="10%" y="40%" width="80%" height="20%" rx="10" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+      
+      <text x="50%" y="45%" font-family="Arial, sans-serif" font-size="${Math.max(16, width / 25)}" font-weight="bold" text-anchor="middle" fill="white">
+        AI Generated Car Image
+      </text>
+      <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="${Math.max(14, width / 30)}" text-anchor="middle" fill="rgba(255,255,255,0.9)">
+        ${carInfo}
+      </text>
+      <text x="50%" y="55%" font-family="Arial, sans-serif" font-size="${Math.max(12, width / 35)}" text-anchor="middle" fill="rgba(255,255,255,0.8)">
+        Color: ${promptSpec.car.color}
+      </text>
+      <text x="50%" y="65%" font-family="Arial, sans-serif" font-size="${Math.max(10, width / 40)}" text-anchor="middle" fill="rgba(255,255,255,0.6)">
+        Placeholder - Replace with actual Gemini API
+      </text>
+      
+      <!-- Simple car silhouette -->
+      <g transform="translate(${width/2}, ${height * 0.75}) scale(${Math.min(width, height) / 200})">
+        <path d="M-50,-10 L-40,-20 L40,-20 L50,-10 L50,10 L-50,10 Z" fill="rgba(255,255,255,0.3)"/>
+        <circle cx="-30" cy="15" r="8" fill="rgba(255,255,255,0.4)"/>
+        <circle cx="30" cy="15" r="8" fill="rgba(255,255,255,0.4)"/>
+        <circle cx="-30" cy="15" r="5" fill="rgba(0,0,0,0.3)"/>
+        <circle cx="30" cy="15" r="5" fill="rgba(0,0,0,0.3)"/>
+      </g>
+    </svg>
+  `;
+  
+  // Convert SVG to base64 and return as data URL
+  const base64 = Buffer.from(svg).toString('base64');
+  return `data:image/svg+xml;base64,${base64}`; // Return full data URL
 }

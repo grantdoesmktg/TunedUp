@@ -4,9 +4,6 @@ import {
   LOCATION_PRESETS, 
   TIME_PRESETS, 
   PALETTE_PRESETS,
-  CAR_YEARS,
-  CAR_MAKES,
-  CAR_COLORS,
   WHEEL_COLORS,
   DEFAULT_CAMERA,
   DEFAULT_STYLE,
@@ -147,28 +144,26 @@ const OnSiteApp: React.FC = () => {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="year">Year</label>
-              <select
+              <input
                 id="year"
+                type="text"
                 value={carSpec.year}
                 onChange={(e) => setCarSpec(prev => ({ ...prev, year: e.target.value }))}
-              >
-                {CAR_YEARS.map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
+                placeholder="e.g., 2024, 2023, 2022"
+                required
+              />
             </div>
 
             <div className="form-group">
               <label htmlFor="make">Make</label>
-              <select
+              <input
                 id="make"
+                type="text"
                 value={carSpec.make}
                 onChange={(e) => setCarSpec(prev => ({ ...prev, make: e.target.value }))}
-              >
-                {CAR_MAKES.map(make => (
-                  <option key={make} value={make}>{make}</option>
-                ))}
-              </select>
+                placeholder="e.g., BMW, Toyota, Ford"
+                required
+              />
             </div>
 
             <div className="form-group">
@@ -187,15 +182,14 @@ const OnSiteApp: React.FC = () => {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="color">Color</label>
-              <select
+              <input
                 id="color"
+                type="text"
                 value={carSpec.color}
                 onChange={(e) => setCarSpec(prev => ({ ...prev, color: e.target.value }))}
-              >
-                {CAR_COLORS.map(color => (
-                  <option key={color} value={color}>{color}</option>
-                ))}
-              </select>
+                placeholder="e.g., Red, Blue, Black"
+                required
+              />
             </div>
 
             <div className="form-group">
