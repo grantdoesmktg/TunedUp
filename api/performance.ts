@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Types for the request body
 interface CarInput {
@@ -182,10 +182,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Validate environment variable
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OPENAI_API_KEY environment variable is not set');
+    if (!process.env.GEMINI_API_KEY) {
+      console.error('GEMINI_API_KEY environment variable is not set');
       return res.status(500).json({ 
-        error: 'Server configuration error: OpenAI API key not configured' 
+        error: 'Server configuration error: Gemini API key not configured' 
       });
     }
 
@@ -200,151 +200,74 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('Processing performance request for:', `${carInput.year} ${carInput.make} ${carInput.model}`);
 
-    // Initialize OpenAI
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
+    // Initialize Gemini AI
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
     const { systemPrompt, userPrompt } = createPrompts(carInput);
     
-    // Try o3-mini first, fallback to gpt-4o if not available
-    let response: any;
-    try {
-      response = await openai.chat.completions.create({
-        model: "o3-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
+    // Combine system and user prompts for Gemini
+    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
+
+    const result = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: [{ text: fullPrompt }]
+      }],
+      generationConfig: {
         temperature: 0.3,
-        max_tokens: 3000,
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "perf_schema",
-            strict: true,
-            schema: {
+        maxOutputTokens: 3000,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          required: ["stockPerformance", "estimatedPerformance", "explanation", "confidence"],
+          properties: {
+            stockPerformance: {
               type: "object",
-              required: ["stockPerformance", "estimatedPerformance", "explanation", "confidence"],
+              required: ["horsepower", "whp", "zeroToSixty"],
               properties: {
-                stockPerformance: {
-                  type: "object",
-                  required: ["horsepower", "whp", "zeroToSixty"],
-                  properties: {
-                    horsepower: { type: "number" },
-                    whp: { type: "number" },
-                    zeroToSixty: { type: "number" }
-                  },
-                  additionalProperties: false
-                },
-                estimatedPerformance: {
-                  type: "object", 
-                  required: ["horsepower", "whp", "zeroToSixty"],
-                  properties: {
-                    horsepower: { type: "number" },
-                    whp: { type: "number" },
-                    zeroToSixty: { type: "number" }
-                  },
-                  additionalProperties: false
-                },
-                explanation: { type: "string" },
-                confidence: { 
-                  type: "string", 
-                  enum: ["Low", "Medium", "High"] 
-                }
+                horsepower: { type: "number" },
+                whp: { type: "number" },
+                zeroToSixty: { type: "number" }
               },
-              additionalProperties: false
-            }
-          }
-        },
-        tools: [{
-          type: "function",
-          function: {
-            name: "fetch_exact_specs",
-            description: "Research and return exact factory specifications for a specific vehicle configuration. Use this to get precise weight, horsepower, and performance data.",
-            parameters: {
-              type: "object",
-              properties: {
-                year: { type: "integer" },
-                make: { type: "string" },
-                model: { type: "string" },
-                trim: { type: "string" }
-              },
-              required: ["year", "make", "model", "trim"],
               additionalProperties: false
             },
-            strict: true
-          }
-        }]
-      });
-    } catch (o3Error) {
-      console.log("o3-mini not available, falling back to gpt-4o:", o3Error);
-      // Fallback to gpt-4o with structured schema
-      response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        temperature: 0.3,
-        max_tokens: 3000,
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "perf_schema",
-            strict: true,
-            schema: {
-              type: "object",
-              required: ["stockPerformance", "estimatedPerformance", "explanation", "confidence"],
+            estimatedPerformance: {
+              type: "object", 
+              required: ["horsepower", "whp", "zeroToSixty"],
               properties: {
-                stockPerformance: {
-                  type: "object",
-                  required: ["horsepower", "whp", "zeroToSixty"],
-                  properties: {
-                    horsepower: { type: "number" },
-                    whp: { type: "number" },
-                    zeroToSixty: { type: "number" }
-                  },
-                  additionalProperties: false
-                },
-                estimatedPerformance: {
-                  type: "object", 
-                  required: ["horsepower", "whp", "zeroToSixty"],
-                  properties: {
-                    horsepower: { type: "number" },
-                    whp: { type: "number" },
-                    zeroToSixty: { type: "number" }
-                  },
-                  additionalProperties: false
-                },
-                explanation: { type: "string" },
-                confidence: { 
-                  type: "string", 
-                  enum: ["Low", "Medium", "High"] 
-                }
+                horsepower: { type: "number" },
+                whp: { type: "number" },
+                zeroToSixty: { type: "number" }
               },
               additionalProperties: false
+            },
+            explanation: { type: "string" },
+            confidence: { 
+              type: "string", 
+              enum: ["Low", "Medium", "High"] 
             }
-          }
+          },
+          additionalProperties: false
         }
-      });
-    }
+      }
+    });
 
-    const content = response.choices[0]?.message?.content;
+    const content = result.response.text();
     if (!content) {
-      throw new Error("Received an empty response from OpenAI.");
+      throw new Error("Received an empty response from Gemini.");
     }
     
     const data = JSON.parse(content);
     
     // Validate the response structure
     if (!data.stockPerformance || !data.estimatedPerformance || !data.explanation || !data.confidence) {
-      throw new Error("OpenAI response missing required fields.");
+      throw new Error("Gemini response missing required fields.");
     }
     
     console.log('Performance calculation completed successfully');
     
-    // OpenAI doesn't provide sources like Gemini, so we'll return an empty array
+    // Add sources array for consistency with client expectations
     const aiResponse: AIResponse = { ...data, sources: [] };
     
     return res.status(200).json(aiResponse);
@@ -357,16 +280,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     if (error instanceof Error) {
       if (error.message.includes('API key') || error.message.includes('authentication')) {
-        errorMessage = 'Invalid API key configuration';
+        errorMessage = 'Invalid Gemini API key configuration';
         statusCode = 401;
       } else if (error.message.includes('quota') || error.message.includes('limit')) {
-        errorMessage = 'API quota exceeded. Please try again later.';
+        errorMessage = 'Gemini API quota exceeded. Please try again later.';
         statusCode = 429;
       } else if (error.message.includes('content') || error.message.includes('policy')) {
         errorMessage = 'Content violates policy. Please modify your request.';
         statusCode = 400;
       } else if (error instanceof SyntaxError) {
-        errorMessage = 'Failed to parse AI response. The model may have returned an invalid format.';
+        errorMessage = 'Failed to parse Gemini response. The model may have returned an invalid format.';
         statusCode = 422;
       }
     }
