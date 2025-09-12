@@ -46,11 +46,11 @@ interface RequestBody {
 
 // Constants for prompt generation
 const MODEL_DESCRIPTIONS = {
-  scottish_hills: "a runway model beautiful Scottish woman in a fitted crop top and athletic shorts, natural hair blowing in the wind",
-  us_canyons: "a runway model beautiful athletic American woman in a sports crop top and workout shorts leaning casually on the car",
-  italian_cobblestone: "a runway model beautiful stylish Italian woman in a fashionable crop top and high-waisted shorts walking past the car",
-  japanese_nightlife: "a runway model beautiful trendy Japanese woman in a fitted crop top and shorts with neon accents, street style, standing near the car",
-  german_city: "a runway model beautiful modern German woman in a sleek crop top and tailored shorts, confident pose beside the car"
+  scottish_hills: "a runway model beautiful Scottish woman in a fitted crop top and athletic shorts, leaning against the car seductively while looking toward the camera, natural hair blowing in the wind",
+  us_canyons: "a runway model beautiful athletic American woman in a sports crop top and workout shorts leaning seductively against the car while gazing toward the camera with alluring eyes",
+  italian_cobblestone: "a runway model beautiful stylish Italian woman in a fashionable crop top and high-waisted shorts leaning against the car in a seductive pose, looking directly at the camera",
+  japanese_nightlife: "a runway model beautiful trendy Japanese woman in a fitted crop top and shorts with neon accents, leaning seductively against the car while making eye contact with the camera",
+  german_city: "a runway model beautiful modern German woman in a sleek crop top and tailored shorts, leaning against the car in a seductive pose while gazing confidently toward the camera"
 };
 
 const NEGATIVE_PROMPT = `
