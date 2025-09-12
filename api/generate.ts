@@ -131,7 +131,7 @@ function renderPrompt(promptSpec: PromptSpec): string {
   
   // Add styling modifications
   if (car.deBadged) {
-    prompt += ', with all model badges, trim badges, and emblems removed except for the main manufacturer logo (debadged look)';
+    prompt += ', completely debadged with NO model name badges, NO trim level badges, NO performance badges, NO text badges anywhere on the vehicle body, only the manufacturer logo remains';
   }
   
   if (car.chromeDelete) {
