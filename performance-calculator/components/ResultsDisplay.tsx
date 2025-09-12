@@ -148,12 +148,27 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, carInpu
           </div>
         )}
 
-        <div className="mt-8 pt-6 border-t border-divider flex justify-center">
+        <div className="mt-8 pt-6 border-t border-divider flex justify-center gap-4">
           <button
             onClick={onGoBack}
-            className="px-8 py-3 bg-primary text-background font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-all"
+            className="px-8 py-3 bg-secondary text-textPrimary font-semibold rounded-lg shadow-md hover:bg-secondary/80 border border-divider transition-all"
           >
             New Estimate
+          </button>
+          <button
+            onClick={() => {
+              const params = new URLSearchParams({
+                year: carInput.year,
+                make: carInput.make,
+                model: carInput.model,
+                color: 'Red', // Default color
+                source: 'performance-calculator'
+              });
+              window.open(`/w/on-site/embed?${params.toString()}`, '_blank');
+            }}
+            className="px-8 py-3 bg-primary text-background font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-all"
+          >
+            Turn into Image
           </button>
         </div>
       </div>

@@ -16,18 +16,26 @@ import ImageGallery from './components/ImageGallery';
 import './styles.css';
 
 const OnSiteApp: React.FC = () => {
-  const [carSpec, setCarSpec] = useState<CarSpec>({
-    year: '2024',
-    make: 'BMW',
-    model: 'M3',
-    color: 'Red',
-    wheelsColor: 'Black',
-    addModel: false,
-    deBadged: false,
-    chromeDelete: false,
-    position: 'front',
-    details: ''
+  const [carSpec, setCarSpec] = useState<CarSpec>(() => {
+    // Check URL parameters for car data from Performance Calculator
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    return {
+      year: urlParams.get('year') || '2024',
+      make: urlParams.get('make') || 'BMW',
+      model: urlParams.get('model') || 'M3',
+      color: urlParams.get('color') || 'Red',
+      wheelsColor: 'Black',
+      addModel: false,
+      deBadged: false,
+      chromeDelete: false,
+      position: 'front',
+      details: ''
+    };
   });
+
+  // Check if data came from Performance Calculator
+  const fromPerformanceCalc = new URLSearchParams(window.location.search).get('source') === 'performance-calculator';
 
   const [selectedPresets, setSelectedPresets] = useState<{
     location?: string;
@@ -139,6 +147,18 @@ const OnSiteApp: React.FC = () => {
         <h1>On-Site</h1>
         <p>Generate custom car images with AI</p>
       </div>
+
+      {fromPerformanceCalc && (
+        <div className="notification-banner">
+          <div className="notification-content">
+            <div className="notification-icon">🚗</div>
+            <div className="notification-text">
+              <strong>Car details imported from Performance Calculator!</strong>
+              <p>Your {carSpec.year} {carSpec.make} {carSpec.model} is ready for image generation.</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <form className="car-form" onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
         <div className="form-section">
