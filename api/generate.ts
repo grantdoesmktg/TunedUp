@@ -46,11 +46,11 @@ interface RequestBody {
 
 // Constants for prompt generation
 const MODEL_DESCRIPTIONS = {
-  scottish_hills: "a fashionable Scottish woman in modern casual wear, natural hair blowing in the wind",
-  us_canyons: "an athletic American woman in denim and boots leaning casually on the car",
-  italian_cobblestone: "a stylish Italian woman in chic streetwear walking past the car",
-  japanese_nightlife: "a trendy Japanese woman in neon-accented fashion, street style, standing near the car",
-  german_city: "a modern German woman in sleek minimalist clothing, confident pose beside the car"
+  scottish_hills: "a fashionable Scottish woman in a fitted crop top and athletic shorts, natural hair blowing in the wind",
+  us_canyons: "an athletic American woman in a sports crop top and workout shorts leaning casually on the car",
+  italian_cobblestone: "a stylish Italian woman in a fashionable crop top and high-waisted shorts walking past the car",
+  japanese_nightlife: "a trendy Japanese woman in a fitted crop top and shorts with neon accents, street style, standing near the car",
+  german_city: "a modern German woman in a sleek crop top and tailored shorts, confident pose beside the car"
 };
 
 const NEGATIVE_PROMPT = `
@@ -131,7 +131,7 @@ function renderPrompt(promptSpec: PromptSpec): string {
   
   // Add styling modifications
   if (car.deBadged) {
-    prompt += ', with all badges and emblems removed for a clean debadged look';
+    prompt += ', with all model badges, trim badges, and emblems removed except for the main manufacturer logo (debadged look)';
   }
   
   if (car.chromeDelete) {
@@ -175,7 +175,7 @@ function renderPrompt(promptSpec: PromptSpec): string {
   }
   
   // Add quality descriptors and license plate requirement
-  prompt += ', with license plate completely blacked out or obscured for privacy';
+  prompt += ', with no license plate visible on the vehicle';
   prompt += ', ' + QUALITY_PROMPT.trim();
   
   return prompt;
