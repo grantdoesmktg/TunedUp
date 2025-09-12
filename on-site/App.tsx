@@ -21,10 +21,10 @@ const OnSiteApp: React.FC = () => {
     const urlParams = new URLSearchParams(window.location.search);
     
     return {
-      year: urlParams.get('year') || '2024',
-      make: urlParams.get('make') || 'BMW',
-      model: urlParams.get('model') || 'M3',
-      color: urlParams.get('color') || 'Red',
+      year: urlParams.get('year') || '2018',
+      make: urlParams.get('make') || 'Infiniti',
+      model: urlParams.get('model') || 'Q50',
+      color: urlParams.get('color') || 'Liquid Platinum',
       wheelsColor: 'Black',
       addModel: false,
       deBadged: false,
