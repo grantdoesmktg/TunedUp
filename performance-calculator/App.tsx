@@ -24,7 +24,24 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showResults, setShowResults] = useState<boolean>(false);
   
-  const [carInput, setCarInput] = useState<CarInput>(INITIAL_CAR_INPUT);
+  const [carInput, setCarInput] = useState<CarInput>(() => {
+    // Check URL parameters for data from Build Planner or other widgets
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    return {
+      make: urlParams.get('make') || '',
+      model: urlParams.get('model') || '',
+      year: urlParams.get('year') || '',
+      trim: urlParams.get('trim') || '',
+      drivetrain: DRIVETRAIN_OPTIONS[0],
+      transmission: TRANSMISSION_OPTIONS[0],
+      modifications: urlParams.get('modifications') || '',
+      tireType: TIRE_TYPE_OPTIONS[0],
+      fuelType: FUEL_TYPE_OPTIONS[0],
+      launchTechnique: LAUNCH_TECHNIQUE_OPTIONS[0],
+    };
+  });
+  
   const [aiResponse, setAiResponse] = useState<AIResponse | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {

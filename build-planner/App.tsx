@@ -191,7 +191,7 @@ const BuildPlannerApp: React.FC = () => {
 
       {isLoading && (
         <div className="loading-spinner">
-          <p>🔧 Analyzing your vehicle and planning the perfect build...</p>
+          <div className="spinner"></div>
         </div>
       )}
 
