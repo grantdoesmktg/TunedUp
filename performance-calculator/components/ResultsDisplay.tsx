@@ -148,12 +148,27 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, carInpu
           </div>
         )}
 
-        <div className="mt-8 pt-6 border-t border-divider flex justify-center gap-4">
+        <div className="mt-8 pt-6 border-t border-divider flex justify-center gap-3 flex-wrap">
           <button
             onClick={onGoBack}
-            className="px-8 py-3 bg-secondary text-textPrimary font-semibold rounded-lg shadow-md hover:bg-secondary/80 border border-divider transition-all"
+            className="px-6 py-3 bg-secondary text-textPrimary font-semibold rounded-lg shadow-md hover:bg-secondary/80 border border-divider transition-all"
           >
             New Estimate
+          </button>
+          <button
+            onClick={() => {
+              const params = new URLSearchParams({
+                year: carInput.year,
+                make: carInput.make,
+                model: carInput.model,
+                trim: carInput.trim,
+                source: 'performance-calculator'
+              });
+              window.open(`/build-planner?${params.toString()}`, '_blank');
+            }}
+            className="px-6 py-3 bg-highlight text-background font-semibold rounded-lg shadow-md hover:bg-highlight/90 transition-all"
+          >
+            Plan More Mods
           </button>
           <button
             onClick={() => {
@@ -166,7 +181,7 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, carInpu
               });
               window.open(`/w/on-site/embed?${params.toString()}`, '_blank');
             }}
-            className="px-8 py-3 bg-primary text-background font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-all"
+            className="px-6 py-3 bg-primary text-background font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-all"
           >
             Turn into Image
           </button>
