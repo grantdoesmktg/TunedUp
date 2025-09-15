@@ -30,7 +30,7 @@ const OnSiteApp: React.FC = () => {
       deBadged: false,
       chromeDelete: false,
       position: 'front',
-      details: ''
+      details: urlParams.get('trim') ? `${urlParams.get('trim')} trim` : ''
     };
   });
 
