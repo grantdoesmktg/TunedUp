@@ -16,6 +16,9 @@ const BuildPlannerApp: React.FC = () => {
     };
   });
 
+  const [budget, setBudget] = useState<string>('$2,500');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [buildPlan, setBuildPlan] = useState<BuildPlanResponse | null>(null);
@@ -23,8 +26,53 @@ const BuildPlannerApp: React.FC = () => {
   // Check if data came from Performance Calculator
   const fromPerformanceCalc = new URLSearchParams(window.location.search).get('source') === 'performance-calculator';
 
+  const buildCategories = [
+    {
+      id: 'power-focused',
+      title: 'Power-Focused',
+      icon: '⚡',
+      description: 'Intake, exhaust, tune, fueling, turbo upgrades',
+      metrics: 'HP/TQ gains, 0–60, ¼ mile'
+    },
+    {
+      id: 'handling-track',
+      title: 'Handling & Track',
+      icon: '🏁',
+      description: 'Suspension, coilovers, sway bars, brake upgrades',
+      metrics: 'Lap times, grip, braking distance'
+    },
+    {
+      id: 'visual-aesthetic',
+      title: 'Visual / Aesthetic',
+      icon: '✨',
+      description: 'Body kits, wraps/paint, aero, wheels, lighting',
+      metrics: 'Looks, stance, personalization'
+    },
+    {
+      id: 'daily-reliability',
+      title: 'Daily Driver / Reliability',
+      icon: '🛡️',
+      description: 'OEM+ mods, cooling, conservative tunes',
+      metrics: 'Drivability, NVH, reliability'
+    },
+    {
+      id: 'show-flex',
+      title: 'Show & Flex',
+      icon: '💎',
+      description: 'High-end visual mods, audio, flashy renders',
+      metrics: 'Shareability, "My Garage" clout'
+    },
+    {
+      id: 'balanced-build',
+      title: 'Balanced Build',
+      icon: '⚖️',
+      description: 'Mix of performance + handling + reliability',
+      metrics: 'Best value-for-money, jack of all trades'
+    }
+  ];
+
   const handleGenerate = async () => {
-    if (!vehicleSpec.question.trim()) return;
+    if (!selectedCategory) return;
 
     setIsLoading(true);
     setError(null);
@@ -37,7 +85,10 @@ const BuildPlannerApp: React.FC = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          vehicleSpec
+          vehicleSpec: {
+            ...vehicleSpec,
+            question: `${buildCategories.find(cat => cat.id === selectedCategory)?.title} build for my ${vehicleSpec.year} ${vehicleSpec.make} ${vehicleSpec.model} with a ${budget} budget`
+          }
         })
       });
 
@@ -159,16 +210,39 @@ const BuildPlannerApp: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="question">Build Goals & Budget</label>
-            <textarea
-              id="question"
-              className="question-input"
-              value={vehicleSpec.question}
-              onChange={(e) => setVehicleSpec(prev => ({ ...prev, question: e.target.value }))}
-              placeholder="What mods should I do first on a 2018 Infiniti Q50 3.0t Sport with $2,500? Looking for more power and better sound..."
-              required
-              rows={4}
-            />
+            <label htmlFor="budget">Budget</label>
+            <select
+              id="budget"
+              value={budget}
+              onChange={(e) => setBudget(e.target.value)}
+              className="budget-select"
+            >
+              <option value="$1,000">$1,000</option>
+              <option value="$2,500">$2,500</option>
+              <option value="$5,000">$5,000</option>
+              <option value="$10,000">$10,000</option>
+              <option value="$15,000">$15,000</option>
+              <option value="$25,000">$25,000</option>
+              <option value="$50,000+">$50,000+</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h2>Build Category</h2>
+          <div className="category-grid">
+            {buildCategories.map((category) => (
+              <div
+                key={category.id}
+                className={`category-card ${selectedCategory === category.id ? 'selected' : ''}`}
+                onClick={() => setSelectedCategory(category.id)}
+              >
+                <div className="category-icon">{category.icon}</div>
+                <div className="category-title">{category.title}</div>
+                <div className="category-description">{category.description}</div>
+                <div className="category-metrics">{category.metrics}</div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -176,7 +250,7 @@ const BuildPlannerApp: React.FC = () => {
           <button
             type="submit"
             className="generate-button"
-            disabled={isLoading || !vehicleSpec.question.trim()}
+            disabled={isLoading || !selectedCategory}
           >
             {isLoading ? 'Planning Your Build...' : 'Get Build Plan & Costs'}
           </button>
