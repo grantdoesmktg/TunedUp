@@ -12,7 +12,6 @@ interface VehicleSpec {
 
 interface BuildPlanRequest {
   vehicleSpec: VehicleSpec;
-  stage: 'stage1' | 'stage2' | 'track_ready';
 }
 
 interface PartRecommendation {
@@ -35,13 +34,7 @@ interface BuildPlanResponse {
   warnings: string[];
 }
 
-const createBuildPlanPrompt = (vehicleSpec: VehicleSpec, stage: string): string => {
-  const stageDescriptions = {
-    stage1: 'Stage 1 - Basic bolt-on modifications for daily driving with improved performance',
-    stage2: 'Stage 2 - Intermediate modifications for significant performance gains',
-    track_ready: 'Track Ready - Advanced modifications optimized for track use and maximum performance'
-  };
-
+const createBuildPlanPrompt = (vehicleSpec: VehicleSpec): string => {
   return `
 You are a professional automotive tuning consultant with extensive knowledge of modification costs, installation complexity, and performance gains. You must provide a comprehensive build plan with accurate cost estimates.
 
@@ -53,12 +46,11 @@ CRITICAL REQUIREMENTS:
 5. Be specific about actual parts, not generic categories
 
 Vehicle: ${vehicleSpec.year} ${vehicleSpec.make} ${vehicleSpec.model} ${vehicleSpec.trim}
-Build Goal: ${stageDescriptions[stage as keyof typeof stageDescriptions]}
 Customer Request: ${vehicleSpec.question}
 
 RESPONSE FORMAT - Return valid JSON only:
 {
-  "stage": "${stageDescriptions[stage as keyof typeof stageDescriptions]}",
+  "stage": "Descriptive build type based on customer request (e.g., 'Budget Build', 'Stage 1 Performance', 'Track Prep')",
   "totalPartsCost": number,
   "totalDIYCost": number, 
   "totalProfessionalCost": number,
@@ -83,12 +75,14 @@ PRICING GUIDELINES:
 - Research actual part prices from major suppliers (APR, Cobb, Injen, etc.)
 - Include supporting modifications needed (gaskets, fluids, misc hardware)
 
-STAGE-SPECIFIC FOCUS:
-- Stage 1: Intake, exhaust, tune, basic suspension - focus on bolt-on ease
-- Stage 2: Turbo upgrades, internals, fuel system - more complex installations  
-- Track Ready: Roll cage, racing seats, advanced aero - professional installation required
+ANALYSIS APPROACH:
+- Parse customer request for budget, goals, and experience level
+- Recommend appropriate modifications based on their specific needs
+- Consider budget constraints and prioritize modifications
+- Factor in vehicle platform capabilities and common issues
+- Suggest realistic timelines and difficulty levels
 
-Analyze this specific vehicle platform and provide realistic, actionable recommendations.
+Analyze this specific vehicle platform and customer request to provide realistic, actionable recommendations.
 `;
 };
 
@@ -116,11 +110,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Parse and validate request body
-    const { vehicleSpec, stage } = req.body as BuildPlanRequest;
+    const { vehicleSpec } = req.body as BuildPlanRequest;
     
-    if (!vehicleSpec || !stage) {
+    if (!vehicleSpec) {
       return res.status(400).json({ 
-        error: 'Missing required fields: vehicleSpec and stage are required' 
+        error: 'Missing required fields: vehicleSpec is required' 
       });
     }
 
@@ -131,13 +125,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    console.log('Processing build plan request for:', `${vehicleSpec.year} ${vehicleSpec.make} ${vehicleSpec.model} - ${stage}`);
+    console.log('Processing build plan request for:', `${vehicleSpec.year} ${vehicleSpec.make} ${vehicleSpec.model}`);
 
     // Initialize Gemini AI
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-    const prompt = createBuildPlanPrompt(vehicleSpec, stage);
+    const prompt = createBuildPlanPrompt(vehicleSpec);
 
     const result = await model.generateContent({
       contents: [{
