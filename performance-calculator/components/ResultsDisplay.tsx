@@ -176,10 +176,11 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, carInpu
                 year: carInput.year,
                 make: carInput.make,
                 model: carInput.model,
-                color: 'Red', // Default color
+                trim: carInput.trim,
+                color: 'Liquid Platinum', // Default color to match On-Site default
                 source: 'performance-calculator'
               });
-              window.open(`/w/on-site/embed?${params.toString()}`, '_blank');
+              window.open(`/on-site?${params.toString()}`, '_blank');
             }}
             className="px-6 py-3 bg-primary text-background font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-all"
           >
