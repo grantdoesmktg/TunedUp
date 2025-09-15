@@ -138,15 +138,10 @@ const BuildPlannerApp: React.FC = () => {
 
   return (
     <div className="build-planner-app">
-      <div className="app-header">
-        <h1>Build Planner</h1>
-        <p>Get AI-powered modification recommendations and cost estimates</p>
-      </div>
 
       {fromPerformanceCalc && (
         <div className="notification-banner">
           <div className="notification-content">
-            <div className="notification-icon">🔧</div>
             <div className="notification-text">
               <strong>Vehicle details imported from Performance Calculator!</strong>
               <p>Your {vehicleSpec.year} {vehicleSpec.make} {vehicleSpec.model} is ready for build planning.</p>
@@ -246,7 +241,6 @@ const BuildPlannerApp: React.FC = () => {
                 className={`category-card ${selectedCategory === category.id ? 'selected' : ''}`}
                 onClick={() => setSelectedCategory(category.id)}
               >
-                <div className="category-icon">{category.icon}</div>
                 <div className="category-title">{category.title}</div>
                 <div className="category-description">{category.description}</div>
                 <div className="category-metrics">{category.metrics}</div>

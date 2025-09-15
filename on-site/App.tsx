@@ -155,15 +155,10 @@ const OnSiteApp: React.FC = () => {
 
   return (
     <div className="onsite-app">
-      <div className="app-header">
-        <h1>On-Site</h1>
-        <p>Generate custom car images with AI</p>
-      </div>
 
       {fromPerformanceCalc && (
         <div className="notification-banner">
           <div className="notification-content">
-            <div className="notification-icon">🚗</div>
             <div className="notification-text">
               <strong>Car details imported from Performance Calculator!</strong>
               <p>Your {carSpec.year} {carSpec.make} {carSpec.model} is ready for image generation.</p>
@@ -174,7 +169,6 @@ const OnSiteApp: React.FC = () => {
 
       <form className="car-form" onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
         <div className="form-section">
-          <h2>Car Specifications</h2>
           
           <div className="form-row">
             <div className="form-group">
@@ -315,14 +309,13 @@ const OnSiteApp: React.FC = () => {
 
         <div className="form-section">
           <div className="scene-header">
-            <h2>Scene Presets</h2>
             <button
               type="button"
               onClick={handleRandomize}
               className="randomize-button"
               title="Randomize all scene presets"
             >
-              🎲 Randomize
+Randomize
             </button>
           </div>
           
