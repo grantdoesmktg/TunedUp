@@ -218,12 +218,21 @@ const BuildPlannerApp: React.FC = () => {
               className="budget-select"
             >
               <option value="$1,000">$1,000</option>
+              <option value="$1,500">$1,500</option>
+              <option value="$2,000">$2,000</option>
               <option value="$2,500">$2,500</option>
+              <option value="$3,000">$3,000</option>
+              <option value="$3,500">$3,500</option>
+              <option value="$4,000">$4,000</option>
+              <option value="$4,500">$4,500</option>
               <option value="$5,000">$5,000</option>
+              <option value="$6,000">$6,000</option>
+              <option value="$7,000">$7,000</option>
+              <option value="$8,000">$8,000</option>
+              <option value="$9,000">$9,000</option>
               <option value="$10,000">$10,000</option>
               <option value="$15,000">$15,000</option>
-              <option value="$25,000">$25,000</option>
-              <option value="$50,000+">$50,000+</option>
+              <option value="$20,000">$20,000</option>
             </select>
           </div>
         </div>
