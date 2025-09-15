@@ -158,62 +158,28 @@ const BuildPlannerApp: React.FC = () => {
             </div>
           </div>
 
+          <div className="form-group">
+            <label htmlFor="question">Build Goals & Budget</label>
+            <textarea
+              id="question"
+              className="question-input"
+              value={vehicleSpec.question}
+              onChange={(e) => setVehicleSpec(prev => ({ ...prev, question: e.target.value }))}
+              placeholder="What mods should I do first on a 2018 Infiniti Q50 3.0t Sport with $2,500? Looking for more power and better sound..."
+              required
+              rows={4}
+            />
+          </div>
         </div>
 
-        <div className="form-section chat-section">
-          <h2>Ask the AI Build Expert</h2>
-          <div className="chat-container">
-            <div className="chat-input-wrapper">
-              <textarea
-                className="chat-input"
-                value={vehicleSpec.question}
-                onChange={(e) => setVehicleSpec(prev => ({ ...prev, question: e.target.value }))}
-                placeholder="What mods should I do first on a 2018 Infiniti Q50 3.0t Sport with $2,500? Looking for more power and better sound..."
-                required
-                rows={3}
-              />
-              <button
-                type="submit"
-                className="chat-send-button"
-                disabled={isLoading || !vehicleSpec.question.trim()}
-              >
-                {isLoading ? '🔧' : '➤'}
-              </button>
-            </div>
-            <div className="stage-quick-options">
-              <span className="quick-label">Quick suggestions:</span>
-              <button
-                type="button"
-                className="quick-option"
-                onClick={() => setVehicleSpec(prev => ({ 
-                  ...prev, 
-                  question: `What are the best Stage 1 modifications for my ${prev.year} ${prev.make} ${prev.model} with a $1,500 budget?` 
-                }))}
-              >
-                Stage 1 mods
-              </button>
-              <button
-                type="button"
-                className="quick-option"
-                onClick={() => setVehicleSpec(prev => ({ 
-                  ...prev, 
-                  question: `I want to make my ${prev.year} ${prev.make} ${prev.model} track-ready, what do I need?` 
-                }))}
-              >
-                Track prep
-              </button>
-              <button
-                type="button"
-                className="quick-option"
-                onClick={() => setVehicleSpec(prev => ({ 
-                  ...prev, 
-                  question: `Best bang for buck mods for my ${prev.year} ${prev.make} ${prev.model} under $3,000?` 
-                }))}
-              >
-                Best value
-              </button>
-            </div>
-          </div>
+        <div className="generate-section">
+          <button
+            type="submit"
+            className="generate-button"
+            disabled={isLoading || !vehicleSpec.question.trim()}
+          >
+            {isLoading ? 'Planning Your Build...' : 'Get Build Plan & Costs'}
+          </button>
           
           {error && (
             <div className="error-message">
