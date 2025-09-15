@@ -76,6 +76,31 @@ export const PALETTE_PRESETS: PalettePreset[] = [
     key: 'vintage_film',
     label: 'Vintage Film',
     description: 'Retro color grading with film grain aesthetic'
+  },
+  {
+    key: 'champagne_gold',
+    label: 'Champagne Gold',
+    description: 'Ivory, champagne, soft black, rose gold trim'
+  },
+  {
+    key: 'racing_heritage',
+    label: 'Racing Heritage',
+    description: 'Bold primary red, white, black, checkered accents'
+  },
+  {
+    key: 'graffiti_pop',
+    label: 'Graffiti Pop',
+    description: 'Lime green, cyan, magenta, matte grey'
+  },
+  {
+    key: 'earth_sand',
+    label: 'Earth & Sand',
+    description: 'Desert tan, muted olive, rust orange, sky blue'
+  },
+  {
+    key: 'holographic_fade',
+    label: 'Holographic Fade',
+    description: 'Shifting gradients of purple, teal, silver, neon'
   }
 ];
 

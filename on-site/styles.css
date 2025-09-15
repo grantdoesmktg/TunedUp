@@ -1,11 +1,11 @@
 :root {
-  --color-primary: #00C2FF;
+  --color-primary: #07FEF7;
   --color-bg: #121212;
   --color-secondary: #1F1F1F;
   --color-text: #FFFFFF;
   --color-text-secondary: #AAAAAA;
   --color-divider: #2A2A2A;
-  --color-highlight: #FF6C00;
+  --color-highlight: #D02780;
   --color-success: #00FF99;
   --color-error: #FF3366;
   --border-radius: 8px;
@@ -103,6 +103,39 @@
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--color-text);
+}
+
+.scene-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.scene-header h2 {
+  margin: 0;
+}
+
+.randomize-button {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-highlight));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.randomize-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.randomize-button:active {
+  transform: translateY(0);
 }
 
 .form-row {
