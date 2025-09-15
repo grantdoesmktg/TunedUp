@@ -141,6 +141,18 @@ const OnSiteApp: React.FC = () => {
     }));
   };
 
+  const handleRandomize = () => {
+    const randomLocation = LOCATION_PRESETS[Math.floor(Math.random() * LOCATION_PRESETS.length)].key;
+    const randomTime = TIME_PRESETS[Math.floor(Math.random() * TIME_PRESETS.length)].key;
+    const randomPalette = PALETTE_PRESETS[Math.floor(Math.random() * PALETTE_PRESETS.length)].key;
+    
+    setSelectedPresets({
+      location: randomLocation,
+      time: randomTime,
+      palette: randomPalette
+    });
+  };
+
   return (
     <div className="onsite-app">
       <div className="app-header">
@@ -302,7 +314,17 @@ const OnSiteApp: React.FC = () => {
         </div>
 
         <div className="form-section">
-          <h2>Scene Presets</h2>
+          <div className="scene-header">
+            <h2>Scene Presets</h2>
+            <button
+              type="button"
+              onClick={handleRandomize}
+              className="randomize-button"
+              title="Randomize all scene presets"
+            >
+              🎲 Randomize
+            </button>
+          </div>
           
           <PresetButtonGroup
             title="Location"

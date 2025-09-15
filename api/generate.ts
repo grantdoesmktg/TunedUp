@@ -124,7 +124,12 @@ function renderPrompt(promptSpec: PromptSpec): string {
       warm_sunset: ', with warm sunset colors featuring oranges, reds, and golden tones',
       monochrome_slate: ', in monochrome with black, white, and subtle gray tones',
       neo_tokyo: ', with cyberpunk neon colors including electric blues, pinks, and purple highlights',
-      vintage_film: ', with vintage film color grading and nostalgic retro tones'
+      vintage_film: ', with vintage film color grading and nostalgic retro tones',
+      champagne_gold: ', with an elegant champagne gold palette featuring ivory, champagne, soft black, and rose gold accents',
+      racing_heritage: ', with a classic racing palette of bold red, pristine white, deep black, and checkered pattern elements',
+      graffiti_pop: ', with vibrant street art colors including lime green, electric cyan, hot magenta, and matte grey',
+      earth_sand: ', with natural earth tones featuring desert tan, muted olive, rust orange, and sky blue',
+      holographic_fade: ', with iridescent holographic colors including shifting purple, teal, silver, and neon highlights'
     };
     prompt += palettePrompts[scene.paletteKey as keyof typeof palettePrompts] || '';
   }
