@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "@prisma/client": "^6.16.2",
     "openai": "^4.71.0",
+    "prisma": "^6.16.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-easy-crop": "^5.1.0",

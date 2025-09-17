@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { checkQuota, incrementUsage } from '../lib/quota.js';
 
 // Types for the request body
 interface VehicleSpec {
@@ -125,6 +126,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Check quota (get email from header)
+    const userEmail = req.headers['x-user-email'] as string || null;
+    const quotaCheck = await checkQuota(userEmail, 'build');
+    
+    if (!quotaCheck.allowed) {
+      return res.status(429).json({ 
+        error: 'QUOTA_EXCEEDED',
+        ...quotaCheck
+      });
+    }
+
     console.log('Processing build plan request for:', `${vehicleSpec.year} ${vehicleSpec.make} ${vehicleSpec.model}`);
 
     // Initialize Gemini AI
@@ -169,6 +181,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     console.log('Build plan completed successfully');
+    
+    // Increment usage after successful calculation
+    await incrementUsage(userEmail, 'build');
     
     return res.status(200).json(data as BuildPlanResponse);
 
