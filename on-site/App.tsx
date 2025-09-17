@@ -51,6 +51,8 @@ const OnSiteApp: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentImage, setCurrentImage] = useState<string | undefined>();
   const [imageHistory, setImageHistory] = useState<GeneratedImage[]>([]);
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [referenceFile, setReferenceFile] = useState<File | null>(null);
 
   useEffect(() => {
     // Apply theme from URL params
@@ -75,6 +77,38 @@ const OnSiteApp: React.FC = () => {
     postResizeMessage();
   }, [isLoading, currentImage, imageHistory.length]);
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please upload a valid image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image file must be less than 5MB');
+        return;
+      }
+      
+      setReferenceFile(file);
+      
+      // Convert to base64 for preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setReferenceImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      setError(null);
+    }
+  };
+
+  const removeReferenceImage = () => {
+    setReferenceImage(null);
+    setReferenceFile(null);
+  };
+
   const buildPromptSpec = (): PromptSpec => ({
     car: carSpec,
     scene: {
@@ -93,6 +127,21 @@ const OnSiteApp: React.FC = () => {
     try {
       const promptSpec = buildPromptSpec();
       
+      // Convert reference image to base64 if uploaded
+      let referenceImageBase64 = null;
+      if (referenceFile) {
+        referenceImageBase64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const result = e.target?.result as string;
+            // Remove data:image/jpeg;base64, prefix to get just the base64 data
+            const base64Data = result.split(',')[1];
+            resolve(base64Data);
+          };
+          reader.readAsDataURL(referenceFile);
+        });
+      }
+      
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
@@ -100,7 +149,8 @@ const OnSiteApp: React.FC = () => {
         },
         body: JSON.stringify({
           promptSpec,
-          imageParams: output
+          imageParams: output,
+          referenceImage: referenceImageBase64
         })
       });
 
@@ -169,6 +219,44 @@ const OnSiteApp: React.FC = () => {
 
       <form className="car-form" onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
         <div className="form-section">
+          
+          {/* Reference Image Upload */}
+          <div className="form-section reference-image-section">
+            <h3>Car Reference Image (Optional)</h3>
+            <p className="section-description">Upload a photo of your car to use as reference. The generated image will match your specific car while applying the modifications and settings below.</p>
+            
+            {!referenceImage ? (
+              <div className="file-upload">
+                <input
+                  type="file"
+                  id="reference-upload"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor="reference-upload" className="upload-button">
+                  <span className="upload-icon">📷</span>
+                  Upload Car Photo
+                </label>
+                <p className="upload-hint">Supports JPG, PNG, WebP (max 5MB)</p>
+              </div>
+            ) : (
+              <div className="reference-preview">
+                <div className="preview-container">
+                  <img src={referenceImage} alt="Reference car" className="preview-image" />
+                  <button 
+                    type="button" 
+                    onClick={removeReferenceImage}
+                    className="remove-image"
+                    aria-label="Remove reference image"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className="preview-text">Reference image uploaded successfully</p>
+              </div>
+            )}
+          </div>
           
           <div className="form-row">
             <div className="form-group">

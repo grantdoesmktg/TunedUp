@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { checkQuota, incrementUsage } from '../lib/quota.js';
 
 // Types for the request body
 interface CarSpec {
@@ -42,6 +43,7 @@ interface ImageParams {
 interface RequestBody {
   promptSpec: PromptSpec;
   imageParams: ImageParams;
+  referenceImage?: string; // base64 encoded image
 }
 
 // Constants for prompt generation
@@ -68,11 +70,13 @@ accurate car body proportions, well-defined wheels and tires, cinematic depth of
 sharp focus on the car, natural environment integration, and a coherent, professional photography look.
 `;
 
-function renderPrompt(promptSpec: PromptSpec): string {
+function renderPrompt(promptSpec: PromptSpec, hasReferenceImage: boolean = false): string {
   const { car, scene, camera, style } = promptSpec;
   
-  // Base car description
-  let prompt = `A ${car.year} ${car.make} ${car.model} in ${car.color.toLowerCase()} color with ${car.wheelsColor.toLowerCase()} wheels`;
+  // Base car description - modify based on reference image
+  let prompt = hasReferenceImage 
+    ? `Using this reference car image as the base, generate a ${car.year} ${car.make} ${car.model}. Keep the same car from the reference image but apply the following specifications: ${car.color.toLowerCase()} color, ${car.wheelsColor.toLowerCase()} wheels`
+    : `A ${car.year} ${car.make} ${car.model} in ${car.color.toLowerCase()} color with ${car.wheelsColor.toLowerCase()} wheels`;
   
   // Position - refined camera angles
   let positionDescription: string;
@@ -210,7 +214,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Parse and validate request body
-    const { promptSpec, imageParams } = req.body as RequestBody;
+    const { promptSpec, imageParams, referenceImage } = req.body as RequestBody;
     
     if (!promptSpec || !imageParams) {
       return res.status(400).json({ 
@@ -225,9 +229,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Check quota (get email from header)
+    const userEmail = req.headers['x-user-email'] as string || null;
+    const quotaCheck = await checkQuota(userEmail, 'image');
+    
+    if (!quotaCheck.allowed) {
+      return res.status(429).json({ 
+        error: 'QUOTA_EXCEEDED',
+        ...quotaCheck
+      });
+    }
+
     // Generate the text prompt
-    const prompt = renderPrompt(promptSpec);
+    const prompt = renderPrompt(promptSpec, !!referenceImage);
     console.log('Generated prompt for Gemini:', prompt.substring(0, 100) + '...');
+    console.log('Reference image provided:', !!referenceImage);
 
     // Initialize Gemini AI
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -249,7 +265,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('Sending JSON prompt to Gemini 2.5 Flash Image:', JSON.stringify(jsonPrompt, null, 2).substring(0, 200) + '...');
 
-    const result = await model.generateContent([JSON.stringify(jsonPrompt)]);
+    // Prepare content array for Gemini
+    const contentParts: any[] = [JSON.stringify(jsonPrompt)];
+    
+    // Add reference image if provided
+    if (referenceImage) {
+      contentParts.unshift({
+        inlineData: {
+          data: referenceImage,
+          mimeType: "image/jpeg"
+        }
+      });
+      console.log('Added reference image to request');
+    }
+
+    const result = await model.generateContent(contentParts);
     const response = result.response;
 
     // Extract image data from Gemini response
@@ -281,6 +311,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         promptSpec
       );
     }
+
+    // Increment usage after successful generation
+    await incrementUsage(userEmail, 'image');
 
     return res.status(200).json({
       image: imageBase64,

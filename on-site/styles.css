@@ -500,3 +500,114 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Reference Image Upload Styles */
+.reference-image-section {
+  background: var(--color-secondary);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.reference-image-section h3 {
+  margin: 0 0 8px 0;
+  color: var(--color-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.section-description {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  margin: 0 0 20px 0;
+  line-height: 1.4;
+}
+
+.file-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.upload-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--color-primary);
+  color: var(--color-bg);
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.upload-button:hover {
+  background: rgba(7, 254, 247, 0.8);
+  transform: translateY(-2px);
+}
+
+.upload-icon {
+  font-size: 1.2rem;
+}
+
+.upload-hint {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.reference-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.preview-container {
+  position: relative;
+  display: inline-block;
+}
+
+.preview-image {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: var(--border-radius);
+  border: 2px solid var(--color-primary);
+  object-fit: cover;
+}
+
+.remove-image {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: var(--color-error);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.remove-image:hover {
+  background: #cc2a55;
+}
+
+.preview-text {
+  color: var(--color-success);
+  font-size: 0.9rem;
+  margin: 0;
+  font-weight: 500;
+}
