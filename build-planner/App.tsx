@@ -255,7 +255,7 @@ const BuildPlannerApp: React.FC = () => {
             className="generate-button"
             disabled={isLoading || !selectedCategory}
           >
-            {isLoading ? 'Planning Your Build...' : 'Get Build Plan & Costs'}
+            Get Build Plan & Costs
           </button>
           
           {error && (
