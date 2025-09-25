@@ -7,9 +7,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 const prisma = new PrismaClient()
 
 const PRICE_IDS = {
-  PLUS: process.env.STRIPE_PLUS_PRICE_ID!,
-  PRO: process.env.STRIPE_PRO_PRICE_ID!,
-  ULTRA: process.env.STRIPE_ULTRA_PRICE_ID!
+  PLUS: process.env.STRIPE_PRICE_PLUS!,
+  PRO: process.env.STRIPE_PRICE_PRO!,
+  ULTRA: process.env.STRIPE_PRICE_ULTRA!
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
