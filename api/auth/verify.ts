@@ -18,6 +18,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     console.log('Verifying token for magic link authentication')
+    console.log('Token length:', token.length)
+    console.log('Token starts with:', token.substring(0, 20))
 
     // Verify the JWT token
     const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
