@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 import { jwtVerify } from 'jose'
 import { PrismaClient } from '@prisma/client'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-12-18.acacia' })
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 const prisma = new PrismaClient()
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
