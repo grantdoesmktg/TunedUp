@@ -15,7 +15,7 @@ export default function AuthVerify() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-gray-900">
         <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
             <div className="flex justify-center mb-4">
@@ -33,7 +33,7 @@ export default function AuthVerify() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-gray-900">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <div className="flex justify-center mb-4">
