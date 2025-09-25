@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { CarInput, AIResponse } from './types';
 import { InputForm } from './components/InputForm';
 import { LoadingScreen } from './components/LoadingScreen';
@@ -19,10 +19,44 @@ const INITIAL_CAR_INPUT: CarInput = {
   launchTechnique: LAUNCH_TECHNIQUE_OPTIONS[0],
 };
 
-const App: React.FC = () => {
+interface AppProps {
+  onUseQuota?: () => Promise<void>
+  user?: any
+}
+
+const App: React.FC<AppProps> = ({ onUseQuota, user }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showResults, setShowResults] = useState<boolean>(false);
+
+  // Send height updates to parent window for iframe resizing
+  useEffect(() => {
+    const sendHeightToParent = () => {
+      if (window.parent !== window) {
+        // Use a small delay to ensure DOM has rendered
+        setTimeout(() => {
+          const height = Math.max(
+            document.body.scrollHeight,
+            document.body.offsetHeight,
+            document.documentElement.clientHeight,
+            document.documentElement.scrollHeight,
+            document.documentElement.offsetHeight
+          );
+          window.parent.postMessage({ type: 'resize', height: height + 20 }, '*');
+        }, 100);
+      }
+    };
+
+    // Send initial height
+    sendHeightToParent();
+
+    // Send height after state changes
+    const timeoutId = setTimeout(sendHeightToParent, 300);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [isLoading, showResults, error]);
   
   const [carInput, setCarInput] = useState<CarInput>(() => {
     // Check URL parameters for data from Build Planner or other widgets
@@ -49,11 +83,20 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Use quota if authenticated
+      if (onUseQuota) {
+        await onUseQuota();
+      }
+
       const response = await estimatePerformance(carInput);
       setAiResponse(response);
       setShowResults(true);
     } catch (err: any) {
-      setError(err.message || 'An unknown error occurred.');
+      if (err.message === 'Quota exceeded') {
+        setError('You have exceeded your monthly quota. Please upgrade your plan to continue.');
+      } else {
+        setError(err.message || 'An unknown error occurred.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +135,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-textPrimary font-sans">
+    <div className="bg-background text-textPrimary font-sans">
       <main>
         {error && !showResults && (
           <div className="max-w-4xl mx-auto mt-4 p-4 bg-error/20 border border-error/50 text-error rounded-md">
