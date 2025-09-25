@@ -13,8 +13,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { token } = req.query
 
     if (!token || typeof token !== 'string') {
+      console.log('Invalid token provided:', token)
       return res.status(400).json({ error: 'Invalid token' })
     }
+
+    console.log('Verifying token for magic link authentication')
 
     // Verify the JWT token
     const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
