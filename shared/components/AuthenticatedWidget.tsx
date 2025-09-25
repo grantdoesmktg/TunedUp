@@ -76,12 +76,15 @@ export const AuthenticatedWidget: React.FC<AuthenticatedWidgetProps> = ({
     }
 
     try {
-      const response = await fetch(`/api/${toolType}/increment-usage`, {
+      const response = await fetch('/api/increment-usage', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email: user.email })
+        body: JSON.stringify({
+          email: user.email,
+          toolType: toolType
+        })
       })
 
       if (!response.ok) {
