@@ -30,7 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : 'http://localhost:3000'
-    const magicLink = `${baseUrl}/auth/verify?token=${token}`
+    const magicLink = `${baseUrl}/api/auth/verify?token=${token}`
 
     // Send email
     await resend.emails.send({
