@@ -24,7 +24,7 @@ export const AuthenticatedWidget: React.FC<AuthenticatedWidgetProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 text-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
@@ -35,7 +35,7 @@ export const AuthenticatedWidget: React.FC<AuthenticatedWidgetProps> = ({
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 text-gray-900">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Sign in required</h2>
           <p className="text-gray-600 mb-6">
