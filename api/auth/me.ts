@@ -10,13 +10,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    console.log('Auth check - Headers:', req.headers.cookie)
+
     // Get session from cookie
     const sessionCookie = req.headers.cookie
       ?.split(';')
       .find(c => c.trim().startsWith('session='))
       ?.split('=')[1]
 
+    console.log('Extracted session cookie:', sessionCookie ? 'Found' : 'Not found')
+
     if (!sessionCookie) {
+      console.log('No session cookie found')
       return res.status(401).json({ error: 'Not authenticated' })
     }
 
