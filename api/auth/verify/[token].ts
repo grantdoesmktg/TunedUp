@@ -57,8 +57,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       `session=${sessionToken}; HttpOnly; Path=/; Max-Age=${30 * 24 * 60 * 60}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
     ])
 
-    // Redirect to dashboard
-    res.redirect(302, '/dashboard')
+    console.log('Setting session cookie and redirecting to dashboard')
+
+    // Redirect to dashboard with full URL
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000'
+
+    console.log('Redirecting to:', `${baseUrl}/dashboard`)
+    res.redirect(302, `${baseUrl}/dashboard`)
 
   } catch (error) {
     console.error('Verify token error:', error)
