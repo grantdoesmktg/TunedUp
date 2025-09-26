@@ -26,11 +26,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .setIssuedAt()
       .sign(secret)
 
-    // Create magic link
+    // Create magic link (using path parameter instead of query parameter)
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : 'http://localhost:3000'
-    const magicLink = `${baseUrl}/api/auth/verify?token=${encodeURIComponent(token)}`
+    const magicLink = `${baseUrl}/api/auth/verify/${encodeURIComponent(token)}`
 
     console.log('Generated magic link:', magicLink)
     console.log('Token length:', token.length)
