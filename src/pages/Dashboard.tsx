@@ -3,9 +3,21 @@ import { useAuth, getRemainingUsage, PLAN_LIMITS } from '../../shared/contexts/A
 import { UpgradePlansModal } from '../../shared/components/UpgradePlansModal'
 
 export default function Dashboard() {
-  const { user, logout, refreshUser } = useAuth()
+  const { user, logout, refreshUser, loading: authLoading } = useAuth()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 text-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!user) {
     window.location.href = '/login'
