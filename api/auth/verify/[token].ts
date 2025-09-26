@@ -60,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('Setting session cookie and redirecting to dashboard')
 
     // Use HTML redirect instead of server redirect
-    const dashboardUrl = '/dashboard'
+    const dashboardUrl = '/'
 
     res.status(200).send(`
       <!DOCTYPE html>
@@ -99,7 +99,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           </div>
           <script>
             setTimeout(() => {
-              window.location.href = '${dashboardUrl}';
+              // Force a clean redirect to the root domain
+              window.location.replace('${dashboardUrl}');
             }, 1000);
           </script>
         </body>
