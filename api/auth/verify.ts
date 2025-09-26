@@ -10,10 +10,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    console.log('Full query parameters:', req.query)
+    console.log('Request URL:', req.url)
+
     const { token } = req.query
 
     if (!token || typeof token !== 'string') {
       console.log('Invalid token provided:', token)
+      console.log('Token type:', typeof token)
       return res.status(400).json({ error: 'Invalid token' })
     }
 
