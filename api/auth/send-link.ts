@@ -32,6 +32,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       : 'http://localhost:3000'
     const magicLink = `${baseUrl}/api/auth/verify?token=${encodeURIComponent(token)}`
 
+    console.log('Generated magic link:', magicLink)
+    console.log('Token length:', token.length)
+    console.log('Base URL:', baseUrl)
+
     // Send email
     await resend.emails.send({
       from: 'TunedUp <onboarding@resend.dev>',
