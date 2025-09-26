@@ -10,9 +10,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    console.log('Full query parameters:', req.query)
-    console.log('Request URL:', req.url)
-
+    console.log('Request query:', req.query)
     const { token } = req.query
 
     if (!token || typeof token !== 'string') {
