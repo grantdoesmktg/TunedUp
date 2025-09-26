@@ -8,6 +8,30 @@ export default function Login() {
   const [error, setError] = useState('')
   const { login, user } = useAuth()
 
+  // Testing bypass function
+  const handleTestingBypass = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/auth/testing-bypass', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: 'grantdoesmktg@gmail.com' })
+      })
+
+      if (response.ok) {
+        window.location.href = '/dashboard'
+      } else {
+        setError('Testing bypass failed')
+      }
+    } catch (error) {
+      setError('Network error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Check for error params
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -140,6 +164,18 @@ export default function Login() {
                 Get started with our free tier:<br />
                 <strong>1</strong> performance calc, <strong>1</strong> build plan, <strong>3</strong> images per month
               </p>
+
+              {/* Testing bypass button - REMOVE IN PRODUCTION */}
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-xs text-yellow-800 mb-2">🧪 Testing Mode</p>
+                <button
+                  onClick={handleTestingBypass}
+                  disabled={loading}
+                  className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm font-medium disabled:bg-yellow-400"
+                >
+                  {loading ? 'Logging in...' : 'Bypass Login (Testing)'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
