@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { AuthenticatedWidget } from '../shared/components/AuthenticatedWidget'
 import { getRemainingUsage } from '../shared/contexts/AuthContext'
+import { Header } from '../shared/components/Header'
 import PerformanceCalculatorApp from './App'
 
 export default function AuthenticatedPerformanceCalculator() {
@@ -51,10 +52,13 @@ export default function AuthenticatedPerformanceCalculator() {
         }
 
         return (
-          <PerformanceCalculatorApp
-            onUseQuota={onUseQuota}
-            user={user}
-          />
+          <div className="min-h-screen bg-background text-textPrimary">
+            <Header toolName="Performance Calculator" />
+            <PerformanceCalculatorApp
+              onUseQuota={onUseQuota}
+              user={user}
+            />
+          </div>
         )
       }}
     </AuthenticatedWidget>

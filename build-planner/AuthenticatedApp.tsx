@@ -1,6 +1,7 @@
 import React from 'react'
 import { AuthenticatedWidget } from '../shared/components/AuthenticatedWidget'
 import { getRemainingUsage } from '../shared/contexts/AuthContext'
+import { Header } from '../shared/components/Header'
 import BuildPlannerApp from './App'
 
 export default function AuthenticatedBuildPlanner() {
@@ -51,10 +52,13 @@ export default function AuthenticatedBuildPlanner() {
         }
 
         return (
-          <BuildPlannerApp
-            onUseQuota={onUseQuota}
-            user={user}
-          />
+          <div className="min-h-screen bg-background text-textPrimary">
+            <Header toolName="Build Planner" />
+            <BuildPlannerApp
+              onUseQuota={onUseQuota}
+              user={user}
+            />
+          </div>
         )
       }}
     </AuthenticatedWidget>

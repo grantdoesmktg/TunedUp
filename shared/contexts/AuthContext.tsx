@@ -133,7 +133,8 @@ export const PLAN_LIMITS = {
   FREE: { perf: 1, build: 1, image: 3 },
   PLUS: { perf: 10, build: 10, image: 25 },
   PRO: { perf: 15, build: 15, image: 60 },
-  ULTRA: { perf: 25, build: 25, image: 100 }
+  ULTRA: { perf: 25, build: 25, image: 100 },
+  ADMIN: { perf: 999999, build: 999999, image: 999999 }
 }
 
 export function getRemainingUsage(user: User | null, toolType: 'performance' | 'build' | 'image') {
