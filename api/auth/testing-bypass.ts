@@ -51,9 +51,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .sign(secret)
 
     // Set session cookie
-    res.setHeader('Set-Cookie', [
-      `session=${sessionToken}; HttpOnly; Path=/; Max-Age=${30 * 24 * 60 * 60}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
-    ])
+    const isProduction = process.env.NODE_ENV === 'production'
+    const cookieOptions = [
+      `session=${sessionToken}`,
+      'HttpOnly',
+      'Path=/',
+      `Max-Age=${30 * 24 * 60 * 60}`,
+      'SameSite=Lax'
+    ]
+
+    if (isProduction) {
+      cookieOptions.push('Secure')
+    }
+
+    res.setHeader('Set-Cookie', cookieOptions.join('; '))
 
     console.log('Testing bypass successful, session cookie set')
 
