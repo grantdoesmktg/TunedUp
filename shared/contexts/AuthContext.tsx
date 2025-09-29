@@ -95,13 +95,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: 'POST'
       })
       setUser(null)
-      // Redirect to home page
-      window.location.href = '/'
+      // Redirect to login page
+      window.location.href = '/login'
     } catch (error) {
       console.error('Logout error:', error)
       // Clear user state anyway
       setUser(null)
-      window.location.href = '/'
+      window.location.href = '/login'
     }
   }
 
