@@ -13,12 +13,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('Auth check - Headers:', req.headers.cookie)
 
     // Get session from cookie
+    console.log('All cookies:', req.headers.cookie)
+
     const sessionCookie = req.headers.cookie
       ?.split(';')
       .find(c => c.trim().startsWith('session='))
       ?.split('=')[1]
 
     console.log('Extracted session cookie:', sessionCookie ? 'Found' : 'Not found')
+
+    // Debug: List all cookies
+    if (req.headers.cookie) {
+      const allCookies = req.headers.cookie.split(';').map(c => c.trim())
+      console.log('All cookie names:', allCookies.map(c => c.split('=')[0]))
+    }
 
     if (!sessionCookie) {
       console.log('No session cookie found')
