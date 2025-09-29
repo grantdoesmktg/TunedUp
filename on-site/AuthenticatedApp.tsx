@@ -1,6 +1,7 @@
 import React from 'react'
 import { AuthenticatedWidget } from '../shared/components/AuthenticatedWidget'
 import { getRemainingUsage } from '../shared/contexts/AuthContext'
+import { Header } from '../shared/components/Header'
 import OnSiteApp from './App'
 
 export default function AuthenticatedOnSite() {
@@ -51,10 +52,13 @@ export default function AuthenticatedOnSite() {
         }
 
         return (
-          <OnSiteApp
-            onUseQuota={onUseQuota}
-            user={user}
-          />
+          <div className="min-h-screen bg-background text-textPrimary">
+            <Header toolName="On-Site Generator" />
+            <OnSiteApp
+              onUseQuota={onUseQuota}
+              user={user}
+            />
+          </div>
         )
       }}
     </AuthenticatedWidget>

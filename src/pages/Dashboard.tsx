@@ -1,11 +1,27 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth, getRemainingUsage, PLAN_LIMITS } from '../../shared/contexts/AuthContext'
 import { UpgradePlansModal } from '../../shared/components/UpgradePlansModal'
+import { Header } from '../../shared/components/Header'
+import { ImageSlider } from '../../shared/components/ImageSlider'
+import { Footer } from '../../shared/components/Footer'
 
 export default function Dashboard() {
-  const { user, logout, refreshUser, loading: authLoading } = useAuth()
+  const { user, refreshUser, loading: authLoading } = useAuth()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  // Check for success/canceled params from Stripe - MUST be before any early returns
+  useEffect(() => {
+    if (user) {
+      const urlParams = new URLSearchParams(window.location.search)
+      if (urlParams.get('success') === 'true') {
+        // Refresh user data after successful payment
+        refreshUser()
+        // Clear URL params
+        window.history.replaceState({}, document.title, window.location.pathname)
+      }
+    }
+  }, [user, refreshUser])
 
   // Show loading state while checking authentication
   if (authLoading) {
@@ -23,17 +39,6 @@ export default function Dashboard() {
     window.location.href = '/login'
     return null
   }
-
-  // Check for success/canceled params from Stripe
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    if (urlParams.get('success') === 'true') {
-      // Refresh user data after successful payment
-      refreshUser()
-      // Clear URL params
-      window.history.replaceState({}, document.title, window.location.pathname)
-    }
-  }, [])
 
   const perfUsage = getRemainingUsage(user, 'performance')
   const buildUsage = getRemainingUsage(user, 'build')
@@ -68,8 +73,14 @@ export default function Dashboard() {
 
   const planInfo = PLAN_LIMITS[user.planCode as keyof typeof PLAN_LIMITS] || PLAN_LIMITS.FREE
   const isFreePlan = user.planCode === 'FREE'
+  const isAdmin = user.planCode === 'ADMIN'
 
   const handleManageSubscription = async () => {
+    if (isAdmin) {
+      // Admins don't need to manage subscriptions
+      return
+    }
+
     if (isFreePlan) {
       setShowUpgradeModal(true)
       return
@@ -97,78 +108,54 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">TunedUp</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm">
-                <span className="text-gray-700">Welcome, </span>
-                <span className="font-semibold">{user.email}</span>
-              </div>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                isFreePlan ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800'
-              }`}>
-                {user.planCode} Plan
-              </span>
-              <button
-                onClick={logout}
-                className="text-gray-500 hover:text-gray-700 text-sm font-medium"
-              >
-                Sign out
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background text-textPrimary">
+      <Header />
 
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {/* Plan Overview */}
-        <div className="bg-white overflow-hidden shadow rounded-lg mb-8">
+        <div className="bg-secondary overflow-hidden shadow rounded-lg mb-8">
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                <h3 className="text-lg leading-6 font-medium text-textPrimary">
                   Your {user.planCode} Plan
                 </h3>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-textSecondary">
                   Monthly usage resets on {new Date(user.resetDate.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
                 </p>
               </div>
-              <button
-                onClick={handleManageSubscription}
-                disabled={loading}
-                className={`px-4 py-2 rounded-md text-sm font-medium ${
-                  isFreePlan
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-gray-600 hover:bg-gray-700 text-white'
-                }`}
-              >
-                {loading ? 'Loading...' : isFreePlan ? 'Upgrade Plan' : 'Manage Subscription'}
-              </button>
+              {!isAdmin && (
+                <button
+                  onClick={handleManageSubscription}
+                  disabled={loading}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
+                    isFreePlan
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-gray-600 hover:bg-gray-700 text-white'
+                  }`}
+                >
+                  {loading ? 'Loading...' : isFreePlan ? 'Upgrade Plan' : 'Manage Subscription'}
+                </button>
+              )}
             </div>
 
             <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
-              <div className="bg-gray-50 overflow-hidden px-4 py-5 rounded-lg">
-                <dt className="text-sm font-medium text-gray-500 truncate">Performance Calcs</dt>
-                <dd className="mt-1 text-3xl font-semibold text-gray-900">
-                  {perfUsage.remaining} <span className="text-lg text-gray-500">/ {perfUsage.limit}</span>
+              <div className="bg-divider overflow-hidden px-4 py-5 rounded-lg">
+                <dt className="text-sm font-medium text-textSecondary truncate">Performance Calcs</dt>
+                <dd className="mt-1 text-3xl font-semibold text-textPrimary">
+                  {perfUsage.remaining} <span className="text-lg text-textSecondary">/ {perfUsage.limit}</span>
                 </dd>
               </div>
-              <div className="bg-gray-50 overflow-hidden px-4 py-5 rounded-lg">
-                <dt className="text-sm font-medium text-gray-500 truncate">Build Plans</dt>
-                <dd className="mt-1 text-3xl font-semibold text-gray-900">
-                  {buildUsage.remaining} <span className="text-lg text-gray-500">/ {buildUsage.limit}</span>
+              <div className="bg-divider overflow-hidden px-4 py-5 rounded-lg">
+                <dt className="text-sm font-medium text-textSecondary truncate">Build Plans</dt>
+                <dd className="mt-1 text-3xl font-semibold text-textPrimary">
+                  {buildUsage.remaining} <span className="text-lg text-textSecondary">/ {buildUsage.limit}</span>
                 </dd>
               </div>
-              <div className="bg-gray-50 overflow-hidden px-4 py-5 rounded-lg">
-                <dt className="text-sm font-medium text-gray-500 truncate">Image Generations</dt>
-                <dd className="mt-1 text-3xl font-semibold text-gray-900">
-                  {imageUsage.remaining} <span className="text-lg text-gray-500">/ {imageUsage.limit}</span>
+              <div className="bg-divider overflow-hidden px-4 py-5 rounded-lg">
+                <dt className="text-sm font-medium text-textSecondary truncate">Image Generations</dt>
+                <dd className="mt-1 text-3xl font-semibold text-textPrimary">
+                  {imageUsage.remaining} <span className="text-lg text-textSecondary">/ {imageUsage.limit}</span>
                 </dd>
               </div>
             </dl>
@@ -183,7 +170,7 @@ export default function Dashboard() {
             return (
               <div
                 key={tool.name}
-                className={`bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow ${
+                className={`bg-secondary overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow ${
                   hasUsage ? 'cursor-pointer' : 'opacity-75'
                 }`}
               >
@@ -191,10 +178,10 @@ export default function Dashboard() {
                   <div className="flex items-center">
                     <div className="text-3xl mr-4">{tool.icon}</div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-medium text-gray-900">
+                      <h3 className="text-lg font-medium text-textPrimary">
                         {tool.name}
                       </h3>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <p className="mt-1 text-sm text-textSecondary">
                         {tool.description}
                       </p>
                     </div>
@@ -202,14 +189,14 @@ export default function Dashboard() {
 
                   <div className="mt-4">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Usage this month</span>
-                      <span className={`font-medium ${hasUsage ? 'text-green-600' : 'text-red-600'}`}>
+                      <span className="text-textSecondary">Usage this month</span>
+                      <span className={`font-medium ${hasUsage ? 'text-success' : 'text-error'}`}>
                         {tool.usage.used} / {tool.usage.limit}
                       </span>
                     </div>
-                    <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                    <div className="mt-2 w-full bg-divider rounded-full h-2">
                       <div
-                        className={`h-2 rounded-full ${hasUsage ? 'bg-green-500' : 'bg-red-500'}`}
+                        className={`h-2 rounded-full ${hasUsage ? 'bg-success' : 'bg-error'}`}
                         style={{
                           width: `${Math.min(100, (tool.usage.used / tool.usage.limit) * 100)}%`
                         }}
@@ -272,12 +259,17 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Image Slider */}
+        <ImageSlider />
+
         <UpgradePlansModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
           currentPlan={user.planCode}
         />
       </div>
+
+      <Footer />
     </div>
   )
 }
