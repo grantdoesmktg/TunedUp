@@ -52,8 +52,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Set session cookie
     const isProduction = process.env.NODE_ENV === 'production'
+    const cookieName = isProduction ? '_vercel_jwt' : 'session'
     const cookieOptions = [
-      `session=${sessionToken}`,
+      `${cookieName}=${sessionToken}`,
       'HttpOnly',
       'Path=/',
       `Max-Age=${30 * 24 * 60 * 60}`,
