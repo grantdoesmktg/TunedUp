@@ -467,6 +467,32 @@ Randomize
         isLoading={isLoading}
         currentImage={currentImage}
       />
+
+      {/* Community Link */}
+      <div style={{ textAlign: 'center', marginTop: '2rem', paddingBottom: '2rem' }}>
+        <a
+          href="/community"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            color: '#00C2FF',
+            textDecoration: 'none',
+            fontWeight: '500',
+            transition: 'color 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#d82c83'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#00C2FF'
+          }}
+        >
+          <span>🎨</span>
+          View Community Gallery & Share Your Creation
+          <span>→</span>
+        </a>
+      </div>
     </div>
   );
 };
