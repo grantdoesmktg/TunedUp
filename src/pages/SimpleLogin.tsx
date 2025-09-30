@@ -24,28 +24,6 @@ export default function SimpleLogin() {
     }
   }
 
-  const handleTestingBypass = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/auth/testing-bypass', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email: 'grantdoesmktg@gmail.com' })
-      })
-
-      if (response.ok) {
-        window.location.href = '/dashboard'
-      } else {
-        setMessage('Testing bypass failed')
-      }
-    } catch (error) {
-      setMessage('Network error')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div style={{
@@ -135,34 +113,6 @@ export default function SimpleLogin() {
           </button>
         </form>
 
-        <div style={{
-          backgroundColor: '#fffbeb',
-          border: '1px solid #f59e0b',
-          borderRadius: '6px',
-          padding: '16px',
-          marginBottom: '20px'
-        }}>
-          <p style={{ fontSize: '12px', color: '#92400e', marginBottom: '8px' }}>
-            🧪 Testing Mode
-          </p>
-          <button
-            onClick={handleTestingBypass}
-            disabled={loading}
-            style={{
-              backgroundColor: '#d97706',
-              color: 'white',
-              padding: '8px 16px',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.5 : 1
-            }}
-          >
-            {loading ? 'Logging in...' : 'Bypass Login (Testing)'}
-          </button>
-        </div>
 
         <p style={{ fontSize: '14px', color: '#6b7280' }}>
           Get started with our free tier:<br />
