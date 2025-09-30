@@ -25,10 +25,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Fallback to _vercel_jwt if session cookie not found
     if (!sessionCookie) {
-      sessionCookie = req.headers.cookie
+      const vercelJwtCookie = req.headers.cookie
         ?.split(';')
         .find(c => c.trim().startsWith('_vercel_jwt='))
         ?.split('=')[1]
+
+      // Handle multiple JWT tokens separated by commas - take the first one (ours)
+      if (vercelJwtCookie) {
+        sessionCookie = vercelJwtCookie.split(',')[0]
+      }
     }
 
     console.log('Extracted session cookie:', sessionCookie ? 'Found' : 'Not found')
