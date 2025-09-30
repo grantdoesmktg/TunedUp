@@ -60,19 +60,34 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
 
     **Analysis Requirements**:
     1. Research factory specifications (weight, horsepower, 0-60 time)
-    2. Estimate realistic power gains from each modification
+    2. Estimate optimistic but realistic power gains from each modification
     3. Calculate wheel horsepower based on drivetrain losses
     4. Estimate 0-60 time improvement based on power-to-weight ratio changes
+    5. Apply tuning gains as a percentage multiplier AFTER calculating all other modifications
+
+    **Modification Guidelines** (be optimistic within realistic bounds):
+    • **Cold Air Intake**: 5-15hp naturally aspirated, 10-25hp forced induction
+    • **Exhaust System**: 8-25hp naturally aspirated, 15-35hp forced induction
+    • **ECU Tune/Chip**: 10-25% power increase AFTER other mods (multiplicative effect)
+    • **Turbo/Supercharger**: 40-80% base power increase
+    • **Internal Engine Mods**: 15-40% power increase depending on extent
+    • **Nitrous**: 25-150hp depending on shot size
+    • **Multiple Mods**: Apply 5-15% synergy bonus for comprehensive builds
+
+    **Tuning Multiplier Effect**:
+    When ECU tuning is mentioned, calculate base modifications first, then apply tuning as a 15-25% multiplier on top. Tuning optimizes all modifications together and unlocks additional performance.
 
     **Explanation Format** (use bullet points):
     • **Vehicle Specs**: Factory weight, horsepower, and 0-60 time
     • **Power Gains**: Breakdown of each modification's contribution
+    • **Tuning Effect**: How ECU tuning multiplies the gains (if applicable)
     • **Final Numbers**: Total crank HP, wheel HP, estimated 0-60 time
     • **Methodology**: Brief explanation of calculations and assumptions
 
     **Guidelines**:
-    - Be realistic but not overly conservative with modification gains
-    - Account for synergies between modifications
+    - Be optimistic but realistic with modification gains - users want to see meaningful improvements
+    - Account for synergies between modifications and comprehensive builds
+    - ECU tuning should provide significant additional gains beyond bolt-on parts
     - Use proper formatting with bullet points (•) and sub-points (-)
     - No \\n\\n characters - use clean line breaks
   `;

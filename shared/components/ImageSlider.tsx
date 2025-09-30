@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 
 const images = [
   '/images/tuned-up-1757711926260.png',
@@ -12,46 +12,59 @@ const images = [
 ]
 
 export const ImageSlider: React.FC = () => {
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Auto-slide every 2.5 seconds
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length)
-    }, 2500)
+    const scrollContainer = scrollRef.current
+    if (!scrollContainer) return
 
-    return () => clearInterval(interval)
+    let scrollPosition = 0
+    const scrollSpeed = 0.5 // pixels per frame
+    const imageWidth = 320 // approximate image width including gap
+    const totalWidth = images.length * imageWidth
+
+    const smoothScroll = () => {
+      scrollPosition += scrollSpeed
+
+      // Reset position when we've scrolled through all images
+      if (scrollPosition >= totalWidth) {
+        scrollPosition = 0
+      }
+
+      scrollContainer.scrollLeft = scrollPosition
+      requestAnimationFrame(smoothScroll)
+    }
+
+    const animationFrame = requestAnimationFrame(smoothScroll)
+
+    return () => {
+      cancelAnimationFrame(animationFrame)
+    }
   }, [])
 
-  // Show 3 images at a time, with smooth transitions
-  const getVisibleImages = () => {
-    const visibleImages = []
-    for (let i = 0; i < 3; i++) {
-      const index = (currentIndex + i) % images.length
-      visibleImages.push({
-        src: images[index],
-        index: index
-      })
-    }
-    return visibleImages
-  }
+  // Duplicate images for seamless loop
+  const duplicatedImages = [...images, ...images, ...images]
 
   return (
     <div className="mt-8">
       <h3 className="text-lg font-semibold text-textPrimary mb-4 text-center">
         Generated with TunedUp
       </h3>
-      <div className="relative overflow-hidden">
-        <div className="flex gap-4 transition-transform duration-500 ease-in-out">
-          {getVisibleImages().map((image) => (
+      <div className="relative">
+        <div
+          ref={scrollRef}
+          className="flex gap-4 overflow-hidden scrollbar-hide"
+          style={{ scrollBehavior: 'auto' }}
+        >
+          {duplicatedImages.map((image, index) => (
             <div
-              key={`${image.index}-${currentIndex}`}
-              className="flex-shrink-0 w-1/3"
+              key={`${image}-${index}`}
+              className="flex-shrink-0 w-80"
             >
               <div className="relative group">
                 <img
-                  src={image.src}
-                  alt={`Generated automotive image ${image.index + 1}`}
+                  src={image}
+                  alt={`Generated automotive image ${(index % images.length) + 1}`}
                   className="w-full h-auto object-contain rounded-lg shadow-lg group-hover:shadow-xl transition-shadow"
                 />
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg" />
@@ -59,17 +72,9 @@ export const ImageSlider: React.FC = () => {
             </div>
           ))}
         </div>
-      </div>
-      <div className="flex justify-center mt-4 space-x-2">
-        {images.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentIndex(index)}
-            className={`w-2 h-2 rounded-full transition-colors ${
-              index === currentIndex ? 'bg-primary' : 'bg-textSecondary'
-            }`}
-          />
-        ))}
+        {/* Gradient overlays for smooth edges */}
+        <div className="absolute left-0 top-0 w-16 h-full bg-gradient-to-r from-background to-transparent pointer-events-none" />
+        <div className="absolute right-0 top-0 w-16 h-full bg-gradient-to-l from-background to-transparent pointer-events-none" />
       </div>
     </div>
   )
