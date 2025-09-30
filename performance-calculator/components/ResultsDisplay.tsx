@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { AIResponse, CarInput } from '../types';
 import { GaugeIcon } from './icons/GaugeIcon';
 import { ClockIcon } from './icons/ClockIcon';
@@ -7,6 +7,10 @@ interface ResultsDisplayProps {
   results: AIResponse;
   carInput: CarInput;
   onGoBack: () => void;
+  onSaveCar?: (carName: string) => void;
+  isSaving?: boolean;
+  saveMessage?: string | null;
+  user?: any;
 }
 
 const PerformanceCard: React.FC<{ title: string, hp: number, whp: number, zeroToSixty: number, isEstimated?: boolean }> = ({ title, hp, whp, zeroToSixty, isEstimated = false }) => (
@@ -85,11 +89,28 @@ const ConfidenceBadge: React.FC<{ confidence: AIResponse['confidence'] | null | 
     );
 };
 
-export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, carInput, onGoBack }) => {
+export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
+  results,
+  carInput,
+  onGoBack,
+  onSaveCar,
+  isSaving = false,
+  saveMessage,
+  user
+}) => {
   const { stockPerformance, estimatedPerformance, explanation, sources, confidence } = results;
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [carName, setCarName] = useState(`${carInput.year} ${carInput.make} ${carInput.model} Build`);
 
   const hpDiff = estimatedPerformance.horsepower - stockPerformance.horsepower;
   const zeroToSixtyDiff = estimatedPerformance.zeroToSixty - stockPerformance.zeroToSixty;
+
+  const handleSave = () => {
+    if (onSaveCar && carName.trim()) {
+      onSaveCar(carName.trim());
+      setShowSaveModal(false);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 text-textPrimary">
@@ -148,6 +169,17 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, carInpu
           </div>
         )}
 
+        {/* Save message */}
+        {saveMessage && (
+          <div className={`mt-6 p-4 rounded-lg text-center ${
+            saveMessage.includes('Successfully')
+              ? 'bg-success/20 border border-success text-success'
+              : 'bg-error/20 border border-error text-error'
+          }`}>
+            {saveMessage}
+          </div>
+        )}
+
         <div className="mt-8 pt-6 border-t border-divider flex justify-center gap-3 flex-wrap">
           <button
             onClick={onGoBack}
@@ -155,6 +187,18 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, carInpu
           >
             New Estimate
           </button>
+
+          {/* Save Car Button - only show if user is logged in */}
+          {user?.email && onSaveCar && (
+            <button
+              onClick={() => setShowSaveModal(true)}
+              disabled={isSaving}
+              className="px-6 py-3 bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition-all disabled:opacity-50"
+            >
+              {isSaving ? 'Saving...' : 'Save Car'}
+            </button>
+          )}
+
           <button
             onClick={() => {
               const params = new URLSearchParams({
@@ -186,6 +230,43 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, carInpu
             Turn into Image
           </button>
         </div>
+
+        {/* Save Modal */}
+        {showSaveModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-secondary p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+              <h3 className="text-xl font-semibold text-textPrimary mb-4">Save Car to Garage</h3>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-textSecondary mb-2">
+                  Car Name
+                </label>
+                <input
+                  type="text"
+                  value={carName}
+                  onChange={(e) => setCarName(e.target.value)}
+                  className="w-full px-3 py-2 border border-divider rounded-md bg-background text-textPrimary focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="My Build Name"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSave}
+                  disabled={!carName.trim() || isSaving}
+                  className="flex-1 bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-2 px-4 rounded-md font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={() => setShowSaveModal(false)}
+                  disabled={isSaving}
+                  className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md font-semibold hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

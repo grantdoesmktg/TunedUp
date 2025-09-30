@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { VehicleSpec, BuildPlanResponse } from './types';
 import './styles.css';
 
-const BuildPlannerApp: React.FC = () => {
+interface BuildPlannerAppProps {
+  onUseQuota?: () => Promise<void>
+  user?: any
+}
+
+const BuildPlannerApp: React.FC<BuildPlannerAppProps> = ({ onUseQuota, user }) => {
   const [vehicleSpec, setVehicleSpec] = useState<VehicleSpec>(() => {
     // Check URL parameters for vehicle data from Performance Calculator
     const urlParams = new URLSearchParams(window.location.search);
@@ -22,6 +27,10 @@ const BuildPlannerApp: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [buildPlan, setBuildPlan] = useState<BuildPlanResponse | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [carName, setCarName] = useState('');
 
   // Check if data came from Performance Calculator
   const fromPerformanceCalc = new URLSearchParams(window.location.search).get('source') === 'performance-calculator';
@@ -71,6 +80,53 @@ const BuildPlannerApp: React.FC = () => {
     }
   ];
 
+  const handleSaveBuildPlan = async (carName: string) => {
+    if (!user?.email || !buildPlan) {
+      setSaveMessage('Please log in to save your build plan');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveMessage(null);
+
+    try {
+      const response = await fetch('/api/saved-cars', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-email': user.email
+        },
+        body: JSON.stringify({
+          name: carName,
+          make: vehicleSpec.make,
+          model: vehicleSpec.model,
+          year: vehicleSpec.year,
+          trim: vehicleSpec.trim,
+          buildPlanData: buildPlan,
+          setAsActive: true // Make this the active car
+        })
+      });
+
+      if (response.ok) {
+        setSaveMessage(`Successfully saved "${carName}" to your garage!`);
+        setShowSaveModal(false);
+      } else {
+        const data = await response.json();
+        setSaveMessage(data.error || 'Failed to save build plan');
+      }
+    } catch (error) {
+      setSaveMessage('Network error. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSave = () => {
+    if (carName.trim()) {
+      handleSaveBuildPlan(carName.trim());
+    }
+  };
+
   const handleGenerate = async () => {
     if (!selectedCategory) return;
 
@@ -79,6 +135,10 @@ const BuildPlannerApp: React.FC = () => {
     setBuildPlan(null);
 
     try {
+      // Use quota if authenticated
+      if (onUseQuota) {
+        await onUseQuota();
+      }
       const response = await fetch('/api/build-plan', {
         method: 'POST',
         headers: {
@@ -99,6 +159,10 @@ const BuildPlannerApp: React.FC = () => {
 
       const result = await response.json();
       setBuildPlan(result);
+
+      // Initialize car name for potential saving
+      const selectedCategoryTitle = buildCategories.find(cat => cat.id === selectedCategory)?.title || 'Custom';
+      setCarName(`${vehicleSpec.year} ${vehicleSpec.make} ${vehicleSpec.model} ${selectedCategoryTitle} Build`);
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate build plan';
@@ -340,6 +404,13 @@ const BuildPlannerApp: React.FC = () => {
             </div>
           )}
 
+          {/* Save message */}
+          {saveMessage && (
+            <div className={`save-message ${saveMessage.includes('Successfully') ? 'success' : 'error'}`}>
+              {saveMessage}
+            </div>
+          )}
+
           <div className="action-buttons">
             <button
               className="action-button"
@@ -347,6 +418,18 @@ const BuildPlannerApp: React.FC = () => {
             >
               Plan New Build
             </button>
+
+            {/* Save Build Plan Button - only show if user is logged in */}
+            {user?.email && (
+              <button
+                onClick={() => setShowSaveModal(true)}
+                disabled={isSaving}
+                className="action-button save-button"
+              >
+                {isSaving ? 'Saving...' : 'Save Build Plan'}
+              </button>
+            )}
+
             <button
               className="action-button primary"
               onClick={handleCheckPerformance}
@@ -358,6 +441,44 @@ const BuildPlannerApp: React.FC = () => {
           <div className="disclaimer">
             * Prices are estimates and may vary by location, shop rates, and part availability. 
             Always get quotes from local shops before starting work.
+          </div>
+        </div>
+      )}
+
+      {/* Save Modal */}
+      {showSaveModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 className="modal-title">Save Build Plan to Garage</h3>
+            <div className="form-group">
+              <label htmlFor="car-name" className="form-label">
+                Build Plan Name
+              </label>
+              <input
+                id="car-name"
+                type="text"
+                value={carName}
+                onChange={(e) => setCarName(e.target.value)}
+                className="form-input"
+                placeholder="My Build Plan"
+              />
+            </div>
+            <div className="modal-buttons">
+              <button
+                onClick={handleSave}
+                disabled={!carName.trim() || isSaving}
+                className="modal-button save"
+              >
+                {isSaving ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={() => setShowSaveModal(false)}
+                disabled={isSaving}
+                className="modal-button cancel"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
