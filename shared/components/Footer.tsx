@@ -59,8 +59,8 @@ export const Footer: React.FC = () => {
             <h3 className="text-lg font-semibold text-textPrimary mb-4">Contact</h3>
             <ul className="space-y-2">
               <li>
-                <a href="mailto:tunedup@gmail.com" className="text-textSecondary hover:text-textPrimary transition-colors">
-                  tunedup@gmail.com
+                <a href="mailto:support@tunedup.dev" className="text-textSecondary hover:text-textPrimary transition-colors">
+                  support@tunedup.dev
                 </a>
               </li>
               <li className="text-textSecondary">
@@ -70,7 +70,7 @@ export const Footer: React.FC = () => {
                 We'd love to hear your feedback!
               </li>
               <li>
-                <a href="mailto:tunedup@gmail.com" className="text-textSecondary hover:text-textPrimary transition-colors">
+                <a href="mailto:support@tunedup.dev" className="text-textSecondary hover:text-textPrimary transition-colors">
                   Send us your requests
                 </a>
               </li>
