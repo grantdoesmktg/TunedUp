@@ -5,10 +5,27 @@ import { Header } from '../../shared/components/Header'
 import { ImageSlider } from '../../shared/components/ImageSlider'
 import { Footer } from '../../shared/components/Footer'
 
+interface SavedCar {
+  id: string
+  name: string
+  make: string
+  model: string
+  year: string
+  trim?: string
+  imageUrl?: string
+  performanceData?: any
+  buildPlanData?: any
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 export default function Dashboard() {
   const { user, refreshUser, loading: authLoading } = useAuth()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [savedCar, setSavedCar] = useState<SavedCar | null>(null)
+  const [loadingCar, setLoadingCar] = useState(false)
 
   // Check for success/canceled params from Stripe - MUST be before any early returns
   useEffect(() => {
@@ -22,6 +39,35 @@ export default function Dashboard() {
       }
     }
   }, [user, refreshUser])
+
+  // Fetch saved car data
+  useEffect(() => {
+    if (user) {
+      fetchSavedCar()
+    }
+  }, [user])
+
+  const fetchSavedCar = async () => {
+    setLoadingCar(true)
+    try {
+      const response = await fetch('/api/saved-cars', {
+        headers: {
+          'x-user-email': user?.email || ''
+        }
+      })
+
+      if (response.ok) {
+        const cars = await response.json()
+        // Get the active car or the most recent one
+        const activeCar = cars.find((car: SavedCar) => car.isActive) || cars[0]
+        setSavedCar(activeCar || null)
+      }
+    } catch (error) {
+      console.error('Failed to fetch saved car:', error)
+    } finally {
+      setLoadingCar(false)
+    }
+  }
 
   // Show loading state while checking authentication
   if (authLoading) {
@@ -51,15 +97,8 @@ export default function Dashboard() {
       path: '/performance-calculator',
       icon: '⚡',
       usage: perfUsage,
-      type: 'performance' as const
-    },
-    {
-      name: 'Build Planner',
-      description: 'Plan your next automotive build with expert recommendations',
-      path: '/build-planner',
-      icon: '🔧',
-      usage: buildUsage,
-      type: 'build' as const
+      type: 'performance' as const,
+      savedData: savedCar?.performanceData
     },
     {
       name: 'On-Site Generator',
@@ -67,7 +106,17 @@ export default function Dashboard() {
       path: '/w/on-site/embed',
       icon: '🎨',
       usage: imageUsage,
-      type: 'image' as const
+      type: 'image' as const,
+      savedData: null // Images are shown in My Car section
+    },
+    {
+      name: 'Build Planner',
+      description: 'Plan your next automotive build with expert recommendations',
+      path: '/build-planner',
+      icon: '🔧',
+      usage: buildUsage,
+      type: 'build' as const,
+      savedData: savedCar?.buildPlanData
     }
   ]
 
@@ -112,53 +161,108 @@ export default function Dashboard() {
       <Header />
 
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {/* Plan Overview */}
+        {/* My Car Section */}
         <div className="bg-secondary overflow-hidden shadow rounded-lg mb-8">
           <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg leading-6 font-medium text-textPrimary">
-                  Your {user.planCode} Plan
-                </h3>
-                <p className="mt-1 text-sm text-textSecondary">
-                  Monthly usage resets on {new Date(user.resetDate.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
-                </p>
+            {loadingCar ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="mt-2 text-textSecondary">Loading your car...</p>
               </div>
-              {!isAdmin && (
-                <button
-                  onClick={handleManageSubscription}
-                  disabled={loading}
-                  className={`px-4 py-2 rounded-md text-sm font-medium ${
-                    isFreePlan
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-gray-600 hover:bg-gray-700 text-white'
-                  }`}
-                >
-                  {loading ? 'Loading...' : isFreePlan ? 'Upgrade Plan' : 'Manage Subscription'}
-                </button>
-              )}
-            </div>
+            ) : savedCar ? (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Car Image */}
+                <div className="lg:col-span-1">
+                  <div className="aspect-video bg-divider rounded-lg overflow-hidden">
+                    {savedCar.imageUrl ? (
+                      <img
+                        src={savedCar.imageUrl}
+                        alt={`${savedCar.year} ${savedCar.make} ${savedCar.model}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-textSecondary">
+                        <div className="text-center">
+                          <div className="text-4xl mb-2">🚗</div>
+                          <p className="text-sm">No image uploaded</p>
+                          <p className="text-xs mt-1">Use Image Generator to create one</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setShowUpgradeModal(true)} // Placeholder for image upload modal
+                    className="mt-3 w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md text-sm font-medium"
+                  >
+                    Upload Image
+                  </button>
+                </div>
 
-            <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
-              <div className="bg-divider overflow-hidden px-4 py-5 rounded-lg">
-                <dt className="text-sm font-medium text-textSecondary truncate">Performance Calcs</dt>
-                <dd className="mt-1 text-3xl font-semibold text-textPrimary">
-                  {perfUsage.remaining} <span className="text-lg text-textSecondary">/ {perfUsage.limit}</span>
-                </dd>
+                {/* Car Details & Performance */}
+                <div className="lg:col-span-1">
+                  <div className="bg-background rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-textPrimary mb-3">{savedCar.name}</h3>
+                    <div className="space-y-2 text-sm">
+                      <p className="text-textSecondary">
+                        <span className="font-medium">Car:</span> {savedCar.year} {savedCar.make} {savedCar.model} {savedCar.trim}
+                      </p>
+                      {savedCar.performanceData && (
+                        <div className="mt-4">
+                          <h4 className="font-medium text-textPrimary mb-2">Latest Performance</h4>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                              <span className="text-textSecondary">HP:</span>
+                              <span className="ml-1 text-textPrimary font-medium">
+                                {savedCar.performanceData.estimatedPerformance?.horsepower || 'N/A'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-textSecondary">0-60:</span>
+                              <span className="ml-1 text-textPrimary font-medium">
+                                {savedCar.performanceData.estimatedPerformance?.zeroToSixty || 'N/A'}s
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Build Plan Preview */}
+                <div className="lg:col-span-1">
+                  <div className="bg-background rounded-lg p-4">
+                    <h4 className="font-medium text-textPrimary mb-3">Latest Build Plan</h4>
+                    {savedCar.buildPlanData ? (
+                      <div className="text-sm text-textSecondary">
+                        <p className="line-clamp-3">
+                          {savedCar.buildPlanData.plan?.slice(0, 150)}...
+                        </p>
+                        <button className="mt-2 text-primary hover:text-[#d82c83] text-xs font-medium">
+                          View Full Plan →
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-textSecondary">No build plan saved yet</p>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="bg-divider overflow-hidden px-4 py-5 rounded-lg">
-                <dt className="text-sm font-medium text-textSecondary truncate">Build Plans</dt>
-                <dd className="mt-1 text-3xl font-semibold text-textPrimary">
-                  {buildUsage.remaining} <span className="text-lg text-textSecondary">/ {buildUsage.limit}</span>
-                </dd>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🚗</div>
+                <h3 className="text-xl font-semibold text-textPrimary mb-2">No Car Saved Yet</h3>
+                <p className="text-textSecondary mb-6">
+                  Start by using the Performance Calculator or Build Planner to save your first car project
+                </p>
+                <button
+                  onClick={() => window.location.href = '/performance-calculator'}
+                  className="bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                >
+                  Get Started
+                </button>
               </div>
-              <div className="bg-divider overflow-hidden px-4 py-5 rounded-lg">
-                <dt className="text-sm font-medium text-textSecondary truncate">Image Generations</dt>
-                <dd className="mt-1 text-3xl font-semibold text-textPrimary">
-                  {imageUsage.remaining} <span className="text-lg text-textSecondary">/ {imageUsage.limit}</span>
-                </dd>
-              </div>
-            </dl>
+            )}
           </div>
         </div>
 
@@ -170,9 +274,7 @@ export default function Dashboard() {
             return (
               <div
                 key={tool.name}
-                className={`bg-secondary overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow ${
-                  hasUsage ? 'cursor-pointer' : 'opacity-75'
-                }`}
+                className="bg-secondary overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow"
               >
                 <div className="px-4 py-5 sm:p-6">
                   <div className="flex items-center">
@@ -187,28 +289,45 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-textSecondary">Usage this month</span>
-                      <span className={`font-medium ${hasUsage ? 'text-success' : 'text-error'}`}>
-                        {tool.usage.used} / {tool.usage.limit}
-                      </span>
-                    </div>
-                    <div className="mt-2 w-full bg-divider rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${hasUsage ? 'bg-success' : 'bg-error'}`}
-                        style={{
-                          width: `${Math.min(100, (tool.usage.used / tool.usage.limit) * 100)}%`
-                        }}
-                      />
-                    </div>
+                  {/* Show saved data instead of quota */}
+                  <div className="mt-4 bg-background rounded-lg p-3">
+                    {tool.savedData ? (
+                      <div className="text-sm">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-textSecondary">Latest Save</span>
+                          <span className="text-success text-xs">✓ Saved</span>
+                        </div>
+                        {tool.type === 'performance' && tool.savedData.estimatedPerformance && (
+                          <div className="text-xs text-textSecondary">
+                            {tool.savedData.estimatedPerformance.horsepower}HP, {tool.savedData.estimatedPerformance.zeroToSixty}s 0-60
+                          </div>
+                        )}
+                        {tool.type === 'build' && tool.savedData.plan && (
+                          <div className="text-xs text-textSecondary line-clamp-2">
+                            {tool.savedData.plan.slice(0, 80)}...
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-textSecondary">
+                        <div className="flex items-center justify-between">
+                          <span>No saved data</span>
+                          <span className="text-xs">Use tool to save</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="mt-6">
+                  {/* Usage indicator */}
+                  <div className="mt-3 text-xs text-textSecondary">
+                    Usage this month: {tool.usage.used} / {tool.usage.limit}
+                  </div>
+
+                  <div className="mt-4">
                     {hasUsage ? (
                       <a
                         href={tool.path}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md text-sm font-medium text-center block"
+                        className="w-full bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-2 px-4 rounded-md text-sm font-medium text-center block hover:opacity-90 transition-opacity"
                       >
                         Open Tool
                       </a>
