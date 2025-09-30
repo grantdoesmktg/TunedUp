@@ -1,7 +1,7 @@
 {
   "name": "tunedup",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -31,4 +31,3 @@
     "vite": "^6.2.0"
   }
 }
-// Force deployment - Tue Sep 30 09:49:33 CDT 2025
