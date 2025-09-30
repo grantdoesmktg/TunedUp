@@ -1,8 +1,6 @@
 import React from 'react'
-import { useAuth } from '../contexts/AuthContext'
 
 export const Footer: React.FC = () => {
-  const { user } = useAuth()
   return (
     <footer className="bg-secondary border-t border-divider mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -85,18 +83,6 @@ export const Footer: React.FC = () => {
           <p className="text-textSecondary">
             © 2025 TunedUp. All rights reserved.
           </p>
-
-          {/* Admin Dev Button - Only show for grantdoesmktg@gmail.com */}
-          {user?.email === 'grantdoesmktg@gmail.com' && (
-            <div className="mt-4">
-              <a
-                href="/admin"
-                className="inline-flex items-center px-3 py-1 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-              >
-                dev
-              </a>
-            </div>
-          )}
         </div>
       </div>
     </footer>
