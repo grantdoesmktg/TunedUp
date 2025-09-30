@@ -10,7 +10,7 @@ datasource db {
 model User {
   id               String    @id @default(cuid())
   email            String    @unique
-  stripeCustomerId String?
+  stripeCustomerId String?   @unique
   planCode         String    @default("FREE")
   planRenewsAt     DateTime?
   extraCredits     Json      @default("{}")

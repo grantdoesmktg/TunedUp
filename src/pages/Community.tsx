@@ -33,7 +33,7 @@ export default function Community() {
   const fetchImages = async (page: number = 1) => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/community/images?page=${page}&limit=12`)
+      const response = await fetch(`/api/community?action=images&page=${page}&limit=12`)
       const data = await response.json()
 
       if (response.ok) {
@@ -62,7 +62,7 @@ export default function Community() {
       reader.onload = async () => {
         const base64 = reader.result as string
 
-        const response = await fetch('/api/community/upload', {
+        const response = await fetch('/api/community?action=upload', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
