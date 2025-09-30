@@ -11,6 +11,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     console.log('Auth check - Headers:', req.headers.cookie)
+    console.log('Auth check - User Agent:', req.headers['user-agent'])
+    console.log('Auth check - Origin:', req.headers.origin)
+    console.log('Auth check - Referer:', req.headers.referer)
 
     // Get session from cookie - handle both 'session' and '_vercel_jwt' names
     console.log('All cookies:', req.headers.cookie)
