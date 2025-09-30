@@ -15,7 +15,12 @@ import AdvancedAccordion from './components/AdvancedAccordion';
 import ImageGallery from './components/ImageGallery';
 import './styles.css';
 
-const OnSiteApp: React.FC = () => {
+interface OnSiteAppProps {
+  onUseQuota?: () => Promise<void>
+  user?: any
+}
+
+const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
   const [carSpec, setCarSpec] = useState<CarSpec>(() => {
     // Check URL parameters for car data from Performance Calculator
     const urlParams = new URLSearchParams(window.location.search);

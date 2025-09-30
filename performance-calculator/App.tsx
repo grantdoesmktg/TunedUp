@@ -28,6 +28,8 @@ const App: React.FC<AppProps> = ({ onUseQuota, user }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showResults, setShowResults] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   // Send height updates to parent window for iframe resizing
   useEffect(() => {
@@ -107,6 +109,47 @@ const App: React.FC<AppProps> = ({ onUseQuota, user }) => {
     setAiResponse(null);
     setShowResults(false);
     setError(null);
+    setSaveMessage(null);
+  };
+
+  const handleSaveCar = async (carName: string) => {
+    if (!user?.email || !aiResponse) {
+      setSaveMessage('Please log in to save your car');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveMessage(null);
+
+    try {
+      const response = await fetch('/api/saved-cars', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-email': user.email
+        },
+        body: JSON.stringify({
+          name: carName,
+          make: carInput.make,
+          model: carInput.model,
+          year: carInput.year,
+          trim: carInput.trim,
+          performanceData: aiResponse,
+          setAsActive: true // Make this the active car
+        })
+      });
+
+      if (response.ok) {
+        setSaveMessage(`Successfully saved "${carName}" to your garage!`);
+      } else {
+        const data = await response.json();
+        setSaveMessage(data.error || 'Failed to save car');
+      }
+    } catch (error) {
+      setSaveMessage('Network error. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const renderContent = () => {
@@ -116,10 +159,14 @@ const App: React.FC<AppProps> = ({ onUseQuota, user }) => {
     
     if (showResults && aiResponse) {
       return (
-        <ResultsDisplay 
-          results={aiResponse} 
-          carInput={carInput} 
+        <ResultsDisplay
+          results={aiResponse}
+          carInput={carInput}
           onGoBack={handleGoBack}
+          onSaveCar={handleSaveCar}
+          isSaving={isSaving}
+          saveMessage={saveMessage}
+          user={user}
         />
       );
     }
