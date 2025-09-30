@@ -260,7 +260,19 @@ export default function Dashboard() {
         )}
 
         {/* Image Slider */}
-        <ImageSlider />
+        <div className="text-center">
+          <ImageSlider />
+          <div className="mt-6">
+            <a
+              href="/community"
+              className="inline-flex items-center gap-2 text-primary hover:text-[#d82c83] transition-colors font-medium"
+            >
+              <span>🎨</span>
+              View Community Gallery
+              <span>→</span>
+            </a>
+          </div>
+        </div>
 
         <UpgradePlansModal
           isOpen={showUpgradeModal}
