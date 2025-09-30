@@ -170,10 +170,58 @@ export default function Dashboard() {
                 <p className="mt-2 text-textSecondary">Loading your car...</p>
               </div>
             ) : savedCar ? (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Car Image */}
-                <div className="lg:col-span-1">
-                  <div className="aspect-video bg-divider rounded-lg overflow-hidden">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Side - Car Stats */}
+                <div className="bg-background rounded-lg p-6">
+                  <h3 className="text-xl font-semibold text-textPrimary mb-4">{savedCar.name}</h3>
+
+                  {/* Car Details */}
+                  <div className="space-y-3 mb-6">
+                    <div className="flex justify-between">
+                      <span className="text-textSecondary">Make:</span>
+                      <span className="text-textPrimary font-medium">{savedCar.make}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-textSecondary">Year:</span>
+                      <span className="text-textPrimary font-medium">{savedCar.year}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-textSecondary">Model:</span>
+                      <span className="text-textPrimary font-medium">{savedCar.model}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-textSecondary">Trim:</span>
+                      <span className="text-textPrimary font-medium">{savedCar.trim}</span>
+                    </div>
+                  </div>
+
+                  {/* Performance Highlights */}
+                  {savedCar.performanceData && (
+                    <div className="border-t border-divider pt-4">
+                      <h4 className="font-medium text-textPrimary mb-3">Performance Stats</h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-textSecondary">0-60 MPH:</span>
+                          <span className="text-primary font-bold">
+                            {savedCar.performanceData.estimatedPerformance?.zeroToSixty || 'N/A'}s
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-textSecondary">WHP:</span>
+                          <span className="text-primary font-bold">
+                            {savedCar.performanceData.estimatedPerformance?.whp || 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Side - Image Upload */}
+                <div className="bg-background rounded-lg p-6">
+                  <h4 className="font-medium text-textPrimary mb-4">Car Image</h4>
+
+                  <div className="aspect-video bg-divider rounded-lg overflow-hidden mb-4">
                     {savedCar.imageUrl ? (
                       <img
                         src={savedCar.imageUrl}
@@ -183,68 +231,28 @@ export default function Dashboard() {
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-textSecondary">
                         <div className="text-center">
-                          <div className="text-4xl mb-2">🚗</div>
-                          <p className="text-sm">No image uploaded</p>
-                          <p className="text-xs mt-1">Use Image Generator to create one</p>
+                          <div className="text-4xl mb-3">📸</div>
+                          <p className="text-sm font-medium">Go generate something cool 😉</p>
+                          <p className="text-xs mt-1">Use the Image Generator below</p>
                         </div>
                       </div>
                     )}
                   </div>
-                  <button
-                    onClick={() => setShowUpgradeModal(true)} // Placeholder for image upload modal
-                    className="mt-3 w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md text-sm font-medium"
-                  >
-                    Upload Image
-                  </button>
-                </div>
 
-                {/* Car Details & Performance */}
-                <div className="lg:col-span-1">
-                  <div className="bg-background rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-textPrimary mb-3">{savedCar.name}</h3>
-                    <div className="space-y-2 text-sm">
-                      <p className="text-textSecondary">
-                        <span className="font-medium">Car:</span> {savedCar.year} {savedCar.make} {savedCar.model} {savedCar.trim}
-                      </p>
-                      {savedCar.performanceData && (
-                        <div className="mt-4">
-                          <h4 className="font-medium text-textPrimary mb-2">Latest Performance</h4>
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div>
-                              <span className="text-textSecondary">HP:</span>
-                              <span className="ml-1 text-textPrimary font-medium">
-                                {savedCar.performanceData.estimatedPerformance?.horsepower || 'N/A'}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-textSecondary">0-60:</span>
-                              <span className="ml-1 text-textPrimary font-medium">
-                                {savedCar.performanceData.estimatedPerformance?.zeroToSixty || 'N/A'}s
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Build Plan Preview */}
-                <div className="lg:col-span-1">
-                  <div className="bg-background rounded-lg p-4">
-                    <h4 className="font-medium text-textPrimary mb-3">Latest Build Plan</h4>
-                    {savedCar.buildPlanData ? (
-                      <div className="text-sm text-textSecondary">
-                        <p className="line-clamp-3">
-                          {savedCar.buildPlanData.plan?.slice(0, 150)}...
-                        </p>
-                        <button className="mt-2 text-primary hover:text-[#d82c83] text-xs font-medium">
-                          View Full Plan →
-                        </button>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-textSecondary">No build plan saved yet</p>
-                    )}
+                  {/* Upload Options */}
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => window.location.href = '/w/on-site/embed'}
+                      className="w-full bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-2 px-4 rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
+                    >
+                      Generate Image
+                    </button>
+                    <button
+                      onClick={() => setShowUpgradeModal(true)} // Placeholder for file upload
+                      className="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md text-sm font-medium"
+                    >
+                      Upload Image
+                    </button>
                   </div>
                 </div>
               </div>
