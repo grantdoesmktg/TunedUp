@@ -10,6 +10,12 @@ export default defineConfig(() => {
           '@': path.resolve(__dirname, '.'),
         }
       },
-      assetsInclude: ['**/*.html']
+      build: {
+        rollupOptions: {
+          input: {
+            main: path.resolve(__dirname, 'index.html')
+          }
+        }
+      }
     };
 });
