@@ -40,7 +40,7 @@ export default function SimpleLogin() {
     <div className="min-h-screen bg-background text-textPrimary">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-purple-500/20 opacity-50"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#07fef7]/20 to-[#d82c83]/20 opacity-50"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <img
@@ -48,7 +48,7 @@ export default function SimpleLogin() {
               alt="TunedUp"
               className="h-16 mx-auto mb-8"
             />
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent leading-tight">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-[#07fef7] to-[#d82c83] bg-clip-text text-transparent leading-tight">
               Supercharge Your Build
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-textSecondary max-w-3xl mx-auto">
@@ -88,7 +88,7 @@ export default function SimpleLogin() {
                 <button
                   type="submit"
                   disabled={loading || !email}
-                  className="w-full bg-gradient-to-r from-primary to-purple-500 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Sending...' : 'Send Magic Link'}
                 </button>
@@ -185,7 +185,7 @@ export default function SimpleLogin() {
       </div>
 
       {/* CTA Section */}
-      <div className="py-24 bg-gradient-to-br from-primary to-purple-500">
+      <div className="py-24 bg-gradient-to-br from-[#07fef7] to-[#d82c83]">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold mb-6 text-white">
             Ready to Transform Your Build?
@@ -207,6 +207,29 @@ export default function SimpleLogin() {
               <div className="text-sm opacity-90">Images Generated</div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Bottom Sign Up Section */}
+      <div className="py-16 bg-secondary border-t border-divider">
+        <div className="max-w-2xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold mb-4 text-textPrimary">
+            Ready to Get Started?
+          </h2>
+          <p className="text-lg text-textSecondary mb-8">
+            Join thousands of builders optimizing their automotive projects with AI
+          </p>
+          <button
+            onClick={() => {
+              document.querySelector('h1')?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+              })
+            }}
+            className="bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white px-8 py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity"
+          >
+            Sign Up Free - Get Started Now
+          </button>
         </div>
       </div>
 
