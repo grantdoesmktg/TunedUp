@@ -95,12 +95,12 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   if (!customer || customer.deleted) return
 
   const user = await prisma.user.findUnique({
-    where: { stripeCustomerId: customer.id }
+    where: { stripeCustomerId: (customer as any).id }
   })
 
   if (!user) return
 
-  const planRenewsAt = new Date(subscription.current_period_end * 1000)
+  const planRenewsAt = new Date((subscription as any).current_period_end * 1000)
 
   // Map subscription status to plan
   let planCode = 'FREE'
@@ -129,7 +129,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   if (!customer || customer.deleted) return
 
   const user = await prisma.user.findUnique({
-    where: { stripeCustomerId: customer.id }
+    where: { stripeCustomerId: (customer as any).id }
   })
 
   if (!user) return
