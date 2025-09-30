@@ -38,7 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Send email
     await resend.emails.send({
-      from: 'TunedUp <onboarding@resend.dev>',
+      from: 'TunedUp <hello@tunedup.dev>',
       to: email,
       subject: 'Your TunedUp sign-in link',
       html: `
