@@ -48,7 +48,7 @@ export default function SimpleLogin() {
               alt="TunedUp"
               className="h-16 mx-auto mb-8"
             />
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-[#07fef7] to-[#d82c83] bg-clip-text text-transparent leading-relaxed">
+            <h1 className="text-5xl md:text-6xl font-bold mb-8 bg-gradient-to-r from-[#07fef7] to-[#d82c83] bg-clip-text text-transparent leading-loose pb-2">
               Supercharge Your Build
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-textSecondary max-w-3xl mx-auto">
