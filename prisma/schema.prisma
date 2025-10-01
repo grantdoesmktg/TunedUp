@@ -71,3 +71,14 @@ model SavedCar {
 
   @@map("saved_cars")
 }
+
+model VerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("verification_codes")
+}

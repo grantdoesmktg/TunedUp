@@ -1,10 +1,13 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { Resend } from 'resend'
-import { SignJWT } from 'jose'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 const resend = new Resend(process.env.RESEND_API_KEY)
+
+function generateVerificationCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString()
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -18,43 +21,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Valid email required' })
     }
 
-    // Create JWT token with 15 minute expiration
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
-    const token = await new SignJWT({ email })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('15m')
-      .setIssuedAt()
-      .sign(secret)
+    // Generate 6-digit verification code
+    const code = generateVerificationCode()
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
 
-    // Create magic link (using path parameter instead of query parameter)
-    const baseUrl = process.env.NODE_ENV === 'production'
-      ? 'https://tunedup.dev'
-      : 'http://localhost:3000'
-    const magicLink = `${baseUrl}/api/auth/verify/${encodeURIComponent(token)}`
+    // Clean up any existing codes for this email
+    await prisma.verificationCode.deleteMany({
+      where: { email }
+    })
 
-    console.log('Generated magic link:', magicLink)
-    console.log('Token length:', token.length)
-    console.log('Base URL:', baseUrl)
+    // Store new verification code
+    await prisma.verificationCode.create({
+      data: {
+        email,
+        code,
+        expiresAt
+      }
+    })
 
-    // Send email
+    console.log('Generated verification code for', email, ':', code)
+
+    // Send email with branded design
     await resend.emails.send({
       from: 'TunedUp <hello@tunedup.dev>',
       to: email,
-      subject: 'Your TunedUp sign-in link',
+      subject: '🏁 Your TunedUp Access Code - Ready to Roll!',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #1f2937;">Sign in to TunedUp</h1>
-          <p style="color: #4b5563; font-size: 16px;">Click the button below to sign in to your TunedUp account:</p>
+        <div style="background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%); color: white; padding: 40px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
+          <div style="max-width: 500px; margin: 0 auto; text-align: center;">
+            <h1 style="font-size: 48px; margin-bottom: 10px; background: linear-gradient(45deg, #07fef7, #d82c83); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: bold;">TunedUp</h1>
 
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${magicLink}"
-               style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
-              Sign In to TunedUp
-            </a>
+            <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 30px; margin: 20px 0; border: 1px solid rgba(255,255,255,0.1);">
+              <h2 style="color: #07fef7; margin-bottom: 20px;">🔑 Your Access Code</h2>
+              <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #07fef7; background: rgba(0,0,0,0.3); padding: 25px; border-radius: 12px; margin: 20px 0; font-family: 'Courier New', monospace;">
+                ${code}
+              </div>
+              <p style="color: #e5e7eb; margin: 15px 0; font-size: 16px;">Enter this code on the TunedUp login page</p>
+              <p style="color: #9ca3af; font-size: 14px;">⏱️ Code expires in 15 minutes</p>
+            </div>
+
+            <div style="margin-top: 25px;">
+              <p style="color: #d82c83; font-size: 18px; font-weight: 600;">🏎️ Ready to tune up your ride?</p>
+              <p style="color: #9ca3af; font-size: 13px; margin-top: 15px;">Navigate to TunedUp in Safari or Chrome and enter your code</p>
+            </div>
           </div>
-
-          <p style="color: #6b7280; font-size: 14px;">This link will expire in 15 minutes for security.</p>
-          <p style="color: #6b7280; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
         </div>
       `
     })
@@ -74,13 +84,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.status(200).json({
       success: true,
-      message: 'Magic link sent to your email'
+      message: 'Verification code sent to your email'
     })
 
   } catch (error) {
-    console.error('Send link error:', error)
+    console.error('Send verification code error:', error)
     res.status(500).json({
-      error: 'Failed to send magic link'
+      error: 'Failed to send verification code'
     })
   }
 }
