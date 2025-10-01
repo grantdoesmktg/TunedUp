@@ -12,13 +12,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Get session from cookie
-    const sessionCookie = req.headers.cookie
-      ?.split(';')
-      .find(c => c.trim().startsWith('session='))
+    // Get session from cookie - check both production and development cookie names
+    const cookies = req.headers.cookie?.split(';') || []
+    const sessionCookie = cookies
+      .find(c => c.trim().startsWith('_vercel_jwt=') || c.trim().startsWith('session='))
       ?.split('=')[1]
 
     if (!sessionCookie) {
+      console.log('No session cookie found. Available cookies:', req.headers.cookie)
       return res.status(401).json({ error: 'Not authenticated' })
     }
 
