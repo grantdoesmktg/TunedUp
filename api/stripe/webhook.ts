@@ -23,6 +23,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    console.log(`🔔 Webhook received: ${event.type}`, {
+      eventId: event.id,
+      created: new Date(event.created * 1000),
+      livemode: event.livemode
+    })
+
     switch (event.type) {
       case 'checkout.session.completed':
         const checkoutSession = event.data.object as Stripe.Checkout.Session
@@ -50,7 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         break
 
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        console.log(`❓ Unhandled event type: ${event.type}`)
     }
 
     res.status(200).json({ received: true })
@@ -62,31 +68,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  console.log('🎉 Checkout completed webhook received:', {
+    sessionId: session.id,
+    customer: session.customer,
+    metadata: session.metadata
+  })
+
   const { customer, subscription, metadata } = session
 
   if (!metadata?.userId || !metadata?.plan) {
-    console.error('Missing metadata in checkout session')
+    console.error('❌ Missing metadata in checkout session:', { metadata })
     return
   }
 
   const planRenewsAt = new Date()
   planRenewsAt.setMonth(planRenewsAt.getMonth() + 1)
 
-  await prisma.user.update({
-    where: { id: metadata.userId },
-    data: {
-      planCode: metadata.plan,
-      stripeCustomerId: customer as string,
-      planRenewsAt,
-      // Reset usage when upgrading
-      perfUsed: 0,
-      buildUsed: 0,
-      imageUsed: 0,
-      resetDate: new Date()
-    }
-  })
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: metadata.userId },
+      data: {
+        planCode: metadata.plan,
+        stripeCustomerId: customer as string,
+        planRenewsAt,
+        // Reset usage when upgrading
+        perfUsed: 0,
+        buildUsed: 0,
+        imageUsed: 0,
+        resetDate: new Date()
+      }
+    })
 
-  console.log(`Plan upgraded for user ${metadata.userId} to ${metadata.plan}`)
+    console.log(`✅ Plan upgraded for user ${metadata.userId} to ${metadata.plan}`, {
+      userId: updatedUser.id,
+      email: updatedUser.email,
+      newPlan: updatedUser.planCode
+    })
+  } catch (error) {
+    console.error('❌ Failed to update user plan:', error)
+    throw error
+  }
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
