@@ -150,7 +150,8 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(user?.email && { 'x-user-email': user.email })
         },
         body: JSON.stringify({
           promptSpec,
