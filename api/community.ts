@@ -240,33 +240,40 @@ async function handleLike(req: VercelRequest, res: VercelResponse) {
       console.log('Session verification failed, continuing as anonymous user')
     }
 
+    // Require authentication for likes to prevent spam
+    if (!userEmail) {
+      return res.status(401).json({ error: 'You must be logged in to like images' })
+    }
+
     // Check if user already liked this image (prevent spam)
-    if (userEmail) {
-      try {
-        const existingLike = await prisma.communityImageLike.findUnique({
-          where: {
-            imageId_userEmail: {
-              imageId: imageId,
-              userEmail: userEmail
-            }
-          }
-        })
-
-        if (existingLike) {
-          return res.status(400).json({ error: 'You have already liked this image' })
-        }
-
-        // Create like record
-        await prisma.communityImageLike.create({
-          data: {
+    try {
+      console.log('Checking for existing like:', { imageId, userEmail })
+      const existingLike = await prisma.communityImageLike.findUnique({
+        where: {
+          imageId_userEmail: {
             imageId: imageId,
             userEmail: userEmail
           }
-        })
-      } catch (error: any) {
-        // If likes table doesn't exist yet, continue without spam prevention
-        console.warn('Likes table not available, skipping duplicate check:', error.message)
+        }
+      })
+
+      if (existingLike) {
+        console.log('User already liked this image:', existingLike)
+        return res.status(400).json({ error: 'You have already liked this image' })
       }
+
+      console.log('Creating new like record:', { imageId, userEmail })
+      // Create like record
+      await prisma.communityImageLike.create({
+        data: {
+          imageId: imageId,
+          userEmail: userEmail
+        }
+      })
+      console.log('Like record created successfully')
+    } catch (error: any) {
+      console.error('Error in like spam prevention:', error)
+      return res.status(500).json({ error: 'Failed to process like request' })
     }
 
     // Increment like count on the image

@@ -153,6 +153,15 @@ export default function Community() {
       } else {
         // Show error message briefly
         console.error('Failed to like image:', data.error)
+
+        // Show user-friendly error messages
+        if (response.status === 401) {
+          alert('Please log in to like images')
+        } else if (response.status === 400) {
+          alert('You have already liked this image')
+        } else {
+          alert('Failed to like image. Please try again.')
+        }
       }
     } catch (error) {
       console.error('Like error:', error)
