@@ -30,6 +30,7 @@ export default function Community() {
   const [shareMessage, setShareMessage] = useState('')
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
   const [customDescription, setCustomDescription] = useState('')
+  const [likingImages, setLikingImages] = useState<Set<string>>(new Set())
 
   const fetchImages = async (page: number = 1) => {
     try {
@@ -113,6 +114,44 @@ export default function Community() {
   const handleConfirmShare = () => {
     if (selectedImageIndex !== null) {
       handleShareRecent(recentImages[selectedImageIndex], customDescription.trim())
+    }
+  }
+
+  const handleLike = async (imageId: string) => {
+    if (likingImages.has(imageId)) return // Prevent multiple clicks
+
+    setLikingImages(prev => new Set(prev).add(imageId))
+
+    try {
+      const response = await fetch('/api/community?action=like', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ imageId })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Update the local images state with new like count
+        setImages(prev => prev.map(img =>
+          img.id === imageId
+            ? { ...img, likesCount: data.likesCount }
+            : img
+        ))
+      } else {
+        // Show error message briefly
+        console.error('Failed to like image:', data.error)
+      }
+    } catch (error) {
+      console.error('Like error:', error)
+    } finally {
+      setLikingImages(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(imageId)
+        return newSet
+      })
     }
   }
 
@@ -331,11 +370,25 @@ export default function Community() {
                     />
                   </div>
                   <div className="p-4">
-                    {image.description && (
-                      <p className="text-textPrimary text-sm mb-2 line-clamp-2">
-                        {image.description}
-                      </p>
-                    )}
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        {image.description && (
+                          <p className="text-textPrimary text-sm mb-2 line-clamp-2">
+                            {image.description}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleLike(image.id)}
+                        disabled={likingImages.has(image.id)}
+                        className="ml-3 flex flex-col items-center gap-1 text-xs hover:scale-110 transition-transform disabled:opacity-50"
+                      >
+                        <span className="text-orange-500 text-lg">🔥</span>
+                        <span className="text-textSecondary font-medium">
+                          {image.likesCount || 0}
+                        </span>
+                      </button>
+                    </div>
                     <div className="flex justify-between items-center text-xs text-textSecondary">
                       <span>by {image.userEmail}</span>
                       <span>{formatDate(image.createdAt)}</span>
