@@ -10,6 +10,11 @@ export default function Login() {
   const [error, setError] = useState('')
   const { login, user } = useAuth()
 
+  // Debug step changes
+  React.useEffect(() => {
+    console.log('🔍 Step changed to:', step)
+  }, [step])
+
   // Testing bypass function
   const handleTestingBypass = async () => {
     setLoading(true)
@@ -59,12 +64,17 @@ export default function Login() {
     setMessage('')
     setError('')
 
+    console.log('🔍 Sending email to:', email)
     const result = await login(email)
+    console.log('🔍 Login result:', result)
 
     if (result.success) {
+      console.log('✅ Email sent successfully, switching to code step')
       setMessage('🏁 Check your email for a verification code!')
       setStep('code')
+      console.log('✅ Step updated to: code')
     } else {
+      console.log('❌ Email failed:', result.error)
       setError(result.error || 'Failed to send verification code')
     }
 
