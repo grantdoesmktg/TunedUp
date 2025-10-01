@@ -6,6 +6,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 const prisma = new PrismaClient()
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
+// Disable body parsing for webhook endpoint
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -15,10 +22,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let event: Stripe.Event
 
   try {
-    const body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body)
+    // Get raw body buffer for signature verification
+    const chunks = []
+    for await (const chunk of req) {
+      chunks.push(chunk)
+    }
+    const body = Buffer.concat(chunks)
+
     event = stripe.webhooks.constructEvent(body, sig, endpointSecret)
+    console.log('✅ Webhook signature verified successfully')
   } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message)
+    console.error('❌ Webhook signature verification failed:', err.message)
     return res.status(400).json({ error: `Webhook Error: ${err.message}` })
   }
 
