@@ -80,16 +80,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Redirecting...</title>
+          <title>Login Successful</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <style>
             body {
-              font-family: Arial, sans-serif;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
               display: flex;
               justify-content: center;
               align-items: center;
               height: 100vh;
               margin: 0;
               background: #f9fafb;
+              padding: 20px;
+              box-sizing: border-box;
+            }
+            .container {
+              text-align: center;
+              max-width: 400px;
+              width: 100%;
             }
             .spinner {
               border: 4px solid #f3f4f6;
@@ -104,18 +112,140 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               0% { transform: rotate(0deg); }
               100% { transform: rotate(360deg); }
             }
+            .success-message {
+              font-size: 18px;
+              color: #374151;
+              margin-bottom: 20px;
+            }
+            .mobile-warning {
+              display: none;
+              background: #fef3c7;
+              border: 2px solid #f59e0b;
+              border-radius: 8px;
+              padding: 16px;
+              margin: 20px 0;
+              text-align: left;
+            }
+            .mobile-warning h3 {
+              margin: 0 0 10px 0;
+              color: #92400e;
+              font-size: 16px;
+            }
+            .mobile-warning p {
+              margin: 0 0 10px 0;
+              color: #78350f;
+              font-size: 14px;
+              line-height: 1.4;
+            }
+            .open-browser-btn {
+              background: #3b82f6;
+              color: white;
+              padding: 12px 24px;
+              border: none;
+              border-radius: 6px;
+              font-size: 16px;
+              font-weight: 500;
+              cursor: pointer;
+              width: 100%;
+              margin-top: 10px;
+            }
+            .open-browser-btn:hover {
+              background: #2563eb;
+            }
           </style>
         </head>
         <body>
-          <div style="text-align: center;">
-            <div class="spinner"></div>
-            <p>Successfully authenticated! Redirecting to dashboard...</p>
+          <div class="container">
+            <div class="spinner" id="spinner"></div>
+            <div class="success-message" id="normalMessage">
+              Successfully authenticated! Redirecting to dashboard...
+            </div>
+
+            <div class="mobile-warning" id="mobileWarning">
+              <h3>📱 On a mobile device? Click here to save your account</h3>
+              <p>You're currently in an email app browser. To stay logged in:</p>
+              <p><strong>1.</strong> Tap the button below to open in your main browser</p>
+              <p><strong>2.</strong> You'll stay logged in for future visits</p>
+              <button class="open-browser-btn" onclick="openInMainBrowser()">
+                Open in Safari/Chrome
+              </button>
+            </div>
           </div>
+
           <script>
-            setTimeout(() => {
-              // Force a clean redirect to the dashboard with enough time for cookie to be set
-              window.location.replace('/dashboard');
-            }, 1500);
+            // Detect in-app browsers
+            function isInAppBrowser() {
+              const ua = navigator.userAgent || navigator.vendor || window.opera;
+
+              // Gmail, Outlook, Yahoo Mail, Apple Mail, etc.
+              const inAppPatterns = [
+                /FBAN/i,      // Facebook
+                /FBAV/i,      // Facebook
+                /Instagram/i, // Instagram
+                /LinkedInApp/i, // LinkedIn
+                /GSA/i,       // Google Search App
+                /YahooMailApp/i, // Yahoo Mail
+                /OutlookMobile/i, // Outlook
+                /TwitterAndroid/i, // Twitter
+                /DiscordAndroid/i, // Discord
+                /SkypeUriPreview/i, // Skype
+                /TelegramBot/i,    // Telegram
+                /KAKAOTALK/i,      // KakaoTalk
+                /NAVER/i,          // Naver
+                /Snapchat/i,       // Snapchat
+                /TikTok/i,         // TikTok
+                /Line/i,           // Line
+              ];
+
+              // Check for common in-app browser patterns
+              for (let pattern of inAppPatterns) {
+                if (pattern.test(ua)) return true;
+              }
+
+              // Check for webview indicators
+              if (ua.includes('wv') && ua.includes('Version/')) return true; // Android WebView
+              if (window.navigator.standalone === false) return true; // iOS WebView
+
+              // Check if it's a mobile device and missing standard browser features
+              const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+              if (isMobile) {
+                // Check for missing features that indicate webview
+                if (!window.chrome && !window.safari) {
+                  return true;
+                }
+              }
+
+              return false;
+            }
+
+            function isMobileDevice() {
+              return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            }
+
+            function openInMainBrowser() {
+              // Try to open in external browser
+              const currentUrl = window.location.href.replace('/auth/verify/', '/dashboard');
+
+              // Create a link that forces external opening
+              window.open(currentUrl, '_blank');
+
+              // Also try the current window as fallback
+              setTimeout(() => {
+                window.location.replace('/dashboard');
+              }, 1000);
+            }
+
+            // Check if we should show mobile warning
+            if (isMobileDevice() && isInAppBrowser()) {
+              document.getElementById('mobileWarning').style.display = 'block';
+              document.getElementById('normalMessage').textContent = 'Authentication successful!';
+              document.getElementById('spinner').style.display = 'none';
+            } else {
+              // Normal redirect flow
+              setTimeout(() => {
+                window.location.replace('/dashboard');
+              }, 1500);
+            }
           </script>
         </body>
       </html>
