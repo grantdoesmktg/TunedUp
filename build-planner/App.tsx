@@ -142,7 +142,8 @@ const BuildPlannerApp: React.FC<BuildPlannerAppProps> = ({ onUseQuota, user }) =
       const response = await fetch('/api/build-plan', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(user?.email && { 'x-user-email': user.email })
         },
         body: JSON.stringify({
           vehicleSpec: {

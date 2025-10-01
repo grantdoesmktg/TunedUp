@@ -90,7 +90,7 @@ const App: React.FC<AppProps> = ({ onUseQuota, user }) => {
         await onUseQuota();
       }
 
-      const response = await estimatePerformance(carInput);
+      const response = await estimatePerformance(carInput, user);
       setAiResponse(response);
       setShowResults(true);
     } catch (err: any) {
