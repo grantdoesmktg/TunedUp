@@ -28,6 +28,8 @@ export default function Community() {
   const [recentImages, setRecentImages] = useState<any[]>([])
   const [sharing, setSharing] = useState(false)
   const [shareMessage, setShareMessage] = useState('')
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
+  const [customDescription, setCustomDescription] = useState('')
 
   const fetchImages = async (page: number = 1) => {
     try {
@@ -88,7 +90,8 @@ export default function Community() {
 
       if (response.ok) {
         setShareMessage(data.message)
-        setShowRecentImages(false)
+        setSelectedImageIndex(null)
+        setCustomDescription('')
         // Refresh images
         fetchImages(currentPage)
       } else {
@@ -98,6 +101,18 @@ export default function Community() {
       setShareMessage('Share failed. Please try again.')
     } finally {
       setSharing(false)
+    }
+  }
+
+  const handleSelectImage = (index: number) => {
+    setSelectedImageIndex(index)
+    setCustomDescription('')
+    setShareMessage('')
+  }
+
+  const handleConfirmShare = () => {
+    if (selectedImageIndex !== null) {
+      handleShareRecent(recentImages[selectedImageIndex], customDescription.trim())
     }
   }
 
@@ -161,28 +176,36 @@ export default function Community() {
                   Generate Images
                 </a>
               </div>
-            ) : (
+            ) : selectedImageIndex === null ? (
               <div className="space-y-6">
                 <p className="text-textSecondary">Select an image from your recent generations to share with the community:</p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {recentImages.map((image, index) => (
-                    <div key={index} className="bg-background rounded-lg overflow-hidden border border-divider">
+                    <div key={index} className="bg-background rounded-lg overflow-hidden border border-divider hover:border-primary transition-colors cursor-pointer">
                       <img
                         src={image.blob}
                         alt="Recent generation"
                         className="w-full h-48 object-cover"
+                        onError={(e) => {
+                          console.error('Grid image failed to load:', image.blob?.substring(0, 100));
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
+                      {!image.blob?.startsWith('data:image') && (
+                        <div className="w-full h-48 flex items-center justify-center bg-gray-200">
+                          <p className="text-gray-500 text-sm">Preview unavailable</p>
+                        </div>
+                      )}
                       <div className="p-4">
                         <p className="text-sm text-textSecondary mb-3">
                           Generated: {image.timestamp ? new Date(image.timestamp).toLocaleDateString() : 'Recently'}
                         </p>
                         <button
-                          onClick={() => handleShareRecent(image)}
-                          disabled={sharing}
-                          className="w-full bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-2 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => handleSelectImage(index)}
+                          className="w-full bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-2 rounded-lg font-semibold hover:opacity-90 transition-opacity"
                         >
-                          {sharing ? 'Sharing...' : 'Share This Image'}
+                          Select This Image
                         </button>
                       </div>
                     </div>
@@ -193,12 +216,93 @@ export default function Community() {
                   <button
                     onClick={() => {
                       setShowRecentImages(false)
+                      setSelectedImageIndex(null)
+                      setCustomDescription('')
                       setShareMessage('')
                     }}
                     className="px-6 py-3 border border-divider rounded-lg text-textSecondary hover:text-textPrimary transition-colors"
                   >
                     Cancel
                   </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <button
+                    onClick={() => setSelectedImageIndex(null)}
+                    className="text-textSecondary hover:text-textPrimary transition-colors"
+                  >
+                    ← Back to selection
+                  </button>
+                  <h3 className="text-lg font-semibold text-textPrimary">Add Description</h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-background rounded-lg overflow-hidden border border-divider">
+                    <img
+                      src={recentImages[selectedImageIndex].blob}
+                      alt="Selected image"
+                      className="w-full h-64 object-cover"
+                      onError={(e) => {
+                        console.error('Image failed to load:', recentImages[selectedImageIndex].blob?.substring(0, 100));
+                        e.currentTarget.style.display = 'none';
+                      }}
+                      onLoad={() => {
+                        console.log('Image loaded successfully');
+                      }}
+                    />
+                    {!recentImages[selectedImageIndex].blob?.startsWith('data:image') && (
+                      <div className="w-full h-64 flex items-center justify-center bg-gray-200">
+                        <p className="text-gray-500">Image preview not available</p>
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <p className="text-sm text-textSecondary">
+                        Generated: {recentImages[selectedImageIndex].timestamp ? new Date(recentImages[selectedImageIndex].timestamp).toLocaleDateString() : 'Recently'}
+                      </p>
+                      {process.env.NODE_ENV === 'development' && (
+                        <p className="text-xs text-gray-400 mt-2 truncate">
+                          Debug: {recentImages[selectedImageIndex].blob?.substring(0, 50)}...
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-textPrimary">
+                        Description for Community
+                      </label>
+                      <textarea
+                        value={customDescription}
+                        onChange={(e) => setCustomDescription(e.target.value)}
+                        placeholder="Describe your car generation... (optional)"
+                        className="w-full px-4 py-3 bg-background border border-divider rounded-lg text-textPrimary placeholder-textSecondary resize-none focus:border-primary focus:outline-none"
+                        rows={4}
+                      />
+                      <p className="text-xs text-textSecondary mt-2">
+                        Leave empty to use a default description based on generation date
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleConfirmShare}
+                        disabled={sharing}
+                        className="flex-1 bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {sharing ? 'Sharing...' : 'Share to Community'}
+                      </button>
+                      <button
+                        onClick={() => setSelectedImageIndex(null)}
+                        disabled={sharing}
+                        className="px-6 py-3 border border-divider rounded-lg text-textSecondary hover:text-textPrimary transition-colors disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
