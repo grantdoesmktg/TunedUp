@@ -17,6 +17,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  console.log('🔄 Create checkout request received:', {
+    body: req.body,
+    hasStripePrices: {
+      PLUS: !!process.env.STRIPE_PRICE_PLUS,
+      PRO: !!process.env.STRIPE_PRICE_PRO,
+      ULTRA: !!process.env.STRIPE_PRICE_ULTRA
+    }
+  })
+
   try {
     // Get session from cookie - check both production and development cookie names
     const cookies = req.headers.cookie?.split(';') || []
@@ -106,9 +115,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
   } catch (error) {
-    console.error('Create checkout error:', error)
+    console.error('❌ Create checkout error:', error)
+    console.error('❌ Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      priceIds: PRICE_IDS
+    })
+
     res.status(500).json({
-      error: 'Failed to create checkout session'
+      error: 'Failed to create checkout session',
+      details: error instanceof Error ? error.message : 'Unknown error'
     })
   }
 }
