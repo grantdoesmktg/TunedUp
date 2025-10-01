@@ -24,11 +24,10 @@ export default function Community() {
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
-  const [showUpload, setShowUpload] = useState(false)
-  const [uploadFile, setUploadFile] = useState<File | null>(null)
-  const [uploadDescription, setUploadDescription] = useState('')
-  const [uploading, setUploading] = useState(false)
-  const [uploadMessage, setUploadMessage] = useState('')
+  const [showRecentImages, setShowRecentImages] = useState(false)
+  const [recentImages, setRecentImages] = useState<any[]>([])
+  const [sharing, setSharing] = useState(false)
+  const [shareMessage, setShareMessage] = useState('')
 
   const fetchImages = async (page: number = 1) => {
     try {
@@ -51,44 +50,54 @@ export default function Community() {
     fetchImages(currentPage)
   }, [currentPage])
 
-  const handleUpload = async () => {
-    if (!uploadFile) return
+  const fetchRecentImages = () => {
+    try {
+      // Get recent images from localStorage (from image generator)
+      const imageHistoryKey = 'tunedup_image_history'
+      const storedHistory = localStorage.getItem(imageHistoryKey)
 
-    setUploading(true)
-    setUploadMessage('')
+      if (storedHistory) {
+        const history = JSON.parse(storedHistory)
+        setRecentImages(Array.isArray(history) ? history.slice(-5) : []) // Last 5 images
+      } else {
+        setRecentImages([])
+      }
+    } catch (error) {
+      console.error('Failed to fetch recent images:', error)
+      setRecentImages([])
+    }
+  }
+
+  const handleShareRecent = async (imageData: any, description: string = '') => {
+    setSharing(true)
+    setShareMessage('')
 
     try {
-      const reader = new FileReader()
-      reader.onload = async () => {
-        const base64 = reader.result as string
-
-        const response = await fetch('/api/community?action=upload', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            image: base64,
-            description: uploadDescription
-          })
+      const response = await fetch('/api/community?action=upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          image: imageData.blob,
+          description: description || `Generated car image: ${imageData.timestamp ? new Date(imageData.timestamp).toLocaleDateString() : 'Recent'}`
         })
+      })
 
-        const data = await response.json()
+      const data = await response.json()
 
-        if (response.ok) {
-          setUploadMessage(data.message)
-          setUploadFile(null)
-          setUploadDescription('')
-          setShowUpload(false)
-        } else {
-          setUploadMessage(data.error || 'Upload failed')
-        }
+      if (response.ok) {
+        setShareMessage(data.message)
+        setShowRecentImages(false)
+        // Refresh images
+        fetchImages(currentPage)
+      } else {
+        setShareMessage(data.error || 'Share failed')
       }
-      reader.readAsDataURL(uploadFile)
     } catch (error) {
-      setUploadMessage('Upload failed. Please try again.')
+      setShareMessage('Share failed. Please try again.')
     } finally {
-      setUploading(false)
+      setSharing(false)
     }
   }
 
@@ -114,74 +123,85 @@ export default function Community() {
           </p>
 
           <button
-            onClick={() => setShowUpload(!showUpload)}
+            onClick={() => {
+              setShowRecentImages(!showRecentImages)
+              if (!showRecentImages) {
+                fetchRecentImages()
+              }
+            }}
             className="bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
           >
-            Share Your Creation
+            Share Recent Generation
           </button>
         </div>
 
-        {showUpload && (
-          <div className="max-w-2xl mx-auto mb-12 bg-secondary p-8 rounded-2xl border border-divider">
-            <h2 className="text-2xl font-semibold mb-6 text-textPrimary">Upload Your Image</h2>
+        {showRecentImages && (
+          <div className="max-w-4xl mx-auto mb-12 bg-secondary p-8 rounded-2xl border border-divider">
+            <h2 className="text-2xl font-semibold mb-6 text-textPrimary">Share Recent Generations</h2>
 
-            {uploadMessage && (
+            {shareMessage && (
               <div className={`p-4 rounded-lg mb-6 ${
-                uploadMessage.includes('successfully')
+                shareMessage.includes('successfully')
                   ? 'bg-success/20 border border-success text-success'
                   : 'bg-error/20 border border-error text-error'
               }`}>
-                {uploadMessage}
+                {shareMessage}
               </div>
             )}
 
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-textPrimary">
-                  Select Image
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                  className="w-full px-4 py-3 bg-background border border-divider rounded-lg text-textPrimary"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-textPrimary">
-                  Description (optional)
-                </label>
-                <textarea
-                  value={uploadDescription}
-                  onChange={(e) => setUploadDescription(e.target.value)}
-                  placeholder="Tell us about your creation..."
-                  className="w-full px-4 py-3 bg-background border border-divider rounded-lg text-textPrimary placeholder-textSecondary resize-none"
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  onClick={handleUpload}
-                  disabled={!uploadFile || uploading}
-                  className="flex-1 bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            {recentImages.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-textSecondary">No recent generations found. Create some images with the AI Image Generator first!</p>
+                <a
+                  href="/w/on-site/embed"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-4 px-6 py-3 bg-primary text-background rounded-lg font-semibold hover:opacity-90 transition-opacity"
                 >
-                  {uploading ? 'Uploading...' : 'Upload Image'}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowUpload(false)
-                    setUploadFile(null)
-                    setUploadDescription('')
-                    setUploadMessage('')
-                  }}
-                  className="px-6 py-3 border border-divider rounded-lg text-textSecondary hover:text-textPrimary transition-colors"
-                >
-                  Cancel
-                </button>
+                  Generate Images
+                </a>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-6">
+                <p className="text-textSecondary">Select an image from your recent generations to share with the community:</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {recentImages.map((image, index) => (
+                    <div key={index} className="bg-background rounded-lg overflow-hidden border border-divider">
+                      <img
+                        src={image.blob}
+                        alt="Recent generation"
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="p-4">
+                        <p className="text-sm text-textSecondary mb-3">
+                          Generated: {image.timestamp ? new Date(image.timestamp).toLocaleDateString() : 'Recently'}
+                        </p>
+                        <button
+                          onClick={() => handleShareRecent(image)}
+                          disabled={sharing}
+                          className="w-full bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-2 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {sharing ? 'Sharing...' : 'Share This Image'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => {
+                      setShowRecentImages(false)
+                      setShareMessage('')
+                    }}
+                    className="px-6 py-3 border border-divider rounded-lg text-textSecondary hover:text-textPrimary transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

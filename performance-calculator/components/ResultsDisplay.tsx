@@ -208,21 +208,6 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
                 trim: carInput.trim,
                 source: 'performance-calculator'
               });
-              window.open(`/build-planner?${params.toString()}`, '_blank');
-            }}
-            className="px-6 py-3 bg-highlight text-background font-semibold rounded-lg shadow-md hover:bg-highlight/90 transition-all"
-          >
-            Plan More Mods
-          </button>
-          <button
-            onClick={() => {
-              const params = new URLSearchParams({
-                year: carInput.year,
-                make: carInput.make,
-                model: carInput.model,
-                trim: carInput.trim,
-                source: 'performance-calculator'
-              });
               window.open(`/w/on-site/embed?${params.toString()}`, '_blank');
             }}
             className="px-6 py-3 bg-primary text-background font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-all"
