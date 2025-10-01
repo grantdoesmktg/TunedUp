@@ -1,28 +1,92 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../shared/contexts/AuthContext'
 import { Footer } from '../../shared/components/Footer'
 
 export default function SimpleLogin() {
   const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
+  const [step, setStep] = useState<'email' | 'code'>('email')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
   const { login } = useAuth()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Debug step changes
+  useEffect(() => {
+    console.log('🔍 SimpleLogin step changed to:', step)
+  }, [step])
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email) return
 
     setLoading(true)
     setMessage('')
+    setError('')
+
+    console.log('🔍 SimpleLogin sending email to:', email)
 
     try {
       const result = await login(email)
-      setMessage(result.message)
+
+      if (result.success) {
+        console.log('✅ SimpleLogin email sent successfully, switching to code step')
+        setMessage('🏁 Check your email for a verification code!')
+        setLoading(false)
+
+        // Force state update and re-render
+        setTimeout(() => {
+          console.log('🔄 SimpleLogin switching to code step...')
+          setStep('code')
+          setMessage('📧 Enter the 6-digit code from your email')
+        }, 200)
+      } else {
+        setError(result.error || 'Failed to send verification code')
+        setLoading(false)
+      }
     } catch (error) {
-      setMessage('An error occurred. Please try again.')
-    } finally {
+      setError('An error occurred. Please try again.')
       setLoading(false)
     }
+  }
+
+  const handleCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setMessage('')
+    setError('')
+
+    try {
+      const response = await fetch('/api/auth/verify/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, code })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        setMessage('🎉 Authentication successful! Redirecting...')
+        setTimeout(() => {
+          window.location.href = '/dashboard'
+        }, 1000)
+      } else {
+        setError(data.error || 'Invalid verification code')
+      }
+    } catch (error) {
+      setError('Network error. Please try again.')
+    }
+
+    setLoading(false)
+  }
+
+  const handleBackToEmail = () => {
+    setStep('email')
+    setCode('')
+    setMessage('')
+    setError('')
   }
 
   const images = [
@@ -58,41 +122,92 @@ export default function SimpleLogin() {
             {/* Login Form */}
             <div className="max-w-md mx-auto bg-secondary p-8 rounded-2xl shadow-2xl border border-divider">
               <h2 className="text-2xl font-semibold mb-6 text-textPrimary">
-                Get Started Free
+                {step === 'email' ? 'Get Started Free' : `Verify Your Email`}
               </h2>
 
+              {/* Debug indicator */}
+              <div className="mb-4 text-xs text-blue-400 font-mono">
+                DEBUG: Current step = {step}
+              </div>
+
               {message && (
-                <div className={`p-4 rounded-lg mb-6 ${
-                  message.includes('sent')
-                    ? 'bg-success/20 border border-success text-success'
-                    : 'bg-error/20 border border-error text-error'
-                }`}>
+                <div className="p-4 rounded-lg mb-6 bg-success/20 border border-success text-success">
                   {message}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-textPrimary">
-                    Email address
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    placeholder="Enter your email"
-                    className="w-full px-4 py-3 bg-background border border-divider rounded-lg text-textPrimary placeholder-textSecondary focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
+              {error && (
+                <div className="p-4 rounded-lg mb-6 bg-error/20 border border-error text-error">
+                  {error}
                 </div>
-                <button
-                  type="submit"
-                  disabled={loading || !email}
-                  className="w-full bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Sending...' : 'Send Magic Link'}
-                </button>
-              </form>
+              )}
+
+              {step === 'email' && (
+                <form onSubmit={handleEmailSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-textPrimary">
+                      Email address
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      placeholder="Enter your email"
+                      className="w-full px-4 py-3 bg-background border border-divider rounded-lg text-textPrimary placeholder-textSecondary focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading || !email}
+                    className="w-full bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Sending...' : 'Send Verification Code'}
+                  </button>
+                </form>
+              )}
+
+              {step === 'code' && (
+                <form onSubmit={handleCodeSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-textPrimary">
+                      Verification Code
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
+                      value={code}
+                      onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                      required
+                      placeholder="123456"
+                      className="w-full px-4 py-3 bg-background border border-divider rounded-lg text-textPrimary placeholder-textSecondary focus:ring-2 focus:ring-primary focus:border-transparent text-center text-2xl font-mono tracking-[0.5em]"
+                      autoComplete="one-time-code"
+                    />
+                    <p className="text-xs text-textSecondary mt-2">
+                      📧 Enter the 6-digit code sent to {email}
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <button
+                      type="submit"
+                      disabled={loading || code.length !== 6}
+                      className="w-full bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Verifying...' : 'Sign In'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBackToEmail}
+                      disabled={loading}
+                      className="w-full bg-background border border-divider text-textPrimary py-3 rounded-lg font-semibold hover:bg-divider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ← Use different email
+                    </button>
+                  </div>
+                </form>
+              )}
 
               <p className="text-sm text-textSecondary mt-4">
                 Start with <strong>1</strong> performance calc, <strong>1</strong> build plan, <strong>3</strong> images free
