@@ -66,6 +66,19 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
       applyTheme(theme);
     }
 
+    // Load existing image history from localStorage
+    try {
+      const storedHistory = localStorage.getItem('tunedup_image_history');
+      if (storedHistory) {
+        const history = JSON.parse(storedHistory);
+        if (Array.isArray(history)) {
+          setImageHistory(history);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load image history from localStorage:', error);
+    }
+
     // Post initial resize message
     postResizeMessage();
 
@@ -179,7 +192,18 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
       };
 
       setCurrentImage(result.image);
-      setImageHistory(prev => [...prev, newImage].slice(-3)); // Keep only last 3
+      setImageHistory(prev => {
+        const updated = [...prev, newImage].slice(-3); // Keep only last 3
+
+        // Store in localStorage for community sharing
+        try {
+          localStorage.setItem('tunedup_image_history', JSON.stringify(updated));
+        } catch (error) {
+          console.warn('Failed to save image history to localStorage:', error);
+        }
+
+        return updated;
+      });
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate image';

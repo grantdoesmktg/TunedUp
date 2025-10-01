@@ -332,8 +332,20 @@ const BuildPlannerApp: React.FC<BuildPlannerAppProps> = ({ onUseQuota, user }) =
       </form>
 
       {isLoading && (
-        <div className="loading-spinner">
-          <div className="spinner"></div>
+        <div className="build-loader">
+          <div className="loader-content">
+            <div className="gears">
+              <div className="gear large"></div>
+              <div className="gear small"></div>
+            </div>
+            <h3>Building Your Performance Plan</h3>
+            <p>Analyzing modifications and calculating costs...</p>
+            <div className="progress-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -420,16 +432,6 @@ const BuildPlannerApp: React.FC<BuildPlannerAppProps> = ({ onUseQuota, user }) =
               Plan New Build
             </button>
 
-            {/* Save Build Plan Button - only show if user is logged in */}
-            {user?.email && (
-              <button
-                onClick={() => setShowSaveModal(true)}
-                disabled={isSaving}
-                className="action-button save-button"
-              >
-                {isSaving ? 'Saving...' : 'Save Build Plan'}
-              </button>
-            )}
 
             <button
               className="action-button primary"
