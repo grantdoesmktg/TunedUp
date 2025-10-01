@@ -73,8 +73,13 @@ export default function Dashboard() {
   }
 
   const handleImageUpload = async (file: File) => {
-    if (!user?.email || !savedCar) {
-      setUploadMessage('Please log in and save a car first')
+    if (!user?.email) {
+      setUploadMessage('Please log in first')
+      return
+    }
+
+    if (!savedCar) {
+      setUploadMessage('Please save a car from Performance Calculator or Build Planner first')
       return
     }
 
