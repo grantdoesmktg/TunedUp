@@ -5,10 +5,17 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'GET') {
+  // Handle both GET (magic links) and POST (verification codes)
+  if (req.method === 'GET') {
+    return handleMagicLink(req, res)
+  } else if (req.method === 'POST') {
+    return handleVerificationCode(req, res)
+  } else {
     return res.status(405).json({ error: 'Method not allowed' })
   }
+}
 
+async function handleMagicLink(req: VercelRequest, res: VercelResponse) {
   try {
     console.log('Request query:', req.query)
     const { token } = req.query
@@ -32,16 +39,69 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Invalid token payload' })
     }
 
+    return await createUserSession(email, res, true) // true = redirect with HTML
+  } catch (error) {
+    console.error('Verify magic link error:', error)
+    res.redirect(302, '/login?error=invalid-token')
+  }
+}
+
+async function handleVerificationCode(req: VercelRequest, res: VercelResponse) {
+  try {
+    const { email, code } = req.body
+
+    if (!email || !code) {
+      return res.status(400).json({ error: 'Email and code required' })
+    }
+
+    // Find valid verification code
+    const verificationCode = await prisma.verificationCode.findFirst({
+      where: {
+        email,
+        code,
+        used: false,
+        expiresAt: {
+          gt: new Date()
+        }
+      }
+    })
+
+    if (!verificationCode) {
+      return res.status(400).json({ error: 'Invalid or expired code' })
+    }
+
+    // Mark code as used
+    await prisma.verificationCode.update({
+      where: { id: verificationCode.id },
+      data: { used: true }
+    })
+
+    return await createUserSession(email, res, false) // false = JSON response
+  } catch (error) {
+    console.error('Verify code error:', error)
+    res.status(500).json({
+      error: 'Failed to verify code'
+    })
+  }
+}
+
+async function createUserSession(email: string, res: VercelResponse, sendHtml: boolean) {
+  try {
     // Get user data
     const user = await prisma.user.findUnique({
       where: { email }
     })
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' })
+      if (sendHtml) {
+        return res.redirect(302, '/login?error=user-not-found')
+      } else {
+        return res.status(404).json({ error: 'User not found' })
+      }
     }
 
     // Create session token (longer lived)
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
     const sessionToken = await new SignJWT({
       email,
       userId: user.id,
@@ -52,7 +112,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .setIssuedAt()
       .sign(secret)
 
-    // Set session cookie and redirect to dashboard
+    // Set session cookie
     const isProduction = process.env.NODE_ENV === 'production'
     const cookieName = isProduction ? '_vercel_jwt' : 'session'
     const cookieOptions = [
@@ -69,14 +129,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.setHeader('Set-Cookie', cookieOptions.join('; '))
 
-    console.log('Setting session cookie and redirecting to dashboard')
+    console.log('User authenticated successfully')
     console.log('Cookie options:', cookieOptions.join('; '))
     console.log('Is production:', isProduction)
     console.log('Environment:', process.env.NODE_ENV)
 
-    // Use HTML redirect instead of server redirect
-
-    res.status(200).send(`
+    if (sendHtml) {
+      // HTML redirect for magic links
+      res.status(200).send(`
       <!DOCTYPE html>
       <html>
         <head>
@@ -402,11 +462,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         </body>
       </html>
     `)
+    } else {
+      // JSON response for verification codes
+      res.status(200).json({
+        success: true,
+        message: 'Authentication successful',
+        user: {
+          email: user.email,
+          planCode: user.planCode
+        }
+      })
+    }
 
   } catch (error) {
-    console.error('Verify token error:', error)
-
-    // Redirect to login with error
-    res.redirect(302, '/login?error=invalid-token')
+    console.error('Create user session error:', error)
+    if (sendHtml) {
+      res.redirect(302, '/login?error=session-error')
+    } else {
+      res.status(500).json({ error: 'Failed to create session' })
+    }
   }
 }
