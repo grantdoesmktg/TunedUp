@@ -71,6 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let customerId = user.stripeCustomerId
 
     if (!customerId) {
+      console.log('📝 No customer ID found, creating new customer...')
       const customer = await stripe.customers.create({
         email,
         metadata: {
@@ -84,6 +85,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         where: { email },
         data: { stripeCustomerId: customerId }
       })
+      console.log('✅ New customer created:', customerId)
+    } else {
+      // Verify the customer still exists in Stripe
+      try {
+        await stripe.customers.retrieve(customerId)
+        console.log('✅ Existing customer verified:', customerId)
+      } catch (error) {
+        console.log('❌ Stored customer ID invalid, creating new customer...')
+        const customer = await stripe.customers.create({
+          email,
+          metadata: {
+            userId: user.id
+          }
+        })
+
+        customerId = customer.id
+
+        await prisma.user.update({
+          where: { email },
+          data: { stripeCustomerId: customerId }
+        })
+        console.log('✅ Replacement customer created:', customerId)
+      }
     }
 
     // Create checkout session
