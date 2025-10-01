@@ -97,7 +97,7 @@ export default function Dashboard() {
         reader.readAsDataURL(file)
       })
 
-      const response = await fetch('/api/upload-car-image', {
+      const response = await fetch('/api/saved-cars?action=upload-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
