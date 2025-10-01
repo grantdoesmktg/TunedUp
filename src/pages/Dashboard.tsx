@@ -392,37 +392,8 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Show saved data instead of quota */}
-                  <div className="mt-4 bg-background rounded-lg p-3">
-                    {tool.savedData ? (
-                      <div className="text-sm">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-textSecondary">Latest Save</span>
-                          <span className="text-success text-xs">✓ Saved</span>
-                        </div>
-                        {tool.type === 'performance' && tool.savedData.estimatedPerformance && (
-                          <div className="text-xs text-textSecondary">
-                            {tool.savedData.estimatedPerformance.horsepower}HP, {tool.savedData.estimatedPerformance.zeroToSixty}s 0-60
-                          </div>
-                        )}
-                        {tool.type === 'build' && tool.savedData.plan && (
-                          <div className="text-xs text-textSecondary line-clamp-2">
-                            {tool.savedData.plan.slice(0, 80)}...
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-textSecondary">
-                        <div className="flex items-center justify-between">
-                          <span>No saved data</span>
-                          <span className="text-xs">Use tool to save</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
                   {/* Usage indicator */}
-                  <div className="mt-3 text-xs text-textSecondary">
+                  <div className="mt-4 text-xs text-textSecondary">
                     Usage this month: {tool.usage.used} / {tool.usage.limit}
                   </div>
 
