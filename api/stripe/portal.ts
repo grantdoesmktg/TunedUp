@@ -40,8 +40,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'No subscription found' })
     }
 
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
+    const baseUrl = process.env.NODE_ENV === 'production'
+      ? 'https://www.tunedup.dev'
       : 'http://localhost:3000'
 
     // Create portal session

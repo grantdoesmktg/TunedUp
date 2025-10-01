@@ -78,8 +78,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Create checkout session
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
+    const baseUrl = process.env.NODE_ENV === 'production'
+      ? 'https://www.tunedup.dev'
       : 'http://localhost:3000'
 
     const session = await stripe.checkout.sessions.create({
