@@ -83,92 +83,234 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           <title>Login Successful</title>
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
             body {
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+              background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+              color: white;
+              min-height: 100vh;
               display: flex;
               justify-content: center;
               align-items: center;
-              height: 100vh;
-              margin: 0;
-              background: #f9fafb;
               padding: 20px;
-              box-sizing: border-box;
+              position: relative;
+              overflow: hidden;
             }
+
+            /* Animated background elements */
+            .bg-decoration {
+              position: absolute;
+              opacity: 0.1;
+              pointer-events: none;
+            }
+            .bg-car1 {
+              top: 10%;
+              left: -10%;
+              font-size: 120px;
+              animation: float 6s ease-in-out infinite;
+            }
+            .bg-car2 {
+              bottom: 10%;
+              right: -10%;
+              font-size: 80px;
+              animation: float 8s ease-in-out infinite reverse;
+            }
+            @keyframes float {
+              0%, 100% { transform: translateY(0px) rotate(0deg); }
+              50% { transform: translateY(-20px) rotate(5deg); }
+            }
+
             .container {
               text-align: center;
-              max-width: 400px;
+              max-width: 450px;
               width: 100%;
+              background: rgba(255, 255, 255, 0.05);
+              backdrop-filter: blur(10px);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              border-radius: 20px;
+              padding: 40px 30px;
+              box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+              position: relative;
+              z-index: 1;
             }
+
+            .logo {
+              font-size: 48px;
+              margin-bottom: 10px;
+              background: linear-gradient(45deg, #07fef7, #d82c83);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              background-clip: text;
+              font-weight: bold;
+            }
+
             .spinner {
-              border: 4px solid #f3f4f6;
-              border-top: 4px solid #3b82f6;
+              width: 50px;
+              height: 50px;
+              margin: 20px auto;
+              border: 4px solid rgba(255, 255, 255, 0.2);
+              border-top: 4px solid #07fef7;
               border-radius: 50%;
-              width: 40px;
-              height: 40px;
-              animation: spin 2s linear infinite;
-              margin: 0 auto 20px;
+              animation: spin 1s linear infinite;
             }
             @keyframes spin {
               0% { transform: rotate(0deg); }
               100% { transform: rotate(360deg); }
             }
+
             .success-message {
-              font-size: 18px;
-              color: #374151;
-              margin-bottom: 20px;
+              font-size: 20px;
+              color: #e5e7eb;
+              margin: 20px 0;
+              font-weight: 500;
             }
+
             .mobile-warning {
               display: none;
-              background: #fef3c7;
-              border: 2px solid #f59e0b;
-              border-radius: 8px;
-              padding: 16px;
-              margin: 20px 0;
+              background: linear-gradient(135deg, rgba(7, 254, 247, 0.1), rgba(216, 44, 131, 0.1));
+              border: 2px solid rgba(7, 254, 247, 0.3);
+              border-radius: 16px;
+              padding: 30px 25px;
+              margin: 25px 0;
               text-align: left;
+              position: relative;
+              overflow: hidden;
             }
+
+            .mobile-warning::before {
+              content: '';
+              position: absolute;
+              top: -50%;
+              left: -50%;
+              width: 200%;
+              height: 200%;
+              background: linear-gradient(45deg, transparent, rgba(7, 254, 247, 0.05), transparent);
+              animation: shimmer 3s ease-in-out infinite;
+            }
+            @keyframes shimmer {
+              0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+              100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            }
+
             .mobile-warning h3 {
-              margin: 0 0 10px 0;
-              color: #92400e;
-              font-size: 16px;
+              margin: 0 0 15px 0;
+              color: #07fef7;
+              font-size: 24px;
+              font-weight: 700;
+              position: relative;
+              z-index: 1;
             }
+
             .mobile-warning p {
-              margin: 0 0 10px 0;
-              color: #78350f;
-              font-size: 14px;
-              line-height: 1.4;
-            }
-            .open-browser-btn {
-              background: #3b82f6;
-              color: white;
-              padding: 12px 24px;
-              border: none;
-              border-radius: 6px;
+              margin: 0 0 12px 0;
+              color: #d1d5db;
               font-size: 16px;
-              font-weight: 500;
+              line-height: 1.5;
+              position: relative;
+              z-index: 1;
+            }
+
+            .mobile-warning .highlight {
+              color: #07fef7;
+              font-weight: 600;
+            }
+
+            .open-browser-btn {
+              background: linear-gradient(45deg, #07fef7, #d82c83);
+              color: white;
+              padding: 16px 32px;
+              border: none;
+              border-radius: 12px;
+              font-size: 18px;
+              font-weight: 600;
               cursor: pointer;
               width: 100%;
-              margin-top: 10px;
+              margin-top: 20px;
+              position: relative;
+              overflow: hidden;
+              transition: all 0.3s ease;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              z-index: 1;
             }
+
+            .open-browser-btn::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: -100%;
+              width: 100%;
+              height: 100%;
+              background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+              transition: left 0.5s;
+            }
+
+            .open-browser-btn:hover::before {
+              left: 100%;
+            }
+
             .open-browser-btn:hover {
-              background: #2563eb;
+              transform: translateY(-2px);
+              box-shadow: 0 10px 25px rgba(7, 254, 247, 0.3);
+            }
+
+            .alternative-text {
+              margin-top: 20px;
+              font-size: 13px;
+              color: #9ca3af;
+              background: rgba(255, 255, 255, 0.05);
+              padding: 15px;
+              border-radius: 10px;
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              position: relative;
+              z-index: 1;
+            }
+
+            .alternative-text strong {
+              color: #d82c83;
+            }
+
+            #dashboardUrl {
+              word-break: break-all;
+              color: #07fef7;
+              font-family: monospace;
+              background: rgba(0, 0, 0, 0.3);
+              padding: 8px;
+              border-radius: 6px;
+              display: inline-block;
+              margin-top: 8px;
+              font-size: 12px;
             }
           </style>
         </head>
         <body>
+          <!-- Animated background cars -->
+          <div class="bg-decoration bg-car1">🏎️</div>
+          <div class="bg-decoration bg-car2">🚗</div>
+
           <div class="container">
+            <div class="logo">TunedUp</div>
             <div class="spinner" id="spinner"></div>
             <div class="success-message" id="normalMessage">
-              Successfully authenticated! Redirecting to dashboard...
+              🏁 You're in! Firing up your dashboard...
             </div>
 
             <div class="mobile-warning" id="mobileWarning">
-              <h3>📱 On a mobile device? Click here to save your account</h3>
-              <p>You're currently in an email app browser. To stay logged in:</p>
-              <p><strong>1.</strong> Tap the button below to open in your main browser</p>
-              <p><strong>2.</strong> You'll stay logged in for future visits</p>
+              <h3>🏎️ Ready to hit the road?</h3>
+              <p>Looks like you're browsing from your <span class="highlight">email app's garage</span> - let's get you into the <span class="highlight">main showroom</span> so your session stays tuned up!</p>
+              <p><strong>🔧 Quick pit stop:</strong> Tap the button below to open TunedUp in your main browser</p>
+              <p><strong>🏆 Why?</strong> You'll stay logged in and ready to roll every time you visit!</p>
               <button class="open-browser-btn" onclick="openInMainBrowser()">
-                Open in Safari/Chrome
+                🚀 Open in Main Browser
               </button>
+              <div class="alternative-text">
+                <strong>🛠️ Manual Override:</strong> Copy this URL and paste it in Safari/Chrome for the full TunedUp experience:<br>
+                <span id="dashboardUrl"></span>
+              </div>
             </div>
           </div>
 
@@ -223,16 +365,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
             function openInMainBrowser() {
-              // Try to open in external browser
-              const currentUrl = window.location.href.replace('/auth/verify/', '/dashboard');
+              // Get the base URL and construct dashboard URL
+              const baseUrl = window.location.origin;
+              const dashboardUrl = baseUrl + '/dashboard';
 
-              // Create a link that forces external opening
-              window.open(currentUrl, '_blank');
+              // First, try to open in external browser
+              const opened = window.open(dashboardUrl, '_blank');
 
-              // Also try the current window as fallback
+              // If popup was blocked or failed, provide instructions
+              if (!opened || opened.closed || typeof opened.closed == 'undefined') {
+                alert('Please manually open your browser and go to: ' + dashboardUrl);
+              }
+
+              // Also redirect current window after a delay to give session time to set
               setTimeout(() => {
                 window.location.replace('/dashboard');
-              }, 1000);
+              }, 2000);
             }
 
             // Check if we should show mobile warning
@@ -240,6 +388,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               document.getElementById('mobileWarning').style.display = 'block';
               document.getElementById('normalMessage').textContent = 'Authentication successful!';
               document.getElementById('spinner').style.display = 'none';
+
+              // Show the dashboard URL for manual copying
+              const dashboardUrl = window.location.origin + '/dashboard';
+              document.getElementById('dashboardUrl').textContent = dashboardUrl;
             } else {
               // Normal redirect flow
               setTimeout(() => {
