@@ -13,6 +13,7 @@ export default function Login() {
   // Debug step changes
   React.useEffect(() => {
     console.log('🔍 Step changed to:', step)
+    console.log('🔍 Current step state:', { step, email, code })
   }, [step])
 
   // Testing bypass function
@@ -71,14 +72,21 @@ export default function Login() {
     if (result.success) {
       console.log('✅ Email sent successfully, switching to code step')
       setMessage('🏁 Check your email for a verification code!')
-      setStep('code')
-      console.log('✅ Step updated to: code')
+      setLoading(false)
+
+      // Force state update and re-render
+      setTimeout(() => {
+        console.log('🔄 Switching to code step...')
+        setStep('code')
+        console.log('✅ Step updated to: code')
+        // Force a re-render by updating another state
+        setMessage('📧 Enter the 6-digit code from your email')
+      }, 200)
     } else {
       console.log('❌ Email failed:', result.error)
       setError(result.error || 'Failed to send verification code')
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   const handleCodeSubmit = async (e: React.FormEvent) => {
@@ -132,6 +140,10 @@ export default function Login() {
               : `Enter the 6-digit code sent to ${email}`
             }
           </p>
+          {/* Debug indicator */}
+          <div className="mt-2 text-xs text-blue-500 font-mono">
+            DEBUG: Current step = {step}
+          </div>
         </div>
       </div>
 
