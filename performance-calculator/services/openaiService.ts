@@ -1,11 +1,12 @@
 import type { CarInput, AIResponse } from '../types';
 
-export const estimatePerformance = async (carInput: CarInput): Promise<AIResponse> => {
+export const estimatePerformance = async (carInput: CarInput, user?: any): Promise<AIResponse> => {
   try {
     const response = await fetch('/api/performance', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...(user?.email && { 'x-user-email': user.email })
       },
       body: JSON.stringify(carInput)
     });

@@ -231,8 +231,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Check quota (get email from header)
     const userEmail = req.headers['x-user-email'] as string || null;
-    console.log('🔍 Image generation - User email:', userEmail)
-    console.log('🔍 All headers:', Object.keys(req.headers))
     const quotaCheck = await checkQuota(userEmail, 'image');
     
     if (!quotaCheck.allowed) {
@@ -315,7 +313,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Increment usage after successful generation
-    console.log('🔼 Incrementing usage for email:', userEmail)
     await incrementUsage(userEmail, 'image');
 
     return res.status(200).json({
