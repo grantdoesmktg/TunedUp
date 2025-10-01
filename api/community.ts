@@ -12,6 +12,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return handleUpload(req, res)
   } else if (action === 'images') {
     return handleGetImages(req, res)
+  } else if (action === 'like') {
+    return handleLike(req, res)
   } else {
     return res.status(400).json({ error: 'Invalid action' })
   }
@@ -158,6 +160,91 @@ async function handleGetImages(req: VercelRequest, res: VercelResponse) {
     console.error('Get community images error:', error)
     res.status(500).json({
       error: 'Failed to fetch community images'
+    })
+  }
+}
+
+async function handleLike(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  try {
+    // Get image ID from request body
+    const { imageId } = req.body
+
+    if (!imageId) {
+      return res.status(400).json({ error: 'Image ID is required' })
+    }
+
+    // Check if image exists
+    const image = await prisma.communityImage.findUnique({
+      where: { id: imageId }
+    })
+
+    if (!image) {
+      return res.status(404).json({ error: 'Image not found' })
+    }
+
+    // Get user email from session (optional - likes can be anonymous)
+    let userEmail = null
+    try {
+      const sessionCookie = req.headers.cookie
+        ?.split(';')
+        .find(c => c.trim().startsWith('session=') || c.trim().startsWith('_vercel_jwt='))
+        ?.split('=')[1]
+
+      if (sessionCookie) {
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
+        const { payload } = await jwtVerify(sessionCookie.split(',')[0], secret)
+        userEmail = payload.email as string
+      }
+    } catch (error) {
+      // If session verification fails, continue as anonymous user
+      console.log('Session verification failed, continuing as anonymous user')
+    }
+
+    // Check if user already liked this image (prevent spam)
+    if (userEmail) {
+      const existingLike = await prisma.communityImageLike.findUnique({
+        where: {
+          imageId_userEmail: {
+            imageId: imageId,
+            userEmail: userEmail
+          }
+        }
+      })
+
+      if (existingLike) {
+        return res.status(400).json({ error: 'You have already liked this image' })
+      }
+
+      // Create like record
+      await prisma.communityImageLike.create({
+        data: {
+          imageId: imageId,
+          userEmail: userEmail
+        }
+      })
+    }
+
+    // Increment like count on the image
+    const updatedImage = await prisma.communityImage.update({
+      where: { id: imageId },
+      data: {
+        likesCount: { increment: 1 }
+      }
+    })
+
+    return res.status(200).json({
+      success: true,
+      likesCount: updatedImage.likesCount
+    })
+
+  } catch (error) {
+    console.error('Like image error:', error)
+    res.status(500).json({
+      error: 'Failed to like image'
     })
   }
 }
