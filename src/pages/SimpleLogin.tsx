@@ -11,10 +11,6 @@ export default function SimpleLogin() {
   const [error, setError] = useState('')
   const { login } = useAuth()
 
-  // Debug step changes
-  useEffect(() => {
-    console.log('🔍 SimpleLogin step changed to:', step)
-  }, [step])
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,19 +20,14 @@ export default function SimpleLogin() {
     setMessage('')
     setError('')
 
-    console.log('🔍 SimpleLogin sending email to:', email)
-
     try {
       const result = await login(email)
 
       if (result.success) {
-        console.log('✅ SimpleLogin email sent successfully, switching to code step')
         setMessage('🏁 Check your email for a verification code!')
         setLoading(false)
 
-        // Force state update and re-render
         setTimeout(() => {
-          console.log('🔄 SimpleLogin switching to code step...')
           setStep('code')
           setMessage('📧 Enter the 6-digit code from your email')
         }, 200)
@@ -125,10 +116,6 @@ export default function SimpleLogin() {
                 {step === 'email' ? 'Get Started Free' : `Verify Your Email`}
               </h2>
 
-              {/* Debug indicator */}
-              <div className="mb-4 text-xs text-blue-400 font-mono">
-                DEBUG: Current step = {step}
-              </div>
 
               {message && (
                 <div className="p-4 rounded-lg mb-6 bg-success/20 border border-success text-success">
