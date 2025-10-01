@@ -118,11 +118,18 @@ export default function Community() {
   }
 
   const handleLike = async (imageId: string) => {
-    if (likingImages.has(imageId)) return // Prevent multiple clicks
+    console.log('handleLike called with imageId:', imageId)
 
+    if (likingImages.has(imageId)) {
+      console.log('Like already in progress for:', imageId)
+      return // Prevent multiple clicks
+    }
+
+    console.log('Starting like process for:', imageId)
     setLikingImages(prev => new Set(prev).add(imageId))
 
     try {
+      console.log('Making API request to like image:', imageId)
       const response = await fetch('/api/community?action=like', {
         method: 'POST',
         headers: {
@@ -131,9 +138,12 @@ export default function Community() {
         body: JSON.stringify({ imageId })
       })
 
+      console.log('Like API response status:', response.status)
       const data = await response.json()
+      console.log('Like API response data:', data)
 
       if (response.ok) {
+        console.log('Like successful, updating UI with new count:', data.likesCount)
         // Update the local images state with new like count
         setImages(prev => prev.map(img =>
           img.id === imageId
@@ -147,6 +157,7 @@ export default function Community() {
     } catch (error) {
       console.error('Like error:', error)
     } finally {
+      console.log('Removing like loading state for:', imageId)
       setLikingImages(prev => {
         const newSet = new Set(prev)
         newSet.delete(imageId)
@@ -379,12 +390,18 @@ export default function Community() {
                         )}
                       </div>
                       <button
-                        onClick={() => handleLike(image.id)}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          console.log('Like button clicked for image:', image.id)
+                          handleLike(image.id)
+                        }}
                         disabled={likingImages.has(image.id)}
-                        className="ml-3 flex flex-col items-center gap-1 text-xs hover:scale-110 transition-transform disabled:opacity-50"
+                        className="ml-3 flex flex-col items-center gap-1 text-xs hover:scale-110 transition-all cursor-pointer bg-transparent border-0 p-1 rounded disabled:opacity-50"
+                        type="button"
+                        title="Like this image"
                       >
-                        <span className="text-orange-500 text-lg">🔥</span>
-                        <span className="text-textSecondary font-medium">
+                        <span className="text-orange-500 text-lg pointer-events-none">🔥</span>
+                        <span className="text-textSecondary font-medium pointer-events-none">
                           {image.likesCount || 0}
                         </span>
                       </button>
