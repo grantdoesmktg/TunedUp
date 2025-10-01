@@ -5,6 +5,39 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+// Auto-create likes table if it doesn't exist
+async function ensureLikesTable() {
+  try {
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "community_image_likes" (
+        "id" TEXT NOT NULL,
+        "imageId" TEXT NOT NULL,
+        "userEmail" TEXT NOT NULL,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "community_image_likes_pkey" PRIMARY KEY ("id")
+      );
+    `
+
+    await prisma.$executeRaw`
+      CREATE UNIQUE INDEX IF NOT EXISTS "community_image_likes_imageId_userEmail_key"
+      ON "community_image_likes"("imageId", "userEmail");
+    `
+
+    // Try to add foreign key constraint (may fail if already exists)
+    try {
+      await prisma.$executeRaw`
+        ALTER TABLE "community_image_likes"
+        ADD CONSTRAINT "community_image_likes_imageId_fkey"
+        FOREIGN KEY ("imageId") REFERENCES "community_images"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+      `
+    } catch (fkError) {
+      // Foreign key constraint probably already exists, ignore
+    }
+  } catch (error) {
+    console.warn('Could not ensure likes table exists:', error)
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { action } = req.query
 
@@ -170,6 +203,9 @@ async function handleLike(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // Ensure likes table exists
+    await ensureLikesTable()
+
     // Get image ID from request body
     const { imageId } = req.body
 
@@ -206,26 +242,31 @@ async function handleLike(req: VercelRequest, res: VercelResponse) {
 
     // Check if user already liked this image (prevent spam)
     if (userEmail) {
-      const existingLike = await prisma.communityImageLike.findUnique({
-        where: {
-          imageId_userEmail: {
+      try {
+        const existingLike = await prisma.communityImageLike.findUnique({
+          where: {
+            imageId_userEmail: {
+              imageId: imageId,
+              userEmail: userEmail
+            }
+          }
+        })
+
+        if (existingLike) {
+          return res.status(400).json({ error: 'You have already liked this image' })
+        }
+
+        // Create like record
+        await prisma.communityImageLike.create({
+          data: {
             imageId: imageId,
             userEmail: userEmail
           }
-        }
-      })
-
-      if (existingLike) {
-        return res.status(400).json({ error: 'You have already liked this image' })
+        })
+      } catch (error: any) {
+        // If likes table doesn't exist yet, continue without spam prevention
+        console.warn('Likes table not available, skipping duplicate check:', error.message)
       }
-
-      // Create like record
-      await prisma.communityImageLike.create({
-        data: {
-          imageId: imageId,
-          userEmail: userEmail
-        }
-      })
     }
 
     // Increment like count on the image
