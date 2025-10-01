@@ -78,7 +78,7 @@ export default function Login() {
     setError('')
 
     try {
-      const response = await fetch('/api/auth/verify/code', {
+      const response = await fetch('/api/auth/verify/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
