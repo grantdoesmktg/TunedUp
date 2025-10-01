@@ -79,13 +79,13 @@ async function handleUpload(req: VercelRequest, res: VercelResponse) {
         userEmail: email,
         imageUrl: blob.url,
         description: description || null,
-        approved: false // Requires admin approval
+        approved: true // Auto-approve for development
       }
     })
 
     res.status(200).json({
       success: true,
-      message: 'Image uploaded successfully! It will appear in the community feed after approval.',
+      message: 'Image uploaded successfully! It will appear in the community feed immediately.',
       imageId: communityImage.id
     })
 
