@@ -48,11 +48,35 @@ interface RequestBody {
 
 // Constants for prompt generation
 const MODEL_DESCRIPTIONS = {
-  scottish_hills: "a runway model beautiful Scottish woman in a fitted crop top and athletic shorts, leaning against the car seductively while looking toward the camera, natural hair blowing in the wind",
-  us_canyons: "a runway model beautiful athletic American woman in a sports crop top and workout shorts leaning seductively against the car while gazing toward the camera with alluring eyes",
-  italian_cobblestone: "a runway model beautiful stylish Italian woman in a fashionable crop top and high-waisted shorts leaning against the car in a seductive pose, looking directly at the camera",
-  japanese_nightlife: "a runway model beautiful trendy Japanese woman in a fitted crop top and shorts with neon accents, leaning seductively against the car while making eye contact with the camera",
-  german_city: "a runway model beautiful modern German woman in a sleek crop top and tailored shorts, leaning against the car in a seductive pose while gazing confidently toward the camera"
+  // Japan - Japanese models
+  tokyo_shibuya: "a runway model beautiful Japanese woman in trendy streetwear with neon accents, leaning against the car in a stylish pose while making eye contact with the camera",
+  mount_fuji_hakone: "a runway model beautiful Japanese woman in elegant casual wear, leaning against the car with serene confidence against the mountain backdrop",
+  osaka_bay: "a runway model beautiful Japanese woman in urban street style, leaning against the car with edgy confidence in the industrial setting",
+  kyoto_outskirts: "a runway model beautiful Japanese woman in modern yet respectful attire, leaning against the car gracefully near the traditional architecture",
+
+  // Germany - German models
+  munich_alps: "a runway model beautiful German woman in sleek athletic wear, leaning against the car with precise confidence showcasing German engineering pride",
+  stuttgart: "a runway model beautiful German woman in sophisticated business casual, leaning against the car with disciplined elegance befitting automotive headquarters",
+  berlin: "a runway model beautiful German woman in creative street fashion, leaning against the car with rebellious confidence among the urban art",
+  nurburgring: "a runway model beautiful German woman in racing-inspired attire, leaning against the car with intense focus representing performance culture",
+
+  // United States - American models
+  los_angeles: "a runway model beautiful American woman in laid-back coastal style, leaning against the car with Hollywood glamour and West Coast charm",
+  detroit: "a runway model beautiful American woman in classic denim and leather, leaning against the car with blue-collar pride and muscle car heritage",
+  las_vegas_desert: "a runway model beautiful American woman in bold, flashy attire, leaning against the car with high-stakes confidence in the desert setting",
+  miami: "a runway model beautiful American woman in vibrant tropical fashion, leaning against the car with energetic Miami style and coastal luxury",
+
+  // South Korea - Korean models
+  seoul_gangnam: "a runway model beautiful Korean woman in futuristic K-fashion, leaning against the car with modern sophistication and trendy confidence",
+  busan: "a runway model beautiful Korean woman in coastal casual wear, leaning against the car with energetic freedom by the seaside setting",
+  incheon: "a runway model beautiful Korean woman in clean, minimalist style, leaning against the car with efficient confidence in the modern airport hub",
+  jeju_island: "a runway model beautiful Korean woman in natural, relaxed attire, leaning against the car with adventurous spirit on the volcanic island",
+
+  // Italy - Italian models
+  maranello: "a runway model beautiful Italian woman in passionate red tones, leaning against the car with Ferrari pride and elegant countryside sophistication",
+  santagata_bolognese: "a runway model beautiful Italian woman in bold, luxurious fashion, leaning against the car with dramatic confidence in Lamborghini territory",
+  modena: "a runway model beautiful Italian woman in artistic, refined style, leaning against the car with cultured elegance representing Italian craftsmanship",
+  amalfi_coast: "a runway model beautiful Italian woman in romantic coastal fashion, leaning against the car with Mediterranean charm and coastal luxury"
 };
 
 const NEGATIVE_PROMPT = `
