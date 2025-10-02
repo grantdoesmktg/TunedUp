@@ -31,6 +31,12 @@ export default function Community() {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
   const [customDescription, setCustomDescription] = useState('')
   const [likingImages, setLikingImages] = useState<Set<string>>(new Set())
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'warning'} | null>(null)
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'error') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 4000) // Auto-hide after 4 seconds
+  }
 
   const fetchImages = async (page: number = 1) => {
     try {
@@ -150,17 +156,18 @@ export default function Community() {
             ? { ...img, likesCount: data.likesCount }
             : img
         ))
+        showToast('Image liked! 🔥', 'success')
       } else {
         // Show error message briefly
         console.error('Failed to like image:', data.error)
 
         // Show user-friendly error messages
         if (response.status === 401) {
-          alert('Please log in to like images')
+          showToast('Please log in to like images', 'warning')
         } else if (response.status === 400) {
-          alert('You have already liked this image')
+          showToast('You have already liked this image', 'warning')
         } else {
-          alert('Failed to like image. Please try again.')
+          showToast('Failed to like image. Please try again.', 'error')
         }
       }
     } catch (error) {
@@ -186,6 +193,28 @@ export default function Community() {
   return (
     <div className="min-h-screen bg-background text-textPrimary">
       <Header />
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ease-in-out ${
+          toast.type === 'success' ? 'bg-success/20 border border-success text-success' :
+          toast.type === 'warning' ? 'bg-highlight/20 border border-highlight text-highlight' :
+          'bg-error/20 border border-error text-error'
+        }`}>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">
+              {toast.type === 'success' ? '✅' : toast.type === 'warning' ? '⚠️' : '❌'}
+            </span>
+            <span className="font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 text-lg hover:opacity-70 transition-opacity"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-12">
