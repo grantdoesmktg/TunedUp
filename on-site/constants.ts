@@ -1,30 +1,114 @@
-import { LocationPreset, TimePreset, PalettePreset } from './types';
+import { LocationPreset, TimePreset } from './types';
 
 export const LOCATION_PRESETS: LocationPreset[] = [
+  // 🇯🇵 Japan
   {
-    key: 'scottish_hills',
-    label: 'Scottish Hills',
-    description: 'Rolling green hills with ancient castles in the misty distance'
+    key: 'tokyo_shibuya',
+    label: '🇯🇵 Tokyo (Shibuya)',
+    description: 'Neon city streets, bustling nightlife, drifting cars under glowing billboards'
   },
   {
-    key: 'us_canyons',
-    label: 'US Canyons',
-    description: 'Dramatic red rock formations and desert landscapes'
+    key: 'mount_fuji_hakone',
+    label: '🇯🇵 Mount Fuji/Hakone',
+    description: 'Mountain roads twisting around lush green slopes with Fuji in the background'
   },
   {
-    key: 'italian_cobblestone',
-    label: 'Italian Cobblestone',
-    description: 'Historic cobblestone streets with renaissance architecture'
+    key: 'osaka_bay',
+    label: '🇯🇵 Osaka Bay',
+    description: 'Industrial port city backdrop, bridges over water, gritty warehouses'
   },
   {
-    key: 'japanese_nightlife',
-    label: 'Japanese Nightlife',
-    description: 'Neon-lit urban streets with modern skyscrapers'
+    key: 'kyoto_outskirts',
+    label: '🇯🇵 Kyoto Outskirts',
+    description: 'Ancient shrines, narrow streets, traditional lanterns contrasting with modern cars'
+  },
+
+  // 🇩🇪 Germany
+  {
+    key: 'munich_alps',
+    label: '🇩🇪 Munich (Alps)',
+    description: 'Sleek modern city blending into pristine alpine landscapes'
   },
   {
-    key: 'german_city',
-    label: 'German City',
-    description: 'Clean modern architecture with efficient urban design'
+    key: 'stuttgart',
+    label: '🇩🇪 Stuttgart',
+    description: 'Headquarters of Porsche and Mercedes; polished industrial prestige'
+  },
+  {
+    key: 'berlin',
+    label: '🇩🇪 Berlin',
+    description: 'Urban graffiti walls, underground techno vibe, gritty nightlife'
+  },
+  {
+    key: 'nurburgring',
+    label: '🇩🇪 Nürburgring',
+    description: 'Legendary race track in the Eifel forest, misty mornings, roar of engines'
+  },
+
+  // 🇺🇸 United States
+  {
+    key: 'los_angeles',
+    label: '🇺🇸 Los Angeles',
+    description: 'Palm-lined streets, sunshine, Hollywood glitz, coastal highways'
+  },
+  {
+    key: 'detroit',
+    label: '🇺🇸 Detroit',
+    description: 'Industrial grit, factory steel, muscle car roots'
+  },
+  {
+    key: 'las_vegas_desert',
+    label: '🇺🇸 Las Vegas Desert',
+    description: 'Strip neon lights vs vast desert highways'
+  },
+  {
+    key: 'miami',
+    label: '🇺🇸 Miami',
+    description: 'Tropical nightlife, pastel art deco, flashy oceanfront'
+  },
+
+  // 🇰🇷 South Korea
+  {
+    key: 'seoul_gangnam',
+    label: '🇰🇷 Seoul (Gangnam)',
+    description: 'Futuristic skyscrapers, neon-lit nightlife, K-pop modernity'
+  },
+  {
+    key: 'busan',
+    label: '🇰🇷 Busan',
+    description: 'Coastal bridges, bustling port, mountain tunnels'
+  },
+  {
+    key: 'incheon',
+    label: '🇰🇷 Incheon',
+    description: 'Futuristic airport hub, sprawling modern architecture'
+  },
+  {
+    key: 'jeju_island',
+    label: '🇰🇷 Jeju Island',
+    description: 'Volcanic coastline, rolling hills, natural beauty'
+  },
+
+  // 🇮🇹 Italy
+  {
+    key: 'maranello',
+    label: '🇮🇹 Maranello',
+    description: 'Ferrari\'s red heartland, Italian countryside prestige'
+  },
+  {
+    key: 'santagata_bolognese',
+    label: '🇮🇹 Sant\'Agata Bolognese',
+    description: 'Lamborghini home, rural-meets-luxury estates'
+  },
+  {
+    key: 'modena',
+    label: '🇮🇹 Modena',
+    description: 'Maserati & Pagani origins, charming historic town squares'
+  },
+  {
+    key: 'amalfi_coast',
+    label: '🇮🇹 Amalfi Coast',
+    description: 'Cliffside roads, Mediterranean sea breeze, pastel villages'
   }
 ];
 
@@ -51,58 +135,7 @@ export const TIME_PRESETS: TimePreset[] = [
   }
 ];
 
-export const PALETTE_PRESETS: PalettePreset[] = [
-  {
-    key: 'cool_teal',
-    label: 'Cool Teal',
-    description: 'Calming blues and teals with cool undertones'
-  },
-  {
-    key: 'warm_sunset',
-    label: 'Warm Sunset',
-    description: 'Orange and red tones with warm golden light'
-  },
-  {
-    key: 'monochrome_slate',
-    label: 'Monochrome Slate',
-    description: 'Black and white with subtle gray gradients'
-  },
-  {
-    key: 'neo_tokyo',
-    label: 'Neo-Tokyo',
-    description: 'Cyberpunk neon colors with electric highlights'
-  },
-  {
-    key: 'vintage_film',
-    label: 'Vintage Film',
-    description: 'Retro color grading with film grain aesthetic'
-  },
-  {
-    key: 'champagne_gold',
-    label: 'Champagne Gold',
-    description: 'Ivory, champagne, soft black, rose gold trim'
-  },
-  {
-    key: 'racing_heritage',
-    label: 'Racing Heritage',
-    description: 'Bold primary red, white, black, checkered accents'
-  },
-  {
-    key: 'graffiti_pop',
-    label: 'Graffiti Pop',
-    description: 'Lime green, cyan, magenta, matte grey'
-  },
-  {
-    key: 'earth_sand',
-    label: 'Earth & Sand',
-    description: 'Desert tan, muted olive, rust orange, sky blue'
-  },
-  {
-    key: 'holographic_fade',
-    label: 'Holographic Fade',
-    description: 'Shifting gradients of purple, teal, silver, neon'
-  }
-];
+// Palette presets removed - colors are now integrated into location-specific scenes
 
 export const CAR_YEARS = Array.from({ length: 30 }, (_, i) => (2024 - i).toString());
 
