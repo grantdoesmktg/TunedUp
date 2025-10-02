@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { VehicleSpec, BuildPlanResponse } from './types';
+import { UpgradePopup } from '../shared/components/UpgradePopup';
 import './styles.css';
 
 interface BuildPlannerAppProps {
@@ -31,6 +32,13 @@ const BuildPlannerApp: React.FC<BuildPlannerAppProps> = ({ onUseQuota, user }) =
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [carName, setCarName] = useState('');
+  const [showUpgradePopup, setShowUpgradePopup] = useState(false);
+  const [quotaData, setQuotaData] = useState<{
+    plan: string;
+    used: number;
+    limit: number;
+    message: string;
+  } | null>(null);
 
   // Check if data came from Performance Calculator
   const fromPerformanceCalc = new URLSearchParams(window.location.search).get('source') === 'performance-calculator';
@@ -155,6 +163,19 @@ const BuildPlannerApp: React.FC<BuildPlannerAppProps> = ({ onUseQuota, user }) =
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+
+        // Check if it's a quota exceeded error
+        if (errorData.error === 'QUOTA_EXCEEDED' && errorData.plan && errorData.used !== undefined && errorData.limit !== undefined) {
+          setQuotaData({
+            plan: errorData.plan,
+            used: errorData.used,
+            limit: errorData.limit,
+            message: errorData.message || 'Quota exceeded'
+          });
+          setShowUpgradePopup(true);
+          return; // Don't show generic error
+        }
+
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
@@ -484,6 +505,19 @@ const BuildPlannerApp: React.FC<BuildPlannerAppProps> = ({ onUseQuota, user }) =
             </div>
           </div>
         </div>
+      )}
+
+      {/* Upgrade Popup */}
+      {showUpgradePopup && quotaData && (
+        <UpgradePopup
+          isOpen={showUpgradePopup}
+          onClose={() => setShowUpgradePopup(false)}
+          plan={quotaData.plan}
+          used={quotaData.used}
+          limit={quotaData.limit}
+          toolType="build"
+          message={quotaData.message}
+        />
       )}
     </div>
   );
