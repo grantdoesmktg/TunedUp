@@ -496,6 +496,7 @@ Randomize
         images={imageHistory}
         isLoading={isLoading}
         currentImage={currentImage}
+        user={user}
       />
 
       {/* Community Link */}
