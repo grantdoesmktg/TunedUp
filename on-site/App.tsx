@@ -10,6 +10,7 @@ import {
 } from './constants';
 import { parseThemeFromUrl, applyTheme, postResizeMessage, generateImageId } from './utils';
 import PresetButtonGroup from './components/PresetButtonGroup';
+import LocationPresetGroup from './components/LocationPresetGroup';
 import AdvancedAccordion from './components/AdvancedAccordion';
 import ImageGallery from './components/ImageGallery';
 import { UpgradePopup } from '../shared/components/UpgradePopup';
@@ -453,7 +454,7 @@ Randomize
             </button>
           </div>
           
-          <PresetButtonGroup
+          <LocationPresetGroup
             title="Location"
             options={LOCATION_PRESETS}
             selectedKey={selectedPresets.location}
