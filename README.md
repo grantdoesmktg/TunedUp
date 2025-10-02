@@ -18,3 +18,4 @@ View your app in AI Studio: https://ai.studio/apps/drive/1oQqoj6hPMxaTeVI_hlOaEx
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+# Database updated to Vercel PostgreSQL Thu Oct  2 14:19:14 CDT 2025
