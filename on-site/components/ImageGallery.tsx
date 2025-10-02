@@ -94,11 +94,11 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, isLoading, currentI
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Add a description for your car (optional)..."
                 className="description-input"
-                rows={3}
-                maxLength={200}
+                rows={2}
+                maxLength={35}
               />
               <div className="character-count">
-                {description.length}/200 characters
+                {description.length}/35 characters
               </div>
 
               {uploadSuccess && (
