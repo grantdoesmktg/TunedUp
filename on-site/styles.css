@@ -245,6 +245,71 @@
   color: var(--color-bg);
 }
 
+/* Location Countries Grouping */
+.location-countries {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.country-group {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--color-secondary);
+  padding: 12px;
+}
+
+.country-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.country-flag {
+  font-size: 1.2rem;
+}
+
+.country-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.country-locations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.location-button {
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+  min-width: 120px;
+  text-align: center;
+}
+
+.location-button:hover {
+  border-color: var(--color-primary);
+  background: rgba(0, 194, 255, 0.1);
+}
+
+.location-button.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-bg);
+}
+
 /* Advanced Accordion */
 .advanced-accordion {
   background: var(--color-secondary);
@@ -605,6 +670,21 @@
   
   .gallery-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Mobile-friendly country groups */
+  .country-group {
+    padding: 8px;
+  }
+
+  .country-locations {
+    gap: 4px;
+  }
+
+  .location-button {
+    min-width: 100px;
+    font-size: 0.7rem;
+    padding: 5px 8px;
   }
 }
 
