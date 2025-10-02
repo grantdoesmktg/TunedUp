@@ -101,11 +101,35 @@ function renderPrompt(promptSpec: PromptSpec, hasReferenceImage: boolean = false
   // Location
   if (scene.locationKey) {
     const locationPrompts = {
-      scottish_hills: ', set against rolling green Scottish highlands with ancient stone castles visible in the misty distance',
-      us_canyons: ', positioned in dramatic American canyon landscape with red rock formations and desert terrain',
-      italian_cobblestone: ', parked on historic Italian cobblestone streets with Renaissance architecture and warm Mediterranean lighting',
-      japanese_nightlife: ', on a neon-lit Japanese city street with modern skyscrapers and vibrant urban nightlife in the background',
-      german_city: ', in a clean modern German city setting with efficient architecture and contemporary urban design'
+      // Japan
+      tokyo_shibuya: ', in Tokyo\'s neon-lit Shibuya district with bustling nightlife, JDM street racers, and glowing billboards. The scene features neon pink, electric blue, and purple lighting with cool black asphalt showing wet reflections. The atmosphere is fast-paced, edgy, youthful, and slightly rebellious with tuned imports and late-night car meets',
+      mount_fuji_hakone: ', on mountain roads twisting around lush green slopes with Mount Fuji\'s snow-capped peak in the background. Natural greens, crisp whites, misty grays, and sky blue dominate the scene. The atmosphere is serene yet adrenaline-fueled with lightweight sports cars perfect for touge drifting and carving mountain corners',
+      osaka_bay: ', with an industrial port city backdrop featuring bridges over water and gritty warehouses. Steel gray, muted blue, and sunset orange glows create a rough, underground, hardworking atmosphere with urban grit perfect for street car gatherings and drag racing on industrial roads',
+      kyoto_outskirts: ', near ancient shrines with narrow streets and traditional lanterns creating harmony between tradition and modernity. Deep reds, gold, and earth tones contrast with cool black asphalt. The elegant, thoughtful atmosphere is perfect for respectful automotive showcases and culture-rich photo opportunities',
+
+      // Germany
+      munich_alps: ', in sleek modern Munich where BMW headquarters meets pristine alpine landscapes. Crisp white, alpine green, silver, and deep blue create a clean, precise atmosphere of engineered perfection, perfect for Autobahn performance and mountain drives showcasing BMW pride',
+      stuttgart: ', at the prestigious headquarters of Porsche and Mercedes with polished industrial architecture. Metallic silvers, glassy blues, matte black, and industrial grays create a luxurious, disciplined atmosphere celebrating serious German engineering and European performance pedigree',
+      berlin: ', against urban graffiti walls with underground techno vibes and gritty nightlife. Multicolored graffiti, concrete gray, and neon pops create a rebellious, creative, counterculture atmosphere perfect for street modifications and creative automotive customizations',
+      nurburgring: ', at the legendary race track in the Eifel forest with misty mornings and the roar of engines. Dark green forest, asphalt gray, and racing red and white curbs create an intense, legendary atmosphere that\'s the mecca for performance tuning and automotive testing',
+
+      // United States
+      los_angeles: ', on palm-lined streets with sunshine and Hollywood glitz along coastal highways. Golden sun, ocean blue, and pastel pink/orange skies create a laid-back but stylish atmosphere perfect for lowriders, imports, West Coast car meets, and movie magic glamour',
+      detroit: ', in an industrial setting with factory steel showcasing muscle car roots and heritage. Rust red, brick brown, and industrial gray create a tough, resilient, blue-collar atmosphere celebrating classic American muscle, drag strips, and factory-born automotive heritage',
+      las_vegas_desert: ', contrasting Strip neon lights against vast desert highways. Neon pink/purple, golden desert beige, and midnight blue create a high-stakes, over-the-top atmosphere perfect for exotic cars, drag racing, and daring desert endurance runs',
+      miami: ', with tropical nightlife and pastel art deco architecture along the flashy oceanfront. Aqua teal, hot pink, pastel yellow, and coral create a flashy, energetic, luxurious party-ready atmosphere perfect for supercars, flashy modifications, and coastal cruising',
+
+      // South Korea
+      seoul_gangnam: ', surrounded by futuristic skyscrapers in Seoul\'s Gangnam district with neon-lit nightlife and K-pop modernity. Neon cyan, magenta, chrome silver, and black glass create a high-tech, trendy, ultra-modern atmosphere perfect for luxury sedans, EVs, and futuristic modification culture',
+      busan: ', with coastal bridges and bustling port atmosphere against mountain tunnels. Ocean blue, steel gray, and golden sunlight create a lively, energetic coastal freedom atmosphere perfect for street racing through tunnels and scenic coastal drives',
+      incheon: ', at the futuristic airport hub with sprawling modern architecture. White steel, glass blue, and soft lighting create a clean, efficient, international atmosphere perfect for EV dominance and futuristic automotive testing grounds',
+      jeju_island: ', on volcanic coastline with rolling hills and natural beauty. Lava black, ocean turquoise, and green fields create an adventurous, scenic, escapist atmosphere perfect for road trips, off-road adventures, and relaxed-pace touring',
+
+      // Italy
+      maranello: ', in Ferrari\'s red heartland with Italian countryside prestige and racing heritage. Ferrari red, warm terracotta, and Tuscan gold create a passionate, proud, elegant atmosphere celebrating Ferrari legacy, test roads, and automotive heritage museums',
+      santagata_bolognese: ', at Lamborghini\'s home where rural landscapes meet luxury estates. Lamborghini yellow, lush green fields, and rustic stone create a bold, extravagant, dramatic atmosphere with supercars roaring against the quiet countryside backdrop',
+      modena: ', at the origins of Maserati and Pagani with charming historic town squares. Deep blues, warm brick red, and gold accents create a refined, artistic, historic atmosphere celebrating artisan craftsmanship and exotic boutique supercars',
+      amalfi_coast: ', on cliffside roads with Mediterranean sea breeze and pastel villages. Turquoise sea, pastel yellows/pinks, and sunset gold create a romantic, adventurous, luxurious atmosphere perfect for coastal drives in convertibles and Italian classics'
     };
     prompt += locationPrompts[scene.locationKey as keyof typeof locationPrompts] || '';
   }
@@ -345,10 +369,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function generatePlaceholderImage(
-  width: number, 
-  height: number, 
-  promptSpec: PromptSpec, 
-  description?: string
+  width: number,
+  height: number,
+  promptSpec: PromptSpec
 ): Promise<string> {
   // Create a more sophisticated placeholder using SVG converted to base64
   // This will show actual car information instead of a transparent pixel
