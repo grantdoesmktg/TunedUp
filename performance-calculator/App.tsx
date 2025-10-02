@@ -3,6 +3,7 @@ import type { CarInput, AIResponse } from './types';
 import { InputForm } from './components/InputForm';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ResultsDisplay } from './components/ResultsDisplay';
+import { UpgradePopup } from '../shared/components/UpgradePopup';
 import { estimatePerformance } from './services/openaiService';
 import { DRIVETRAIN_OPTIONS, TRANSMISSION_OPTIONS, TIRE_TYPE_OPTIONS, FUEL_TYPE_OPTIONS, LAUNCH_TECHNIQUE_OPTIONS } from './constants';
 
@@ -30,6 +31,13 @@ const App: React.FC<AppProps> = ({ onUseQuota, user }) => {
   const [showResults, setShowResults] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [showUpgradePopup, setShowUpgradePopup] = useState(false);
+  const [quotaData, setQuotaData] = useState<{
+    plan: string;
+    used: number;
+    limit: number;
+    message: string;
+  } | null>(null);
 
   // Send height updates to parent window for iframe resizing
   useEffect(() => {
@@ -94,7 +102,17 @@ const App: React.FC<AppProps> = ({ onUseQuota, user }) => {
       setAiResponse(response);
       setShowResults(true);
     } catch (err: any) {
-      if (err.message === 'Quota exceeded') {
+      // Check if it's a quota exceeded error with upgrade popup data
+      if (err.quotaData && err.quotaData.plan && err.quotaData.used !== undefined && err.quotaData.limit !== undefined) {
+        setQuotaData({
+          plan: err.quotaData.plan,
+          used: err.quotaData.used,
+          limit: err.quotaData.limit,
+          message: err.quotaData.message || 'Quota exceeded'
+        });
+        setShowUpgradePopup(true);
+        return; // Don't show generic error
+      } else if (err.message === 'Quota exceeded') {
         setError('You have exceeded your monthly quota. Please upgrade your plan to continue.');
       } else {
         setError(err.message || 'An unknown error occurred.');
@@ -194,6 +212,19 @@ const App: React.FC<AppProps> = ({ onUseQuota, user }) => {
       <footer className="text-center py-4 text-textSecondary text-sm">
         <p>Powered by Gemini AI. Estimates are for entertainment purposes only.</p>
       </footer>
+
+      {/* Upgrade Popup */}
+      {showUpgradePopup && quotaData && (
+        <UpgradePopup
+          isOpen={showUpgradePopup}
+          onClose={() => setShowUpgradePopup(false)}
+          plan={quotaData.plan}
+          used={quotaData.used}
+          limit={quotaData.limit}
+          toolType="performance"
+          message={quotaData.message}
+        />
+      )}
     </div>
   );
 };

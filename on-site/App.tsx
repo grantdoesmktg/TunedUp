@@ -13,6 +13,7 @@ import { parseThemeFromUrl, applyTheme, postResizeMessage, generateImageId } fro
 import PresetButtonGroup from './components/PresetButtonGroup';
 import AdvancedAccordion from './components/AdvancedAccordion';
 import ImageGallery from './components/ImageGallery';
+import { UpgradePopup } from '../shared/components/UpgradePopup';
 import './styles.css';
 
 interface OnSiteAppProps {
@@ -58,6 +59,13 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
   const [imageHistory, setImageHistory] = useState<GeneratedImage[]>([]);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [referenceFile, setReferenceFile] = useState<File | null>(null);
+  const [showUpgradePopup, setShowUpgradePopup] = useState(false);
+  const [quotaData, setQuotaData] = useState<{
+    plan: string;
+    used: number;
+    limit: number;
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     // Apply theme from URL params
@@ -175,6 +183,19 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+
+        // Check if it's a quota exceeded error
+        if (errorData.error === 'QUOTA_EXCEEDED' && errorData.plan && errorData.used !== undefined && errorData.limit !== undefined) {
+          setQuotaData({
+            plan: errorData.plan,
+            used: errorData.used,
+            limit: errorData.limit,
+            message: errorData.message || 'Quota exceeded'
+          });
+          setShowUpgradePopup(true);
+          return; // Don't show generic error
+        }
+
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
@@ -524,6 +545,19 @@ Randomize
           <span>→</span>
         </a>
       </div>
+
+      {/* Upgrade Popup */}
+      {showUpgradePopup && quotaData && (
+        <UpgradePopup
+          isOpen={showUpgradePopup}
+          onClose={() => setShowUpgradePopup(false)}
+          plan={quotaData.plan}
+          used={quotaData.used}
+          limit={quotaData.limit}
+          toolType="image"
+          message={quotaData.message}
+        />
+      )}
     </div>
   );
 };
