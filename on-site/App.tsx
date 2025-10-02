@@ -9,8 +9,8 @@ import {
   DEFAULT_OUTPUT
 } from './constants';
 import { parseThemeFromUrl, applyTheme, postResizeMessage, generateImageId } from './utils';
-import PresetButtonGroup from './components/PresetButtonGroup';
 import LocationPresetGroup from './components/LocationPresetGroup';
+import TimePresetGroup from './components/TimePresetGroup';
 import AdvancedAccordion from './components/AdvancedAccordion';
 import ImageGallery from './components/ImageGallery';
 import { UpgradePopup } from '../shared/components/UpgradePopup';
@@ -461,7 +461,7 @@ Randomize
             onSelect={(key) => handlePresetSelect('location', key)}
           />
 
-          <PresetButtonGroup
+          <TimePresetGroup
             title="Time"
             options={TIME_PRESETS}
             selectedKey={selectedPresets.time}
