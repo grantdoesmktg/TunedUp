@@ -39,16 +39,26 @@ async function ensureLikesTable() {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { action } = req.query
+  try {
+    console.log('Community API handler called with action:', req.query.action)
+    const { action } = req.query
 
-  if (action === 'upload') {
-    return handleUpload(req, res)
-  } else if (action === 'images') {
-    return handleGetImages(req, res)
-  } else if (action === 'like') {
-    return handleLike(req, res)
-  } else {
-    return res.status(400).json({ error: 'Invalid action' })
+    if (action === 'upload') {
+      return handleUpload(req, res)
+    } else if (action === 'images') {
+      return handleGetImages(req, res)
+    } else if (action === 'like') {
+      console.log('Calling handleLike...')
+      return handleLike(req, res)
+    } else {
+      return res.status(400).json({ error: 'Invalid action' })
+    }
+  } catch (error: any) {
+    console.error('Handler error:', error)
+    return res.status(500).json({
+      error: 'Handler failed',
+      details: error.message
+    })
   }
 }
 
