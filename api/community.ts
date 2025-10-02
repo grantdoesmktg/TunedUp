@@ -203,37 +203,32 @@ async function handleLike(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Ensure likes table exists
-    await ensureLikesTable()
+    console.log('Starting handleLike function')
 
-    // Get image ID from request body
+    // Get image ID from request body first
     const { imageId } = req.body
+    console.log('Received imageId:', imageId)
 
     if (!imageId) {
       return res.status(400).json({ error: 'Image ID is required' })
     }
 
-    // Check if image exists
-    const image = await prisma.communityImage.findUnique({
-      where: { id: imageId }
-    })
-
-    if (!image) {
-      return res.status(404).json({ error: 'Image not found' })
-    }
-
-    // Get user email from session (optional - likes can be anonymous)
+    // Get user email from session first
     let userEmail = null
     try {
+      console.log('Attempting session verification...')
       const sessionCookie = req.headers.cookie
         ?.split(';')
         .find(c => c.trim().startsWith('session=') || c.trim().startsWith('_vercel_jwt='))
         ?.split('=')[1]
 
+      console.log('Session cookie found:', !!sessionCookie)
+
       if (sessionCookie) {
         const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
         const { payload } = await jwtVerify(sessionCookie.split(',')[0], secret)
         userEmail = payload.email as string
+        console.log('Session verified for user:', userEmail)
       }
     } catch (error) {
       // If session verification fails, continue as anonymous user
@@ -242,8 +237,26 @@ async function handleLike(req: VercelRequest, res: VercelResponse) {
 
     // Require authentication for likes to prevent spam
     if (!userEmail) {
+      console.log('No userEmail found, returning 401')
       return res.status(401).json({ error: 'You must be logged in to like images' })
     }
+
+    // Ensure likes table exists
+    console.log('Ensuring likes table exists...')
+    await ensureLikesTable()
+    console.log('Likes table ensured')
+
+    // Check if image exists
+    console.log('Checking if image exists...')
+    const image = await prisma.communityImage.findUnique({
+      where: { id: imageId }
+    })
+
+    if (!image) {
+      console.log('Image not found')
+      return res.status(404).json({ error: 'Image not found' })
+    }
+    console.log('Image found:', image.id)
 
     // Check if user already liked this image (prevent spam)
     try {
@@ -289,10 +302,13 @@ async function handleLike(req: VercelRequest, res: VercelResponse) {
       likesCount: updatedImage.likesCount
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Like image error:', error)
+    console.error('Error message:', error.message)
+    console.error('Error stack:', error.stack)
     res.status(500).json({
-      error: 'Failed to like image'
+      error: 'Failed to process like request',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
   }
 }
