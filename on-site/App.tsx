@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { CarSpec, PromptSpec, GeneratedImage, CameraOptions, StyleOptions, OutputOptions } from './types';
-import { 
-  LOCATION_PRESETS, 
-  TIME_PRESETS, 
-  PALETTE_PRESETS,
+import {
+  LOCATION_PRESETS,
+  TIME_PRESETS,
   WHEEL_COLORS,
   DEFAULT_CAMERA,
   DEFAULT_STYLE,
@@ -46,7 +45,6 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
   const [selectedPresets, setSelectedPresets] = useState<{
     location?: string;
     time?: string;
-    palette?: string;
   }>({});
 
   const [camera, setCamera] = useState<CameraOptions>(DEFAULT_CAMERA);
@@ -139,8 +137,7 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
     car: carSpec,
     scene: {
       locationKey: selectedPresets.location,
-      timeKey: selectedPresets.time,
-      paletteKey: selectedPresets.palette
+      timeKey: selectedPresets.time
     },
     camera,
     style
@@ -235,7 +232,7 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
     }
   };
 
-  const handlePresetSelect = (category: 'location' | 'time' | 'palette', key: string) => {
+  const handlePresetSelect = (category: 'location' | 'time', key: string) => {
     setSelectedPresets(prev => ({
       ...prev,
       [category]: prev[category] === key ? undefined : key
@@ -245,12 +242,10 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
   const handleRandomize = () => {
     const randomLocation = LOCATION_PRESETS[Math.floor(Math.random() * LOCATION_PRESETS.length)].key;
     const randomTime = TIME_PRESETS[Math.floor(Math.random() * TIME_PRESETS.length)].key;
-    const randomPalette = PALETTE_PRESETS[Math.floor(Math.random() * PALETTE_PRESETS.length)].key;
-    
+
     setSelectedPresets({
       location: randomLocation,
-      time: randomTime,
-      palette: randomPalette
+      time: randomTime
     });
   };
 
@@ -472,12 +467,6 @@ Randomize
             onSelect={(key) => handlePresetSelect('time', key)}
           />
 
-          <PresetButtonGroup
-            title="Palette"
-            options={PALETTE_PRESETS}
-            selectedKey={selectedPresets.palette}
-            onSelect={(key) => handlePresetSelect('palette', key)}
-          />
         </div>
 
         <AdvancedAccordion

@@ -51,7 +51,6 @@ export interface PromptSpec {
   scene: {
     locationKey?: string;
     timeKey?: string;
-    paletteKey?: string;
   };
   camera?: CameraOptions;
   style?: StyleOptions;
