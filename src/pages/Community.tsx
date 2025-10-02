@@ -32,14 +32,18 @@ export default function Community() {
     setTimeout(() => setToast(null), 4000) // Auto-hide after 4 seconds
   }
 
-  const fetchImages = async (page: number = 1) => {
+  const fetchImages = async (page: number = 1, append: boolean = false) => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/community?action=images&page=${page}&limit=12`)
+      const response = await fetch(`/api/community?action=images&page=${page}&limit=40`)
       const data = await response.json()
 
       if (response.ok) {
-        setImages(data.images)
+        if (append) {
+          setImages(prev => [...prev, ...data.images])
+        } else {
+          setImages(data.images)
+        }
         setPagination(data.pagination)
       }
     } catch (error) {
@@ -49,9 +53,17 @@ export default function Community() {
     }
   }
 
+  const handleLoadMore = () => {
+    if (pagination?.hasNext) {
+      const nextPage = currentPage + 1
+      setCurrentPage(nextPage)
+      fetchImages(nextPage, true) // append = true
+    }
+  }
+
   useEffect(() => {
-    fetchImages(currentPage)
-  }, [currentPage])
+    fetchImages(1) // Always start with page 1
+  }, [])
 
 
   const handleLike = async (imageId: string) => {
@@ -176,7 +188,7 @@ export default function Community() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-4 gap-6">
               {images.map((image) => (
                 <div key={image.id} className="bg-secondary rounded-xl overflow-hidden border border-divider hover:border-primary transition-colors">
                   <div className="aspect-square">
@@ -221,26 +233,14 @@ export default function Community() {
               ))}
             </div>
 
-            {pagination && pagination.totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 mt-12">
+            {pagination && pagination.hasNext && (
+              <div className="flex justify-center mt-12">
                 <button
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={!pagination.hasPrev}
-                  className="px-4 py-2 border border-divider rounded-lg text-textSecondary hover:text-textPrimary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  onClick={handleLoadMore}
+                  disabled={loading}
+                  className="bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white px-8 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Previous
-                </button>
-
-                <span className="text-textSecondary">
-                  Page {pagination.currentPage} of {pagination.totalPages}
-                </span>
-
-                <button
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={!pagination.hasNext}
-                  className="px-4 py-2 border border-divider rounded-lg text-textSecondary hover:text-textPrimary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Next
+                  {loading ? 'Loading...' : 'Load More'}
                 </button>
               </div>
             )}
