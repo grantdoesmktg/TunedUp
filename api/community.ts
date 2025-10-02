@@ -271,14 +271,28 @@ async function handleLike(req: VercelRequest, res: VercelResponse) {
     // Check if user already liked this image (prevent spam)
     try {
       console.log('Checking for existing like:', { imageId, userEmail })
-      const existingLike = await prisma.communityImageLike.findUnique({
-        where: {
-          imageId_userEmail: {
-            imageId: imageId,
-            userEmail: userEmail
+
+      // Use raw SQL query as fallback if Prisma model doesn't exist
+      let existingLike
+      try {
+        existingLike = await prisma.communityImageLike.findUnique({
+          where: {
+            imageId_userEmail: {
+              imageId: imageId,
+              userEmail: userEmail
+            }
           }
-        }
-      })
+        })
+      } catch (prismaError: any) {
+        console.log('Prisma model not available, using raw SQL:', prismaError.message)
+        // Use raw SQL as fallback
+        const result = await prisma.$queryRaw`
+          SELECT * FROM community_image_likes
+          WHERE "imageId" = ${imageId} AND "userEmail" = ${userEmail}
+          LIMIT 1
+        `
+        existingLike = Array.isArray(result) && result.length > 0 ? result[0] : null
+      }
 
       if (existingLike) {
         console.log('User already liked this image:', existingLike)
@@ -287,12 +301,21 @@ async function handleLike(req: VercelRequest, res: VercelResponse) {
 
       console.log('Creating new like record:', { imageId, userEmail })
       // Create like record
-      await prisma.communityImageLike.create({
-        data: {
-          imageId: imageId,
-          userEmail: userEmail
-        }
-      })
+      try {
+        await prisma.communityImageLike.create({
+          data: {
+            imageId: imageId,
+            userEmail: userEmail
+          }
+        })
+      } catch (prismaError: any) {
+        console.log('Prisma create failed, using raw SQL:', prismaError.message)
+        // Use raw SQL as fallback
+        await prisma.$executeRaw`
+          INSERT INTO community_image_likes ("id", "imageId", "userEmail", "createdAt")
+          VALUES (${`cuid_${Date.now()}_${Math.random().toString(36).substring(2)}`}, ${imageId}, ${userEmail}, ${new Date()})
+        `
+      }
       console.log('Like record created successfully')
     } catch (error: any) {
       console.error('Error in like spam prevention:', error)
