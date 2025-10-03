@@ -75,25 +75,8 @@ export const AuthenticatedWidget: React.FC<AuthenticatedWidgetProps> = ({
       throw new Error('Quota exceeded')
     }
 
-    try {
-      const response = await fetch('/api/increment-usage', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: user.email,
-          toolType: toolType
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to increment usage')
-      }
-    } catch (error) {
-      console.error('Usage increment failed:', error)
-      // Don't throw here - graceful degradation
-    }
+    // Note: Usage increment is handled by the backend API endpoints (performance.ts, etc.)
+    // This function just checks if the user has quota available
   }
 
   return (
