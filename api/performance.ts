@@ -163,7 +163,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         temperature: 0.3,
         maxOutputTokens: 1500,
         responseMimeType: "application/json",
-responseSchema: {
+        responseSchema: {
           type: SchemaType.OBJECT,
           properties: {
             stockPerformance: {
