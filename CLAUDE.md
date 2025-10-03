@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 TunedUp is a collection of automotive widgets built with React that can be embedded into websites via iframes. The project uses a single Vercel deployment with multiple routes to serve different widgets. Currently includes:
 
-- **Performance Calculator**: An automotive performance estimation widget that uses OpenAI's GPT-4 mini to analyze car modifications and predict performance metrics including horsepower, wheel horsepower (WHP), and 0-60 mph times.
+- **Performance Calculator**: An automotive performance estimation widget that uses Google's Gemini 2.5 Pro to analyze car modifications and predict performance metrics including horsepower, wheel horsepower (WHP), and 0-60 mph times.
 
 ## Development Commands
 
@@ -17,10 +17,13 @@ TunedUp is a collection of automotive widgets built with React that can be embed
 
 ## Environment Setup
 
-The application requires an OpenAI API key to function:
-- Set `OPENAI_API_KEY` in `.env.local` for local development
-- For client-side access, the API key is loaded via `VITE_OPENAI_API_KEY` in the Vite config
-- The Vite config handles both `API_KEY` and `OPENAI_API_KEY` environment variables for compatibility
+The application requires a Gemini API key to function:
+- Set `GEMINI_API_KEY` in `.env.local` for local development
+- **IMPORTANT**: Always sync local environment variables with Vercel production
+  - Run `vercel env pull .env.vercel` to get latest Vercel environment variables
+  - Replace `.env.local` with `.env.vercel` contents to ensure local matches production
+  - Update `.env` file with the `DATABASE_URL` from Vercel for Prisma Studio to work correctly
+- The application uses Gemini 2.5 Pro model exclusively (no OpenAI)
 
 ## Project Structure
 
@@ -64,10 +67,11 @@ Each widget lives in its own folder:
 - **LoadingScreen.tsx**: Loading state with random car facts
 
 ### Services
-- **openaiService.ts**: OpenAI GPT-4 mini integration for performance estimation
+- **openaiService.ts**: Gemini API integration for performance estimation (note: legacy filename)
   - Creates detailed prompts for AI analysis
   - Handles JSON parsing and error handling
   - Uses structured JSON response format for reliable parsing
+  - Actual backend API is in `/api/performance.ts` which calls Gemini 2.5 Pro
 
 ### Data Management
 - Uses localStorage for data persistence (user profiles, saved builds, preferences)
@@ -131,10 +135,11 @@ Widgets are designed to be embedded in iframes on external sites:
 - Node types included for environment variable access
 
 ### API Integration
-- Uses OpenAI SDK for GPT-4 mini model
-- JSON response parsing with structured output format
-- Client-side API calls with browser compatibility enabled
+- Uses Google Generative AI SDK for Gemini 2.5 Pro model
+- JSON response parsing with structured output format (`responseMimeType: "application/json"`)
+- Backend API endpoints handle all AI calls (no client-side API calls)
 - Form validation and submission error handling
+- Usage tracking integrated into backend API endpoints (no separate increment endpoint needed)
 
 ### Error Handling
 - API key validation and user-friendly error messages
