@@ -162,36 +162,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       generationConfig: {
         temperature: 0.3,
         maxOutputTokens: 1500,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: SchemaType.OBJECT,
-          properties: {
-            stockPerformance: {
-              type: SchemaType.OBJECT,
-              properties: {
-                horsepower: { type: SchemaType.NUMBER },
-                whp: { type: SchemaType.NUMBER },
-                zeroToSixty: { type: SchemaType.NUMBER }
-              },
-              required: ["horsepower", "whp", "zeroToSixty"]
-            },
-            estimatedPerformance: {
-              type: SchemaType.OBJECT,
-              properties: {
-                horsepower: { type: SchemaType.NUMBER },
-                whp: { type: SchemaType.NUMBER },
-                zeroToSixty: { type: SchemaType.NUMBER }
-              },
-              required: ["horsepower", "whp", "zeroToSixty"]
-            },
-            explanation: { type: SchemaType.STRING },
-            confidence: {
-              type: SchemaType.STRING,
-              enum: ["Low", "Medium", "High"]
-            }
-          },
-          required: ["stockPerformance", "estimatedPerformance", "explanation", "confidence"]
-        }
+        responseMimeType: "application/json"
       }
     });
 
