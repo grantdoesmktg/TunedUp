@@ -149,12 +149,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Combine system and user prompts for Gemini
     const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
-    // Set a timeout for the Gemini API call
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Gemini API request timed out after 25 seconds')), 25000)
-    );
-
-    const generationPromise = model.generateContent({
+    const result = await model.generateContent({
       contents: [{
         role: 'user',
         parts: [{ text: fullPrompt }]
@@ -165,8 +160,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         responseMimeType: "application/json"
       }
     });
-
-    const result = await Promise.race([generationPromise, timeoutPromise]) as any;
 
     const content = result.response.text();
     if (!content) {
