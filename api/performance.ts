@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { checkQuota, incrementUsage } from '../lib/quota.js';
 
 // Types for the request body
@@ -159,29 +159,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         maxOutputTokens: 3000,
         responseMimeType: "application/json",
 responseSchema: {
-          type: "OBJECT" as const,
+          type: SchemaType.OBJECT,
           properties: {
             stockPerformance: {
-              type: "OBJECT" as const,
+              type: SchemaType.OBJECT,
               properties: {
-                horsepower: { type: "NUMBER" as const },
-                whp: { type: "NUMBER" as const },
-                zeroToSixty: { type: "NUMBER" as const }
+                horsepower: { type: SchemaType.NUMBER },
+                whp: { type: SchemaType.NUMBER },
+                zeroToSixty: { type: SchemaType.NUMBER }
               },
               required: ["horsepower", "whp", "zeroToSixty"]
             },
             estimatedPerformance: {
-              type: "OBJECT" as const,
+              type: SchemaType.OBJECT,
               properties: {
-                horsepower: { type: "NUMBER" as const },
-                whp: { type: "NUMBER" as const },
-                zeroToSixty: { type: "NUMBER" as const }
+                horsepower: { type: SchemaType.NUMBER },
+                whp: { type: SchemaType.NUMBER },
+                zeroToSixty: { type: SchemaType.NUMBER }
               },
               required: ["horsepower", "whp", "zeroToSixty"]
             },
-            explanation: { type: "STRING" as const },
+            explanation: { type: SchemaType.STRING },
             confidence: {
-              type: "STRING" as const,
+              type: SchemaType.STRING,
               enum: ["Low", "Medium", "High"]
             }
           },
