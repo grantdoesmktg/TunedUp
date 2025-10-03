@@ -142,7 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Initialize Gemini AI
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
     const { systemPrompt, userPrompt } = createPrompts(carInput);
     
