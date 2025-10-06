@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { checkQuota, incrementUsage } from '../lib/quota.js';
+import { setCorsHeaders } from '../lib/corsConfig.js';
 
 // Types for the request body
 interface CarInput {
@@ -96,10 +97,8 @@ const createPrompts = (carInput: CarInput): { systemPrompt: string, userPrompt: 
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // Enable CORS with restrictions
+  setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();

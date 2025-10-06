@@ -1,24 +1,37 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient } from '@prisma/client'
 import { put } from '@vercel/blob'
+import { jwtVerify } from 'jose'
+import { setCorsHeaders } from '../lib/corsConfig.js'
 
 const prisma = new PrismaClient()
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-user-email')
+  // Enable CORS with restrictions
+  setCorsHeaders(req, res)
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
   }
 
-  const userEmail = req.headers['x-user-email'] as string
+  // Verify JWT authentication instead of trusting header
+  const sessionCookie = req.headers.cookie
+    ?.split(';')
+    .find(c => c.trim().startsWith('session=') || c.trim().startsWith('_vercel_jwt='))
+    ?.split('=')[1]
 
-  if (!userEmail) {
-    return res.status(401).json({ error: 'User email required' })
+  if (!sessionCookie) {
+    return res.status(401).json({ error: 'Not authenticated' })
   }
+
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
+    const { payload } = await jwtVerify(sessionCookie.split(',')[0], secret)
+    const userEmail = payload.email as string
+
+    if (!userEmail) {
+      return res.status(401).json({ error: 'Invalid session' })
+    }
 
   try {
     if (req.method === 'GET') {
@@ -171,5 +184,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error) {
     console.error('Saved cars API error:', error)
     return res.status(500).json({ error: 'Internal server error' })
+  }
+  } catch (authError) {
+    console.error('Authentication error:', authError)
+    return res.status(401).json({ error: 'Invalid session' })
   }
 }
