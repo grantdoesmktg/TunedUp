@@ -12,17 +12,17 @@ const BuildPlannerApp: React.FC<BuildPlannerAppProps> = ({ onUseQuota, user }) =
   const [vehicleSpec, setVehicleSpec] = useState<VehicleSpec>(() => {
     // Check URL parameters for vehicle data from Performance Calculator
     const urlParams = new URLSearchParams(window.location.search);
-    
+
     return {
-      year: urlParams.get('year') || '2018',
-      make: urlParams.get('make') || 'Infiniti',
-      model: urlParams.get('model') || 'Q50',
-      trim: urlParams.get('trim') || '3.0t Sport',
+      year: urlParams.get('year') || '',
+      make: urlParams.get('make') || '',
+      model: urlParams.get('model') || '',
+      trim: urlParams.get('trim') || '',
       question: ''
     };
   });
 
-  const [budget, setBudget] = useState<string>('$2,500');
+  const [budget, setBudget] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);

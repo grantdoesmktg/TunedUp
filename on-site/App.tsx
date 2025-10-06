@@ -25,12 +25,12 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
   const [carSpec, setCarSpec] = useState<CarSpec>(() => {
     // Check URL parameters for car data from Performance Calculator
     const urlParams = new URLSearchParams(window.location.search);
-    
+
     return {
-      year: urlParams.get('year') || '2018',
-      make: urlParams.get('make') || 'Infiniti',
-      model: urlParams.get('model') || 'Q50',
-      color: urlParams.get('color') || 'Liquid Platinum',
+      year: urlParams.get('year') || '',
+      make: urlParams.get('make') || '',
+      model: urlParams.get('model') || '',
+      color: urlParams.get('color') || '',
       wheelsColor: 'Black',
       addModel: false,
       deBadged: false,
