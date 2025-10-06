@@ -26,9 +26,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false)
   const [savedCar, setSavedCar] = useState<SavedCar | null>(null)
   const [loadingCar, setLoadingCar] = useState(false)
-  const [showImageUploadModal, setShowImageUploadModal] = useState(false)
-  const [uploadingImage, setUploadingImage] = useState(false)
-  const [uploadMessage, setUploadMessage] = useState<string | null>(null)
 
   // Check for success/canceled params from Stripe - MUST be before any early returns
   useEffect(() => {
@@ -72,59 +69,6 @@ export default function Dashboard() {
     }
   }
 
-  const handleImageUpload = async (file: File) => {
-    if (!user?.email) {
-      setUploadMessage('Please log in first')
-      return
-    }
-
-    if (!savedCar) {
-      setUploadMessage('Please save a car from Performance Calculator or Build Planner first')
-      return
-    }
-
-    setUploadingImage(true)
-    setUploadMessage(null)
-
-    try {
-      // Convert file to base64
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader()
-        reader.onload = () => {
-          const result = reader.result as string
-          resolve(result.split(',')[1]) // Remove the data:image/jpeg;base64, prefix
-        }
-        reader.readAsDataURL(file)
-      })
-
-      const response = await fetch('/api/saved-cars?action=upload-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-email': user.email
-        },
-        body: JSON.stringify({
-          file: base64,
-          filename: file.name
-        })
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setUploadMessage('Image uploaded successfully!')
-        setShowImageUploadModal(false)
-        // Refresh the saved car data to show the new image
-        fetchSavedCar()
-      } else {
-        setUploadMessage(data.error || 'Failed to upload image')
-      }
-    } catch (error) {
-      setUploadMessage('Network error. Please try again.')
-    } finally {
-      setUploadingImage(false)
-    }
-  }
 
   // Show loading state while checking authentication
   if (authLoading) {
@@ -302,18 +246,12 @@ export default function Dashboard() {
                 </div>
 
                 {/* Upload Options */}
-                <div className="space-y-2">
+                <div>
                   <button
                     onClick={() => window.location.href = '/w/on-site/embed'}
                     className="w-full bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-2 px-4 rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
                   >
                     Generate Image
-                  </button>
-                  <button
-                    onClick={() => setShowImageUploadModal(true)}
-                    className="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md text-sm font-medium"
-                  >
-                    Upload Image
                   </button>
                 </div>
               </div>
@@ -347,20 +285,14 @@ export default function Dashboard() {
                   <div className="text-4xl mb-4">📸</div>
                   <h3 className="text-lg font-semibold text-textPrimary mb-2">Go generate something cool 😉</h3>
                   <p className="text-textSecondary text-sm mb-4">
-                    Create or upload an image of your dream car
+                    Generate an image of your dream car
                   </p>
-                  <div className="space-y-2">
+                  <div>
                     <button
                       onClick={() => window.location.href = '/w/on-site/embed'}
                       className="w-full bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white py-2 px-4 rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
                     >
                       Generate Image
-                    </button>
-                    <button
-                      onClick={() => setShowImageUploadModal(true)}
-                      className="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md text-sm font-medium"
-                    >
-                      Upload Image
                     </button>
                   </div>
                 </div>
@@ -472,73 +404,6 @@ export default function Dashboard() {
           onClose={() => setShowUpgradeModal(false)}
           currentPlan={user.planCode}
         />
-
-        {/* Image Upload Modal */}
-        {showImageUploadModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Upload Car Image</h3>
-                <button
-                  onClick={() => {
-                    setShowImageUploadModal(false)
-                    setUploadMessage(null)
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="mb-4">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      handleImageUpload(file)
-                    }
-                  }}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Supports JPG, PNG, WebP files up to 5MB
-                </p>
-              </div>
-
-              {uploadMessage && (
-                <div className={`mb-4 p-3 rounded-md text-sm ${
-                  uploadMessage.includes('success')
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {uploadMessage}
-                </div>
-              )}
-
-              {uploadingImage && (
-                <div className="text-center py-4">
-                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  <p className="mt-2 text-sm text-gray-600">Uploading image...</p>
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowImageUploadModal(false)
-                    setUploadMessage(null)
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  disabled={uploadingImage}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       <Footer />
