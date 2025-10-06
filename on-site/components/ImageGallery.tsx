@@ -14,10 +14,56 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, isLoading, currentI
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isSettingProfile, setIsSettingProfile] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const handleDownload = (image: GeneratedImage) => {
     const filename = `tuned-up-${image.id}.png`;
     downloadImage(image.blob, filename);
+  };
+
+  const handleSetAsProfilePicture = async () => {
+    if (!currentImage || !user) {
+      setProfileError('Please log in to set profile picture');
+      return;
+    }
+
+    setIsSettingProfile(true);
+    setProfileError(null);
+    setProfileSuccess(false);
+
+    try {
+      const response = await fetch('/api/saved-cars?action=set-profile-picture', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-email': user.email
+        },
+        body: JSON.stringify({
+          image: currentImage.startsWith('data:') ? currentImage : `data:image/png;base64,${currentImage}`
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `HTTP ${response.status}`);
+      }
+
+      if (result.success) {
+        setProfileSuccess(true);
+        setTimeout(() => setProfileSuccess(false), 3000);
+      } else {
+        throw new Error(result.error || 'Failed to set profile picture');
+      }
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to set profile picture';
+      setProfileError(errorMessage);
+    } finally {
+      setIsSettingProfile(false);
+    }
   };
 
   const handleUploadToCommunity = async () => {
@@ -85,6 +131,32 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, isLoading, currentI
             >
               Download PNG
             </button>
+
+            {/* Set as Profile Picture Button */}
+            {user && (
+              <div className="profile-picture-section">
+                {profileSuccess && (
+                  <div className="upload-success">
+                    ✅ Set as profile picture!
+                  </div>
+                )}
+
+                {profileError && (
+                  <div className="upload-error">
+                    ❌ {profileError}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className={`upload-button ${isSettingProfile ? 'uploading' : ''}`}
+                  onClick={handleSetAsProfilePicture}
+                  disabled={isSettingProfile}
+                >
+                  {isSettingProfile ? 'Setting...' : 'Set as Profile Picture 📸'}
+                </button>
+              </div>
+            )}
 
             {/* Community Upload Section */}
             <div className="community-upload-section">

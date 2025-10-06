@@ -51,6 +51,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Check if this is an image upload request
       const { action } = req.query
 
+      if (action === 'set-profile-picture') {
+        // Handle setting generated image as profile picture
+        const { image } = req.body
+
+        if (!image) {
+          return res.status(400).json({ error: 'No image provided' })
+        }
+
+        // Extract base64 data from data URL if needed
+        const base64Data = image.startsWith('data:')
+          ? image.split(',')[1]
+          : image
+
+        // Convert base64 to buffer
+        const buffer = Buffer.from(base64Data, 'base64')
+
+        // Upload to Vercel Blob
+        const blobFilename = `car-images/${userEmail}/${Date.now()}-profile.png`
+        const blob = await put(blobFilename, buffer, {
+          access: 'public',
+          contentType: 'image/png'
+        })
+
+        // Update the active car with the new image URL
+        const updatedCar = await prisma.savedCar.updateMany({
+          where: {
+            userEmail,
+            isActive: true
+          },
+          data: {
+            imageUrl: blob.url
+          }
+        })
+
+        if (updatedCar.count === 0) {
+          return res.status(404).json({ error: 'No active car found to update' })
+        }
+
+        return res.status(200).json({
+          success: true,
+          imageUrl: blob.url,
+          message: 'Profile picture set successfully'
+        })
+      }
+
       if (action === 'upload-image') {
         // Handle image upload
         const { file, filename } = req.body
