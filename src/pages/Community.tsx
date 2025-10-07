@@ -190,7 +190,7 @@ export default function Community() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {images.map((image) => {
                 const badge = getPlanBadge(image.planCode)
                 const isPlusPlan = image.planCode === 'PLUS'
@@ -204,7 +204,7 @@ export default function Community() {
                     return { boxShadow: '0 0 30px rgba(255, 87, 34, 0.5), inset 0 -30px 40px -20px rgba(255, 87, 34, 0.3)' }
                   }
                   if (isUltraPlan) {
-                    return { boxShadow: '0 0 25px rgba(234, 179, 8, 0.4), inset 0 -30px 40px -20px rgba(234, 179, 8, 0.25)' }
+                    return { boxShadow: '0 0 25px rgba(216, 44, 131, 0.4), inset 0 -30px 40px -20px rgba(216, 44, 131, 0.25)' }
                   }
                   if (isProPlan) {
                     return { boxShadow: '0 0 20px rgba(59, 130, 246, 0.3), inset 0 -30px 40px -20px rgba(59, 130, 246, 0.2)' }
