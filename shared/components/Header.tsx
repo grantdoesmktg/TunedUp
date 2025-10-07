@@ -66,12 +66,16 @@ export const Header: React.FC<HeaderProps> = ({ toolName }) => {
             </div>
             <button
               onClick={() => setShowUpgradeModal(true)}
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-opacity hover:opacity-80 cursor-pointer flex-shrink-0 ${
+              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-opacity hover:opacity-80 cursor-pointer flex-shrink-0 ${
                 isAdmin ? 'bg-highlight/20 text-highlight' :
                 isFreePlan ? 'bg-divider text-textSecondary' : 'bg-primary/20 text-primary'
               }`}
             >
-              {user.planCode} {isAdmin ? '🔥' : 'Plan'}
+              {user.planCode}
+              {user.planCode === 'PLUS' && <span className="text-sm">⭐</span>}
+              {user.planCode === 'PRO' && <span className="text-sm">💎</span>}
+              {user.planCode === 'ULTRA' && <span className="text-sm">👑</span>}
+              {user.planCode === 'ADMIN' ? <span className="text-sm">🔥</span> : ' Plan'}
             </button>
             <button
               onClick={logout}
