@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { UpgradePlansModal } from './UpgradePlansModal'
 
 interface HeaderProps {
   toolName?: string
@@ -7,6 +8,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ toolName }) => {
   const { user, logout } = useAuth()
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   if (!user) return null
 
@@ -40,12 +42,15 @@ export const Header: React.FC<HeaderProps> = ({ toolName }) => {
               <span className="text-textSecondary">Welcome, </span>
               <span className="font-semibold text-textPrimary">{user.email}</span>
             </div>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              isAdmin ? 'bg-highlight/20 text-highlight' :
-              isFreePlan ? 'bg-divider text-textSecondary' : 'bg-primary/20 text-primary'
-            }`}>
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-opacity hover:opacity-80 cursor-pointer ${
+                isAdmin ? 'bg-highlight/20 text-highlight' :
+                isFreePlan ? 'bg-divider text-textSecondary' : 'bg-primary/20 text-primary'
+              }`}
+            >
               {user.planCode} {isAdmin ? '🔥' : 'Plan'}
-            </span>
+            </button>
             <button
               onClick={logout}
               className="text-textSecondary hover:text-textPrimary text-sm font-medium"
@@ -55,6 +60,12 @@ export const Header: React.FC<HeaderProps> = ({ toolName }) => {
           </div>
         </div>
       </div>
+
+      <UpgradePlansModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        currentPlan={user.planCode}
+      />
     </div>
   )
 }
