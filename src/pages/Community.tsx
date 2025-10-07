@@ -195,6 +195,7 @@ export default function Community() {
                 const badge = getPlanBadge(image.planCode)
                 const isProPlan = image.planCode === 'PRO'
                 const isUltraPlan = image.planCode === 'ULTRA'
+                const isAdminPlan = image.planCode === 'ADMIN'
 
                 return (
                 <div
@@ -205,6 +206,8 @@ export default function Community() {
                       boxShadow: '0 0 20px rgba(59, 130, 246, 0.3), inset 0 -30px 40px -20px rgba(59, 130, 246, 0.2)'
                     } : isUltraPlan ? {
                       boxShadow: '0 0 25px rgba(234, 179, 8, 0.4), inset 0 -30px 40px -20px rgba(234, 179, 8, 0.25)'
+                    } : isAdminPlan ? {
+                      boxShadow: '0 0 30px rgba(255, 87, 34, 0.5), inset 0 -30px 40px -20px rgba(255, 87, 34, 0.3)'
                     } : {}
                   }
                 >
