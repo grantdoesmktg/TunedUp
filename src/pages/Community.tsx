@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Header } from '../../shared/components/Header'
 import { Footer } from '../../shared/components/Footer'
+import { getPlanBadge } from '../../shared/contexts/AuthContext'
 
 interface CommunityImage {
   id: string
@@ -9,6 +10,7 @@ interface CommunityImage {
   likesCount: number
   createdAt: string
   userEmail: string
+  planCode: string
 }
 
 interface PaginationInfo {
@@ -189,9 +191,24 @@ export default function Community() {
         ) : (
           <>
             <div className="grid grid-cols-4 gap-6">
-              {images.map((image) => (
-                <div key={image.id} className="bg-secondary rounded-xl overflow-hidden border border-divider hover:border-primary transition-colors">
-                  <div className="aspect-square">
+              {images.map((image) => {
+                const badge = getPlanBadge(image.planCode)
+                const isProPlan = image.planCode === 'PRO'
+                const isUltraPlan = image.planCode === 'ULTRA'
+
+                return (
+                <div
+                  key={image.id}
+                  className="bg-secondary rounded-xl overflow-hidden border border-divider hover:border-primary transition-colors relative"
+                  style={
+                    isProPlan ? {
+                      boxShadow: '0 0 20px rgba(59, 130, 246, 0.3), inset 0 -30px 40px -20px rgba(59, 130, 246, 0.2)'
+                    } : isUltraPlan ? {
+                      boxShadow: '0 0 25px rgba(234, 179, 8, 0.4), inset 0 -30px 40px -20px rgba(234, 179, 8, 0.25)'
+                    } : {}
+                  }
+                >
+                  <div className="aspect-square relative">
                     <img
                       src={image.imageUrl}
                       alt={image.description || 'Community image'}
@@ -225,12 +242,13 @@ export default function Community() {
                       </button>
                     </div>
                     <div className="flex justify-between items-center text-xs text-textSecondary">
-                      <span>by {image.userEmail}</span>
+                      <span>by {image.userEmail} {badge && <span className="ml-1">{badge}</span>}</span>
                       <span>{formatDate(image.createdAt)}</span>
                     </div>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
 
             {pagination && pagination.hasNext && (
