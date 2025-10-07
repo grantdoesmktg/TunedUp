@@ -193,23 +193,34 @@ export default function Community() {
             <div className="grid grid-cols-4 gap-6">
               {images.map((image) => {
                 const badge = getPlanBadge(image.planCode)
+                const isPlusPlan = image.planCode === 'PLUS'
                 const isProPlan = image.planCode === 'PRO'
                 const isUltraPlan = image.planCode === 'ULTRA'
                 const isAdminPlan = image.planCode === 'ADMIN'
+
+                // Get glow style based on plan tier
+                const getGlowStyle = () => {
+                  if (isAdminPlan) {
+                    return { boxShadow: '0 0 30px rgba(255, 87, 34, 0.5), inset 0 -30px 40px -20px rgba(255, 87, 34, 0.3)' }
+                  }
+                  if (isUltraPlan) {
+                    return { boxShadow: '0 0 25px rgba(234, 179, 8, 0.4), inset 0 -30px 40px -20px rgba(234, 179, 8, 0.25)' }
+                  }
+                  if (isProPlan) {
+                    return { boxShadow: '0 0 20px rgba(59, 130, 246, 0.3), inset 0 -30px 40px -20px rgba(59, 130, 246, 0.2)' }
+                  }
+                  if (isPlusPlan) {
+                    return { boxShadow: '0 0 12px rgba(250, 204, 21, 0.15), inset 0 -20px 30px -20px rgba(250, 204, 21, 0.1)' }
+                  }
+                  // FREE - no glow
+                  return {}
+                }
 
                 return (
                 <div
                   key={image.id}
                   className="bg-secondary rounded-xl overflow-hidden border border-divider hover:border-primary transition-colors relative"
-                  style={
-                    isProPlan ? {
-                      boxShadow: '0 0 20px rgba(59, 130, 246, 0.3), inset 0 -30px 40px -20px rgba(59, 130, 246, 0.2)'
-                    } : isUltraPlan ? {
-                      boxShadow: '0 0 25px rgba(234, 179, 8, 0.4), inset 0 -30px 40px -20px rgba(234, 179, 8, 0.25)'
-                    } : isAdminPlan ? {
-                      boxShadow: '0 0 30px rgba(255, 87, 34, 0.5), inset 0 -30px 40px -20px rgba(255, 87, 34, 0.3)'
-                    } : {}
-                  }
+                  style={getGlowStyle()}
                 >
                   <div className="aspect-square relative">
                     <img
