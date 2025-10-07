@@ -2,6 +2,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node'
 import { put } from '@vercel/blob'
 import { jwtVerify } from 'jose'
 import { prisma } from './lib/prisma.js'
+import { checkQuota, incrementUsage } from '../lib/quota.js'
 
 // Auto-create likes table if it doesn't exist
 async function ensureLikesTable() {
@@ -93,6 +94,16 @@ async function handleUpload(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'User not found' })
     }
 
+    // Check community quota
+    const quotaCheck = await checkQuota(email, 'community')
+
+    if (!quotaCheck.allowed) {
+      return res.status(429).json({
+        error: 'QUOTA_EXCEEDED',
+        ...quotaCheck
+      })
+    }
+
     // Parse form data
     const { image, description } = req.body
 
@@ -125,6 +136,9 @@ async function handleUpload(req: VercelRequest, res: VercelResponse) {
         approved: true // Auto-approve for development
       }
     })
+
+    // Increment community usage
+    await incrementUsage(email, 'community')
 
     res.status(200).json({
       success: true,
@@ -159,7 +173,8 @@ async function handleGetImages(req: VercelRequest, res: VercelResponse) {
       include: {
         user: {
           select: {
-            email: true
+            email: true,
+            planCode: true
           }
         }
       },
@@ -186,7 +201,8 @@ async function handleGetImages(req: VercelRequest, res: VercelResponse) {
         description: img.description,
         likesCount: img.likesCount,
         createdAt: img.createdAt,
-        userEmail: img.user.email.replace(/(.{2}).*@/, '$1***@') // Partially hide email
+        userEmail: img.user.email.replace(/(.{2}).*@/, '$1***@'), // Partially hide email
+        planCode: img.user.planCode
       })),
       pagination: {
         currentPage: pageNum,
