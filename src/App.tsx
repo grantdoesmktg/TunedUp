@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '../shared/contexts/AuthContext';
+import Home from './pages/Home';
 import SimpleLogin from './pages/SimpleLogin';
 import Dashboard from './pages/Dashboard';
 import Community from './pages/Community';
@@ -17,7 +18,7 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Home />} />
           <Route path="/login" element={<SimpleLogin />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/auth/verify/:token" element={<AuthVerify />} />
