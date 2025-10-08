@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import Stripe from 'stripe'
 import { jwtVerify } from 'jose'
-import { prisma } from '../../lib/prisma.js'
+import { prisma } from '../lib/prisma.js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
