@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
-import { prisma } from '../lib/prisma.js'
+import { prisma } from '../lib/prisma'
 import { put } from '@vercel/blob'
 import { jwtVerify } from 'jose'
 import { setCorsHeaders } from '../lib/corsConfig.js'

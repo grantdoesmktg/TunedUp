@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { put } from '@vercel/blob'
 import { jwtVerify } from 'jose'
-import { prisma } from '../lib/prisma.js'
+import { prisma } from '../lib/prisma'
 import { checkQuota, incrementUsage } from '../lib/quota.js'
 
 
