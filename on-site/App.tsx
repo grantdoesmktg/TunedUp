@@ -188,6 +188,11 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
       });
 
     } catch (err) {
+      // Check if it's an anonymous quota error - modal already shown by AuthenticatedWidget
+      if (err instanceof Error && err.message === 'Anonymous quota exceeded') {
+        return; // Silent return - modal is already displayed
+      }
+
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate image';
       setError(errorMessage);
       console.error('Generation error:', err);

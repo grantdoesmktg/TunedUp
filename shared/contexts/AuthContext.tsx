@@ -131,7 +131,7 @@ export function useAuth() {
 
 // Plan limits helper
 export const PLAN_LIMITS = {
-  FREE: { perf: 1, build: 1, image: 3, community: 5, detailsChars: 10 },
+  FREE: { perf: 3, build: 3, image: 5, community: 5, detailsChars: 10 },
   PLUS: { perf: 10, build: 10, image: 25, community: 10, detailsChars: 30 },
   PRO: { perf: 15, build: 15, image: 60, community: 20, detailsChars: 50 },
   ULTRA: { perf: 25, build: 25, image: 100, community: 30, detailsChars: 250 },
