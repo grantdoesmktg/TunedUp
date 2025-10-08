@@ -197,7 +197,7 @@ export default function SimpleLogin() {
               )}
 
               <p className="text-sm text-textSecondary mt-4">
-                Start with <strong>1</strong> performance calc, <strong>1</strong> build plan, <strong>3</strong> images free
+                Start with <strong>3</strong> performance calcs, <strong>3</strong> build plans, <strong>5</strong> images free
               </p>
             </div>
           </div>

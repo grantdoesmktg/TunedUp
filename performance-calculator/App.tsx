@@ -102,6 +102,11 @@ const App: React.FC<AppProps> = ({ onUseQuota, user }) => {
       setAiResponse(response);
       setShowResults(true);
     } catch (err: any) {
+      // Check if it's an anonymous quota error - modal already shown by AuthenticatedWidget
+      if (err.message === 'Anonymous quota exceeded') {
+        return; // Silent return - modal is already displayed
+      }
+
       // Check if it's a quota exceeded error with upgrade popup data
       if (err.quotaData && err.quotaData.plan && err.quotaData.used !== undefined && err.quotaData.limit !== undefined) {
         setQuotaData({

@@ -187,6 +187,11 @@ const BuildPlannerApp: React.FC<BuildPlannerAppProps> = ({ onUseQuota, user }) =
       setCarName(`${vehicleSpec.year} ${vehicleSpec.make} ${vehicleSpec.model} ${selectedCategoryTitle} Build`);
 
     } catch (err) {
+      // Check if it's an anonymous quota error - modal already shown by AuthenticatedWidget
+      if (err instanceof Error && err.message === 'Anonymous quota exceeded') {
+        return; // Silent return - modal is already displayed
+      }
+
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate build plan';
       setError(errorMessage);
       console.error('Build planning error:', err);
