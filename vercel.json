@@ -7,6 +7,9 @@
     },
     "api/generate.ts": {
       "maxDuration": 30
+    },
+    "api/**/*.ts": {
+      "excludeFiles": "lib/**"
     }
   },
   "rewrites": [
