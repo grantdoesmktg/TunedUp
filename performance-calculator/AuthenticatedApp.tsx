@@ -11,7 +11,8 @@ export default function AuthenticatedPerformanceCalculator() {
       widgetName="Performance Calculator"
     >
       {({ user, hasUsage, onUseQuota, isAuthenticated }) => {
-        if (!hasUsage) {
+        // Only show authenticated quota exceeded screen if user is logged in
+        if (!hasUsage && isAuthenticated && user) {
           const usage = getRemainingUsage(user, 'performance')
 
           return (
