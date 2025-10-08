@@ -48,7 +48,7 @@ export default function SimpleLogin() {
     setError('')
 
     try {
-      const response = await fetch('/api/auth/verify/token', {
+      const response = await fetch('/api/auth?action=verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/me')
+      const response = await fetch('/api/auth?action=me')
 
       if (response.ok) {
         const data = await response.json()
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string): Promise<{ success: boolean; message: string; error?: string }> => {
     try {
-      const response = await fetch('/api/auth/send-link', {
+      const response = await fetch('/api/auth?action=send-link', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', {
+      await fetch('/api/auth?action=logout', {
         method: 'POST'
       })
       setUser(null)
