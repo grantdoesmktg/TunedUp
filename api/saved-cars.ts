@@ -2,7 +2,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node'
 import { put } from '@vercel/blob'
 import { jwtVerify } from 'jose'
 import { setCorsHeaders } from '../lib/corsConfig.js'
-import { prisma } from '../lib/prisma'
+import { prisma } from './lib/prisma.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS with restrictions
