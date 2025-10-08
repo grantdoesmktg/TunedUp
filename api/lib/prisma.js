@@ -1,10 +1,23 @@
 import { PrismaClient } from '@prisma/client'
 
-// Singleton pattern for Prisma Client to prevent connection exhaustion in serverless
-const prisma = globalThis.prisma || new PrismaClient()
+// Prevent multiple instances of Prisma Client in development
+const globalForPrisma = global
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  // Configure connection pool for serverless
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+})
 
 if (process.env.NODE_ENV !== 'production') {
-  globalThis.prisma = prisma
+  globalForPrisma.prisma = prisma
 }
 
-export { prisma }
+// Gracefully shutdown Prisma Client on process termination
+process.on('beforeExit', async () => {
+  await prisma.$disconnect()
+})
