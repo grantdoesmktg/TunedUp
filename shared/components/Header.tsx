@@ -10,10 +10,8 @@ export const Header: React.FC<HeaderProps> = ({ toolName }) => {
   const { user, logout } = useAuth()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
-  if (!user) return null
-
-  const isFreePlan = user.planCode === 'FREE'
-  const isAdmin = user.planCode === 'ADMIN'
+  const isFreePlan = user?.planCode === 'FREE'
+  const isAdmin = user?.planCode === 'ADMIN'
 
   return (
     <div className="bg-secondary shadow">
@@ -21,7 +19,7 @@ export const Header: React.FC<HeaderProps> = ({ toolName }) => {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-3 sm:space-x-4">
             <a
-              href="/dashboard"
+              href={user ? "/dashboard" : "/"}
               className="hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0"
             >
               <img
@@ -60,38 +58,51 @@ export const Header: React.FC<HeaderProps> = ({ toolName }) => {
             </nav>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <div className="text-sm hidden lg:block">
-              <span className="text-textSecondary">Welcome, </span>
-              <span className="font-semibold text-textPrimary">{user.email}</span>
-            </div>
-            <button
-              onClick={() => setShowUpgradeModal(true)}
-              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-opacity hover:opacity-80 cursor-pointer flex-shrink-0 ${
-                isAdmin ? 'bg-highlight/20 text-highlight' :
-                isFreePlan ? 'bg-divider text-textSecondary' : 'bg-primary/20 text-primary'
-              }`}
-            >
-              {user.planCode}
-              {user.planCode === 'PLUS' && <span className="text-sm">⭐</span>}
-              {user.planCode === 'PRO' && <span className="text-sm">💎</span>}
-              {user.planCode === 'ULTRA' && <span className="text-sm">👑</span>}
-              {user.planCode === 'ADMIN' ? <span className="text-sm">🔥</span> : ' Plan'}
-            </button>
-            <button
-              onClick={logout}
-              className="text-textSecondary hover:text-textPrimary text-sm font-medium flex-shrink-0"
-            >
-              Sign out
-            </button>
+            {user ? (
+              <>
+                <div className="text-sm hidden lg:block">
+                  <span className="text-textSecondary">Welcome, </span>
+                  <span className="font-semibold text-textPrimary">{user.email}</span>
+                </div>
+                <button
+                  onClick={() => setShowUpgradeModal(true)}
+                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-opacity hover:opacity-80 cursor-pointer flex-shrink-0 ${
+                    isAdmin ? 'bg-highlight/20 text-highlight' :
+                    isFreePlan ? 'bg-divider text-textSecondary' : 'bg-primary/20 text-primary'
+                  }`}
+                >
+                  {user.planCode}
+                  {user.planCode === 'PLUS' && <span className="text-sm">⭐</span>}
+                  {user.planCode === 'PRO' && <span className="text-sm">💎</span>}
+                  {user.planCode === 'ULTRA' && <span className="text-sm">👑</span>}
+                  {user.planCode === 'ADMIN' ? <span className="text-sm">🔥</span> : ' Plan'}
+                </button>
+                <button
+                  onClick={logout}
+                  className="text-textSecondary hover:text-textPrimary text-sm font-medium flex-shrink-0"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <a
+                href="/login"
+                className="bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Sign In
+              </a>
+            )}
           </div>
         </div>
       </div>
 
-      <UpgradePlansModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        currentPlan={user.planCode}
-      />
+      {user && (
+        <UpgradePlansModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          currentPlan={user.planCode}
+        />
+      )}
     </div>
   )
 }
