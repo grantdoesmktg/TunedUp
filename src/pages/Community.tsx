@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Header } from '../../shared/components/Header'
 import { Footer } from '../../shared/components/Footer'
-import { getPlanBadge } from '../../shared/contexts/AuthContext'
 
 interface CommunityImage {
   id: string
@@ -10,7 +9,6 @@ interface CommunityImage {
   likesCount: number
   createdAt: string
   userEmail: string
-  planCode: string
 }
 
 interface PaginationInfo {
@@ -190,39 +188,10 @@ export default function Community() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-              {images.map((image) => {
-                const badge = getPlanBadge(image.planCode)
-                const isPlusPlan = image.planCode === 'PLUS'
-                const isProPlan = image.planCode === 'PRO'
-                const isUltraPlan = image.planCode === 'ULTRA'
-                const isAdminPlan = image.planCode === 'ADMIN'
-
-                // Get glow style based on plan tier
-                const getGlowStyle = () => {
-                  if (isAdminPlan) {
-                    return { boxShadow: '0 0 30px rgba(255, 87, 34, 0.5), inset 0 -30px 40px -20px rgba(255, 87, 34, 0.3)' }
-                  }
-                  if (isUltraPlan) {
-                    return { boxShadow: '0 0 25px rgba(216, 44, 131, 0.4), inset 0 -30px 40px -20px rgba(216, 44, 131, 0.25)' }
-                  }
-                  if (isProPlan) {
-                    return { boxShadow: '0 0 20px rgba(59, 130, 246, 0.3), inset 0 -30px 40px -20px rgba(59, 130, 246, 0.2)' }
-                  }
-                  if (isPlusPlan) {
-                    return { boxShadow: '0 0 12px rgba(250, 204, 21, 0.15), inset 0 -20px 30px -20px rgba(250, 204, 21, 0.1)' }
-                  }
-                  // FREE - no glow
-                  return {}
-                }
-
-                return (
-                <div
-                  key={image.id}
-                  className="bg-secondary rounded-xl overflow-hidden border border-divider hover:border-primary transition-colors relative"
-                  style={getGlowStyle()}
-                >
-                  <div className="aspect-square relative">
+            <div className="grid grid-cols-4 gap-6">
+              {images.map((image) => (
+                <div key={image.id} className="bg-secondary rounded-xl overflow-hidden border border-divider hover:border-primary transition-colors">
+                  <div className="aspect-square">
                     <img
                       src={image.imageUrl}
                       alt={image.description || 'Community image'}
@@ -256,13 +225,12 @@ export default function Community() {
                       </button>
                     </div>
                     <div className="flex justify-between items-center text-xs text-textSecondary">
-                      <span>by {image.userEmail} {badge && <span className="ml-1">{badge}</span>}</span>
+                      <span>by {image.userEmail}</span>
                       <span>{formatDate(image.createdAt)}</span>
                     </div>
                   </div>
                 </div>
-                )
-              })}
+              ))}
             </div>
 
             {pagination && pagination.hasNext && (

@@ -1,7 +1,8 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { Resend } from 'resend'
-import { prisma } from '../lib/prisma'
+import { PrismaClient } from '@prisma/client'
 
+const prisma = new PrismaClient()
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 function generateVerificationCode(): string {
@@ -19,20 +20,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!email || !email.includes('@')) {
       return res.status(400).json({ error: 'Valid email required' })
     }
-
-    // Find or create user record FIRST (before sending email)
-    await prisma.user.upsert({
-      where: { email },
-      create: {
-        email,
-        planCode: 'FREE',
-        perfUsed: 0,
-        buildUsed: 0,
-        imageUsed: 0,
-        communityUsed: 0
-      },
-      update: {} // Don't update if user exists
-    })
 
     // Generate 6-digit verification code
     const code = generateVerificationCode()
@@ -80,6 +67,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           </div>
         </div>
       `
+    })
+
+    // Find or create user record
+    await prisma.user.upsert({
+      where: { email },
+      create: {
+        email,
+        planCode: 'FREE',
+        perfUsed: 0,
+        buildUsed: 0,
+        imageUsed: 0
+      },
+      update: {} // Don't update if user exists
     })
 
     res.status(200).json({

@@ -1,7 +1,8 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { jwtVerify, SignJWT } from 'jose'
-import { prisma } from '../../lib/prisma'
+import { PrismaClient } from '@prisma/client'
 
+const prisma = new PrismaClient()
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Handle both GET (magic links) and POST (verification codes)

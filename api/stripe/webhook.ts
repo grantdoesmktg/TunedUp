@@ -1,8 +1,9 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import Stripe from 'stripe'
-import { prisma } from '../lib/prisma'
+import { PrismaClient } from '@prisma/client'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+const prisma = new PrismaClient()
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
 // Disable body parsing for webhook endpoint

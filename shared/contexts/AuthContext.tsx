@@ -9,7 +9,6 @@ export interface User {
   perfUsed: number
   buildUsed: number
   imageUsed: number
-  communityUsed: number
   resetDate: Date
   createdAt: Date
 }
@@ -131,15 +130,15 @@ export function useAuth() {
 
 // Plan limits helper
 export const PLAN_LIMITS = {
-  FREE: { perf: 1, build: 1, image: 3, community: 5, detailsChars: 10 },
-  PLUS: { perf: 10, build: 10, image: 25, community: 10, detailsChars: 30 },
-  PRO: { perf: 15, build: 15, image: 60, community: 20, detailsChars: 50 },
-  ULTRA: { perf: 25, build: 25, image: 100, community: 30, detailsChars: 250 },
-  ADMIN: { perf: 999999, build: 999999, image: 999999, community: 999999, detailsChars: 999999 }
+  FREE: { perf: 1, build: 1, image: 3 },
+  PLUS: { perf: 10, build: 10, image: 25 },
+  PRO: { perf: 15, build: 15, image: 60 },
+  ULTRA: { perf: 25, build: 25, image: 100 },
+  ADMIN: { perf: 999999, build: 999999, image: 999999 }
 }
 
-export function getRemainingUsage(user: User | null, toolType: 'performance' | 'build' | 'image' | 'community') {
-  if (!user) return { remaining: Infinity, limit: Infinity, used: 0 }
+export function getRemainingUsage(user: User | null, toolType: 'performance' | 'build' | 'image') {
+  if (!user) return { remaining: Infinity, limit: Infinity }
 
   const limits = PLAN_LIMITS[user.planCode as keyof typeof PLAN_LIMITS] || PLAN_LIMITS.FREE
   let used: number
@@ -158,37 +157,11 @@ export function getRemainingUsage(user: User | null, toolType: 'performance' | '
       used = user.imageUsed
       limit = limits.image
       break
-    case 'community':
-      used = user.communityUsed
-      limit = limits.community
-      break
   }
 
   return {
     remaining: Math.max(0, limit - used),
     limit,
     used
-  }
-}
-
-export function getCharacterLimit(user: User | null): number {
-  if (!user) return 10
-
-  const limits = PLAN_LIMITS[user.planCode as keyof typeof PLAN_LIMITS] || PLAN_LIMITS.FREE
-  return limits.detailsChars
-}
-
-export function getPlanBadge(planCode: string): string {
-  switch (planCode) {
-    case 'PLUS':
-      return '⭐'
-    case 'PRO':
-      return '💎'
-    case 'ULTRA':
-      return '👑'
-    case 'ADMIN':
-      return '🔥'
-    default:
-      return ''
   }
 }

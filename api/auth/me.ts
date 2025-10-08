@@ -1,6 +1,8 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { jwtVerify } from 'jose'
-import { prisma } from '../lib/prisma'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -68,7 +70,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         perfUsed: true,
         buildUsed: true,
         imageUsed: true,
-        communityUsed: true,
         resetDate: true,
         createdAt: true
       }
@@ -90,7 +91,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           perfUsed: 0,
           buildUsed: 0,
           imageUsed: 0,
-          communityUsed: 0,
           resetDate: now
         },
         select: {
@@ -102,7 +102,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           perfUsed: true,
           buildUsed: true,
           imageUsed: true,
-          communityUsed: true,
           resetDate: true,
           createdAt: true
         }

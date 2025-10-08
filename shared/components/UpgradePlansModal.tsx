@@ -20,39 +20,21 @@ export const UpgradePlansModal: React.FC<UpgradePlansModalProps> = ({
       code: 'PLUS',
       name: 'Plus',
       price: '$4.99',
-      features: [
-        '10 Performance calculations',
-        '10 Build plans',
-        '25 Image generations',
-        '10 Community posts',
-        '30 character custom details'
-      ],
+      features: ['10 Performance calculations', '10 Build plans', '25 Image generations'],
       popular: false
     },
     {
       code: 'PRO',
       name: 'Pro',
       price: '$9.99',
-      features: [
-        '15 Performance calculations',
-        '15 Build plans',
-        '60 Image generations',
-        '20 Community posts',
-        '50 character custom details'
-      ],
+      features: ['15 Performance calculations', '15 Build plans', '60 Image generations'],
       popular: true
     },
     {
       code: 'ULTRA',
       name: 'Ultra',
       price: '$14.99',
-      features: [
-        '25 Performance calculations',
-        '25 Build plans',
-        '100 Image generations',
-        '30 Community posts',
-        '250 character custom details'
-      ],
+      features: ['25 Performance calculations', '25 Build plans', '100 Image generations'],
       popular: false
     }
   ]
@@ -127,12 +109,7 @@ export const UpgradePlansModal: React.FC<UpgradePlansModalProps> = ({
                   )}
 
                   <div className="text-center">
-                    <h3 className="text-xl font-bold text-gray-900 flex items-center justify-center gap-2">
-                      {plan.name}
-                      {plan.code === 'PLUS' && <span className="text-2xl">⭐</span>}
-                      {plan.code === 'PRO' && <span className="text-2xl">💎</span>}
-                      {plan.code === 'ULTRA' && <span className="text-2xl">👑</span>}
-                    </h3>
+                    <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
                     <div className="mt-4 flex items-baseline justify-center">
                       <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
                       <span className="text-lg text-gray-600 ml-1">/month</span>
