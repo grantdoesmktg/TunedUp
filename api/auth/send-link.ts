@@ -21,6 +21,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Valid email required' })
     }
 
+    // Find or create user record FIRST (before sending email)
+    await prisma.user.upsert({
+      where: { email },
+      create: {
+        email,
+        planCode: 'FREE',
+        perfUsed: 0,
+        buildUsed: 0,
+        imageUsed: 0,
+        communityUsed: 0
+      },
+      update: {} // Don't update if user exists
+    })
+
     // Generate 6-digit verification code
     const code = generateVerificationCode()
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
@@ -67,19 +81,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           </div>
         </div>
       `
-    })
-
-    // Find or create user record
-    await prisma.user.upsert({
-      where: { email },
-      create: {
-        email,
-        planCode: 'FREE',
-        perfUsed: 0,
-        buildUsed: 0,
-        imageUsed: 0
-      },
-      update: {} // Don't update if user exists
     })
 
     res.status(200).json({
