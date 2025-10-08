@@ -1,6 +1,7 @@
 import React from 'react'
 import { Header } from '../../shared/components/Header'
 import { Footer } from '../../shared/components/Footer'
+import { ImageSlider } from '../../shared/components/ImageSlider'
 import { useAuth } from '../../shared/contexts/AuthContext'
 
 export default function Home() {
@@ -47,23 +48,9 @@ export default function Home() {
             <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-[#07fef7] to-[#d82c83] bg-clip-text text-transparent">
               AI-Powered Automotive Tools
             </h1>
-            <p className="text-xl md:text-2xl text-textSecondary mb-8 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-textSecondary mb-12 max-w-3xl mx-auto">
               Plan, design, and visualize your perfect build with cutting-edge AI technology
             </p>
-            <div className="flex gap-4 justify-center flex-wrap">
-              <a
-                href="/performance-calculator"
-                className="bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white px-8 py-4 rounded-lg font-semibold hover:opacity-90 transition-opacity text-lg"
-              >
-                Try Performance Calculator Free
-              </a>
-              <a
-                href="/community"
-                className="bg-secondary border border-primary text-textPrimary px-8 py-4 rounded-lg font-semibold hover:bg-primary hover:bg-opacity-10 transition-all text-lg"
-              >
-                View Community Gallery
-              </a>
-            </div>
           </div>
         </div>
 
@@ -71,10 +58,24 @@ export default function Home() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-r from-[#07fef7]/10 to-[#d82c83]/10 rounded-full blur-3xl -z-10" />
       </div>
 
+      {/* Image Slider */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
+        <ImageSlider />
+        <div className="text-center mt-6">
+          <a
+            href="/community"
+            className="text-primary hover:text-[#d82c83] font-semibold text-lg transition-colors inline-flex items-center gap-2"
+          >
+            View Community Gallery
+            <span>→</span>
+          </a>
+        </div>
+      </div>
+
       {/* Tools Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <h2 className="text-3xl font-bold text-center mb-12">
-          Start Building for <span className="text-success">Free</span>
+          Explore Our Tools
         </h2>
 
         <div className="grid md:grid-cols-3 gap-8 mb-12">
@@ -82,7 +83,7 @@ export default function Home() {
             <a
               key={tool.path}
               href={tool.path}
-              className="group bg-secondary rounded-xl p-8 border border-divider hover:border-primary transition-all hover:shadow-xl"
+              className="group bg-gradient-to-br from-secondary to-background rounded-xl p-8 border-2 border-divider hover:border-primary transition-all hover:shadow-2xl hover:scale-105 cursor-pointer transform"
             >
               <div className={`text-6xl mb-4 bg-gradient-to-r ${tool.gradient} bg-clip-text text-transparent`}>
                 {tool.icon}
@@ -93,9 +94,9 @@ export default function Home() {
               <p className="text-textSecondary mb-6">
                 {tool.description}
               </p>
-              <div className="flex items-center text-primary font-semibold group-hover:gap-2 transition-all">
+              <div className="inline-flex items-center justify-center w-full bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white px-6 py-3 rounded-lg font-semibold group-hover:opacity-90 transition-all">
                 Try it now
-                <span className="ml-1 group-hover:ml-2 transition-all">→</span>
+                <span className="ml-2 group-hover:ml-3 transition-all">→</span>
               </div>
             </a>
           ))}
@@ -109,14 +110,14 @@ export default function Home() {
               <div className="text-4xl mb-3">🚀</div>
               <h4 className="font-bold mb-2 text-textPrimary">Instant Results</h4>
               <p className="text-textSecondary text-sm">
-                Get AI-powered estimates and plans in seconds, no signup required
+                Get AI-powered estimates and plans in seconds
               </p>
             </div>
             <div className="text-center">
               <div className="text-4xl mb-3">💾</div>
               <h4 className="font-bold mb-2 text-textPrimary">Save Your Work</h4>
               <p className="text-textSecondary text-sm">
-                Create a free account to save builds and track modifications
+                Create an account to save builds and track modifications
               </p>
             </div>
             <div className="text-center">
@@ -135,13 +136,13 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Build Your Dream Car?</h2>
           <p className="text-xl text-textSecondary mb-8">
-            Start for free, no credit card required
+            Start planning your perfect build today
           </p>
           <a
             href="/performance-calculator"
             className="bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white px-10 py-4 rounded-lg font-semibold hover:opacity-90 transition-opacity text-lg inline-block"
           >
-            Get Started Now
+            Get Started
           </a>
         </div>
       </div>
