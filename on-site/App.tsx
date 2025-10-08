@@ -9,7 +9,6 @@ import {
   DEFAULT_OUTPUT
 } from './constants';
 import { parseThemeFromUrl, applyTheme, postResizeMessage, generateImageId } from './utils';
-import { getCharacterLimit } from '../shared/contexts/AuthContext';
 import LocationPresetGroup from './components/LocationPresetGroup';
 import TimePresetGroup from './components/TimePresetGroup';
 import AdvancedAccordion from './components/AdvancedAccordion';
@@ -341,16 +340,15 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
                 value={carSpec.details}
                 onChange={(e) => {
                   const value = e.target.value;
-                  const limit = getCharacterLimit(user);
-                  if (value.length <= limit) {
+                  if (value.length <= 50) {
                     setCarSpec(prev => ({ ...prev, details: value }));
                   }
                 }}
                 placeholder="e.g., lowered, custom rims, spoiler"
-                maxLength={getCharacterLimit(user)}
+                maxLength={50}
               />
               <small className="character-count">
-                {carSpec.details.length}/{getCharacterLimit(user)} characters
+                {carSpec.details.length}/50 characters
               </small>
             </div>
           </div>

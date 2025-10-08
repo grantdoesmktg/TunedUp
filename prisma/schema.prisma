@@ -17,7 +17,6 @@ model User {
   perfUsed         Int       @default(0)
   buildUsed        Int       @default(0)
   imageUsed        Int       @default(0)
-  communityUsed    Int       @default(0)
   resetDate        DateTime  @default(now())
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
