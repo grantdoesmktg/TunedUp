@@ -5,11 +5,16 @@ import { ImageSlider } from '../../shared/components/ImageSlider'
 import { useAuth } from '../../shared/contexts/AuthContext'
 
 export default function Home() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
 
   // If logged in, redirect to dashboard
   if (user) {
     window.location.href = '/dashboard'
+    return null
+  }
+
+  // Show loading state while checking auth
+  if (loading) {
     return null
   }
 
