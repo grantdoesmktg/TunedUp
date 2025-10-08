@@ -1,9 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { put } from '@vercel/blob'
 import { jwtVerify } from 'jose'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '../lib/prisma'
 
 // Auto-create likes table if it doesn't exist
 async function ensureLikesTable() {

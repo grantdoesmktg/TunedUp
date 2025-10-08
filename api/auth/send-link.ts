@@ -1,8 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { Resend } from 'resend'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '../../lib/prisma'
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 function generateVerificationCode(): string {
