@@ -58,20 +58,6 @@ export default function Home() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-r from-[#07fef7]/10 to-[#d82c83]/10 rounded-full blur-3xl -z-10" />
       </div>
 
-      {/* Image Slider */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
-        <ImageSlider />
-        <div className="text-center mt-6">
-          <a
-            href="/community"
-            className="text-primary hover:text-[#d82c83] font-semibold text-lg transition-colors inline-flex items-center gap-2"
-          >
-            View Community Gallery
-            <span>→</span>
-          </a>
-        </div>
-      </div>
-
       {/* Tools Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <h2 className="text-3xl font-bold text-center mb-12">
@@ -131,19 +117,20 @@ export default function Home() {
         </div>
       </div>
 
-      {/* CTA Section */}
+      {/* Community Gallery Section */}
       <div className="bg-gradient-to-r from-[#07fef7]/10 to-[#d82c83]/10 py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Build Your Dream Car?</h2>
-          <p className="text-xl text-textSecondary mb-8">
-            Start planning your perfect build today
-          </p>
-          <a
-            href="/performance-calculator"
-            className="bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white px-10 py-4 rounded-lg font-semibold hover:opacity-90 transition-opacity text-lg inline-block"
-          >
-            Get Started
-          </a>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-center mb-8">Community Gallery</h2>
+          <ImageSlider />
+          <div className="text-center mt-8">
+            <a
+              href="/community"
+              className="bg-gradient-to-r from-[#07fef7] to-[#d82c83] text-white px-8 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-lg inline-flex items-center gap-2"
+            >
+              View All Images
+              <span>→</span>
+            </a>
+          </div>
         </div>
       </div>
 
