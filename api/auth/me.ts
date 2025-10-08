@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { jwtVerify } from 'jose'
-import { prisma } from '../../lib/prisma'
+import { prisma } from '../lib/prisma.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
