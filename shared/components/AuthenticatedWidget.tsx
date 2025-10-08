@@ -36,11 +36,11 @@ export const AuthenticatedWidget: React.FC<AuthenticatedWidgetProps> = ({
 
   // For anonymous users, check anonymous quota
   if (!user) {
-    const anonQuota = checkAnonymousQuota(toolType === 'performance' ? 'perf' : toolType === 'build' ? 'build' : 'image')
-    const hasUsage = anonQuota.allowed
-
     const handleAnonymousQuota = async () => {
-      if (!hasUsage) {
+      // Check quota fresh each time
+      const anonQuota = checkAnonymousQuota(toolType === 'performance' ? 'perf' : toolType === 'build' ? 'build' : 'image')
+
+      if (!anonQuota.allowed) {
         setQuotaError({
           plan: 'ANONYMOUS',
           used: anonQuota.used,
@@ -51,9 +51,13 @@ export const AuthenticatedWidget: React.FC<AuthenticatedWidgetProps> = ({
         throw new Error('Anonymous quota exceeded')
       }
 
-      // Increment anonymous usage
+      // Increment anonymous usage AFTER successful check
       incrementAnonymousUsage(toolType === 'performance' ? 'perf' : toolType === 'build' ? 'build' : 'image')
     }
+
+    // Check initial quota for display
+    const anonQuota = checkAnonymousQuota(toolType === 'performance' ? 'perf' : toolType === 'build' ? 'build' : 'image')
+    const hasUsage = anonQuota.allowed
 
     return (
       <>

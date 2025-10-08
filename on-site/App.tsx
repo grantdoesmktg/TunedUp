@@ -117,6 +117,17 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
     setError(null);
 
     try {
+      // Check quota before generating
+      if (onUseQuota) {
+        try {
+          await onUseQuota();
+        } catch (error) {
+          // Quota exceeded - error is shown by AuthenticatedWidget
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const promptSpec = buildPromptSpec();
 
       const response = await fetch('/api/generate', {
