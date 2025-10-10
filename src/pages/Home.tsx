@@ -10,11 +10,19 @@ export default function Home() {
 
   // Fetch promotion status
   useEffect(() => {
+    console.log('Fetching promotion status...')
     fetch('/api/promotions?code=FIRST50')
-      .then(res => res.json())
+      .then(res => {
+        console.log('Promotion API response status:', res.status)
+        return res.json()
+      })
       .then(data => {
+        console.log('Promotion data:', data)
         if (data.available) {
           setPromoRemaining(data.remaining)
+          console.log('Set promo remaining to:', data.remaining)
+        } else {
+          console.log('Promotion not available:', data.reason)
         }
       })
       .catch(err => console.error('Failed to fetch promo:', err))
