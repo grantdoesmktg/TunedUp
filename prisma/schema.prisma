@@ -112,3 +112,30 @@ model ToolUsage {
   @@index([fingerprint])
   @@map("tool_usage")
 }
+
+model Promotion {
+  id          String   @id @default(cuid())
+  code        String   @unique // e.g., "FIRST50"
+  planCode    String   // Plan to upgrade to (e.g., "PLUS")
+  maxUses     Int      // Maximum number of uses (e.g., 50)
+  usedCount   Int      @default(0)
+  active      Boolean  @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  redemptions PromotionRedemption[]
+
+  @@map("promotions")
+}
+
+model PromotionRedemption {
+  id           String    @id @default(cuid())
+  promotionId  String
+  userEmail    String
+  redeemedAt   DateTime  @default(now())
+
+  promotion    Promotion @relation(fields: [promotionId], references: [id])
+
+  @@unique([promotionId, userEmail])
+  @@map("promotion_redemptions")
+}

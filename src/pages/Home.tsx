@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Header } from '../../shared/components/Header'
 import { Footer } from '../../shared/components/Footer'
 import { ImageSlider } from '../../shared/components/ImageSlider'
@@ -6,6 +6,19 @@ import { useAuth } from '../../shared/contexts/AuthContext'
 
 export default function Home() {
   const { user, loading } = useAuth()
+  const [promoRemaining, setPromoRemaining] = useState<number | null>(null)
+
+  // Fetch promotion status
+  useEffect(() => {
+    fetch('/api/promotions?code=FIRST50')
+      .then(res => res.json())
+      .then(data => {
+        if (data.available) {
+          setPromoRemaining(data.remaining)
+        }
+      })
+      .catch(err => console.error('Failed to fetch promo:', err))
+  }, [])
 
   // If logged in, redirect to dashboard
   if (user) {
@@ -45,6 +58,23 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-textPrimary">
       <Header />
+
+      {/* Promotional Banner */}
+      {promoRemaining !== null && promoRemaining > 0 && (
+        <div className="bg-gradient-to-r from-[#07fef7] to-[#d82c83] py-3 px-4 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/10 animate-pulse"></div>
+          <div className="relative z-10 flex items-center justify-center gap-3 flex-wrap">
+            <span className="text-2xl">🎉</span>
+            <p className="text-white font-bold text-lg">
+              LIMITED TIME: First 50 users get Plus Plan FREE for 1 year!
+            </p>
+            <span className="bg-white/20 backdrop-blur-sm px-4 py-1 rounded-full text-white font-bold text-sm">
+              {promoRemaining} spots left
+            </span>
+            <span className="text-2xl">🚀</span>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <div className="relative overflow-hidden">
