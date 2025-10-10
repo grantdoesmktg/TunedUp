@@ -23,6 +23,7 @@ interface PromptSpec {
   scene: {
     locationKey?: string;
     timeKey?: string;
+    styleKey?: string;
     paletteKey?: string;
   };
   camera?: {
@@ -170,7 +171,18 @@ function renderPrompt(promptSpec: PromptSpec, hasReferenceImage: boolean = false
     };
     prompt += timePrompts[scene.timeKey as keyof typeof timePrompts] || '';
   }
-  
+
+  // Style presets
+  if (scene.styleKey) {
+    const stylePrompts = {
+      borderlands: ', cell-shaded, comic-book style, cel shading, gritty outlines, hand-drawn textures, Borderlands aesthetic, stylized lighting, inked shadows',
+      photoreal: ', cinematic lighting, photorealistic, 8K detail, depth of field, dynamic reflections, HDR tone mapping, real-world environment',
+      vaporwave: ', vaporwave, retro futurism, synthwave aesthetic, neon grid, lens glow, retrowave lighting, cyberpunk horizon, 80s poster art',
+      concept_art: ', concept art, matte painting, epic lighting, cinematic composition, volumetric light rays, ultra-wide shot, dynamic perspective'
+    };
+    prompt += stylePrompts[scene.styleKey as keyof typeof stylePrompts] || '';
+  }
+
   // Color palette
   if (scene.paletteKey) {
     const palettePrompts = {

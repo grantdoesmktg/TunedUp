@@ -3,6 +3,7 @@ import { CarSpec, PromptSpec, GeneratedImage, CameraOptions, StyleOptions, Outpu
 import {
   LOCATION_PRESETS,
   TIME_PRESETS,
+  STYLE_PRESETS,
   WHEEL_COLORS,
   DEFAULT_CAMERA,
   DEFAULT_STYLE,
@@ -47,6 +48,7 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
   const [selectedPresets, setSelectedPresets] = useState<{
     location?: string;
     time?: string;
+    style?: string;
   }>({});
 
   const [camera, setCamera] = useState<CameraOptions>(DEFAULT_CAMERA);
@@ -106,7 +108,8 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
     car: carSpec,
     scene: {
       locationKey: selectedPresets.location,
-      timeKey: selectedPresets.time
+      timeKey: selectedPresets.time,
+      styleKey: selectedPresets.style
     },
     camera,
     style
@@ -201,7 +204,7 @@ const OnSiteApp: React.FC<OnSiteAppProps> = ({ onUseQuota, user }) => {
     }
   };
 
-  const handlePresetSelect = (category: 'location' | 'time', key: string) => {
+  const handlePresetSelect = (category: 'location' | 'time' | 'style', key: string) => {
     setSelectedPresets(prev => ({
       ...prev,
       [category]: prev[category] === key ? undefined : key
@@ -396,6 +399,13 @@ Randomize
             options={TIME_PRESETS}
             selectedKey={selectedPresets.time}
             onSelect={(key) => handlePresetSelect('time', key)}
+          />
+
+          <TimePresetGroup
+            title="Style"
+            options={STYLE_PRESETS}
+            selectedKey={selectedPresets.style}
+            onSelect={(key) => handlePresetSelect('style', key)}
           />
 
         </div>

@@ -21,6 +21,14 @@ export interface TimePreset {
   key: string;
   label: string;
   description: string;
+  prompt?: string;
+}
+
+export interface StylePreset {
+  key: string;
+  label: string;
+  description: string;
+  prompt: string;
 }
 
 export interface PalettePreset {
@@ -51,6 +59,7 @@ export interface PromptSpec {
   scene: {
     locationKey?: string;
     timeKey?: string;
+    styleKey?: string;
   };
   camera?: CameraOptions;
   style?: StyleOptions;
