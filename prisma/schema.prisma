@@ -97,3 +97,18 @@ model VerificationCode {
 
   @@map("verification_codes")
 }
+
+model ToolUsage {
+  id            String   @id @default(cuid())
+  toolType      String   // "performance", "build", "image"
+  userEmail     String?  // null for anonymous users
+  fingerprint   String?  // browser fingerprint for anonymous tracking
+  success       Boolean  @default(true)
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+
+  @@index([toolType, createdAt])
+  @@index([userEmail])
+  @@index([fingerprint])
+  @@map("tool_usage")
+}

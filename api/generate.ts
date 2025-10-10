@@ -2,6 +2,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { checkQuota, incrementUsage } from '../lib/quota.js';
 import { setCorsHeaders } from '../lib/corsConfig.js';
+import { logToolUsage } from '../lib/analytics.js';
 
 // Types for the request body
 interface CarSpec {
@@ -362,6 +363,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Increment usage after successful generation
     await incrementUsage(userEmail, 'image');
 
+    // Log analytics
+    const fingerprint = req.headers['x-fingerprint'] as string || null;
+    await logToolUsage('image', userEmail, fingerprint, true);
+
     return res.status(200).json({
       image: imageBase64,
       prompt: prompt,
@@ -370,10 +375,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error) {
     console.error('API error:', error);
-    
+
     let errorMessage = 'Failed to generate image';
     let statusCode = 500;
-    
+
     if (error instanceof Error) {
       if (error.message.includes('API key') || error.message.includes('authentication')) {
         errorMessage = 'Invalid API key configuration';
@@ -386,6 +391,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         statusCode = 400;
       }
     }
+
+    // Log failed analytics
+    const userEmail = req.headers['x-user-email'] as string || null;
+    const fingerprint = req.headers['x-fingerprint'] as string || null;
+    await logToolUsage('image', userEmail, fingerprint, false, errorMessage);
     
     return res.status(statusCode).json({ error: errorMessage });
   }
