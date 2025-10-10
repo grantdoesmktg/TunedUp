@@ -2,6 +2,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { checkQuota, incrementUsage } from '../lib/quota.js';
 import { setCorsHeaders } from '../lib/corsConfig.js';
+import { logToolUsage } from '../lib/analytics.js';
 
 // Types for the request body
 interface VehicleSpec {
@@ -217,18 +218,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     console.log('Build plan completed successfully');
-    
+
     // Increment usage after successful calculation
     await incrementUsage(userEmail, 'build');
-    
+
+    // Log analytics
+    const fingerprint = req.headers['x-fingerprint'] as string || null;
+    await logToolUsage('build', userEmail, fingerprint, true);
+
     return res.status(200).json(data as BuildPlanResponse);
 
   } catch (error) {
     console.error('Build plan API error:', error);
-    
+
     let errorMessage = 'Failed to generate build plan';
     let statusCode = 500;
-    
+
     if (error instanceof Error) {
       if (error.message.includes('API key') || error.message.includes('authentication')) {
         errorMessage = 'Invalid Gemini API key configuration';
@@ -244,7 +249,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         statusCode = 422;
       }
     }
-    
+
+    // Log failed analytics
+    const userEmail = req.headers['x-user-email'] as string || null;
+    const fingerprint = req.headers['x-fingerprint'] as string || null;
+    await logToolUsage('build', userEmail, fingerprint, false, errorMessage);
+
     return res.status(statusCode).json({ error: errorMessage });
   }
 }
