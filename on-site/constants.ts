@@ -156,9 +156,9 @@ export const STYLE_PRESETS: StylePreset[] = [
   },
   {
     key: 'concept_art',
-    label: 'Concept Art',
-    description: 'Painterly matte-painting with epic cinematic lighting',
-    prompt: 'concept art, matte painting, epic lighting, cinematic composition, volumetric light rays, ultra-wide shot, dynamic perspective'
+    label: 'Concept Sketch',
+    description: 'Black and white pencil sketch with hand-drawn shading',
+    prompt: 'black and white pencil sketch, concept art drawing, hand-drawn automotive design sketch, pencil shading, sketch lines, monochrome, technical drawing style, artist concept sketch'
   }
 ];
 
