@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "postinstall": "prisma generate && prisma db push --accept-data-loss"
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
