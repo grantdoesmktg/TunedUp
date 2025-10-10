@@ -1,4 +1,4 @@
-import { LocationPreset, TimePreset } from './types';
+import { LocationPreset, TimePreset, StylePreset } from './types';
 
 export const LOCATION_PRESETS: LocationPreset[] = [
   // 🇯🇵 Japan
@@ -132,6 +132,33 @@ export const TIME_PRESETS: TimePreset[] = [
     key: 'midday',
     label: 'Midday',
     description: 'Bright daylight with clear shadows'
+  }
+];
+
+export const STYLE_PRESETS: StylePreset[] = [
+  {
+    key: 'borderlands',
+    label: 'Borderlands',
+    description: 'Cell-shaded comic with thick black outlines, gritty textures',
+    prompt: 'cell-shaded, comic-book style, cel shading, gritty outlines, hand-drawn textures, Borderlands aesthetic, stylized lighting, inked shadows'
+  },
+  {
+    key: 'photoreal',
+    label: 'Photoreal',
+    description: 'Cinematic real-world with true lighting and reflections',
+    prompt: 'cinematic lighting, photorealistic, 8K detail, depth of field, dynamic reflections, HDR tone mapping, real-world environment'
+  },
+  {
+    key: 'vaporwave',
+    label: 'Vaporwave',
+    description: '80s synthwave with neon grids and dreamy energy',
+    prompt: 'vaporwave, retro futurism, synthwave aesthetic, neon grid, lens glow, retrowave lighting, cyberpunk horizon, 80s poster art'
+  },
+  {
+    key: 'concept_art',
+    label: 'Concept Art',
+    description: 'Painterly matte-painting with epic cinematic lighting',
+    prompt: 'concept art, matte painting, epic lighting, cinematic composition, volumetric light rays, ultra-wide shot, dynamic perspective'
   }
 ];
 
