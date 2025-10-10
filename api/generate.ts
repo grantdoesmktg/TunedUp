@@ -178,7 +178,7 @@ function renderPrompt(promptSpec: PromptSpec, hasReferenceImage: boolean = false
       borderlands: ', cell-shaded, comic-book style, cel shading, gritty outlines, hand-drawn textures, Borderlands aesthetic, stylized lighting, inked shadows',
       photoreal: ', cinematic lighting, photorealistic, 8K detail, depth of field, dynamic reflections, HDR tone mapping, real-world environment',
       vaporwave: ', vaporwave, retro futurism, synthwave aesthetic, neon grid, lens glow, retrowave lighting, cyberpunk horizon, 80s poster art',
-      concept_art: ', concept art, matte painting, epic lighting, cinematic composition, volumetric light rays, ultra-wide shot, dynamic perspective'
+      concept_art: ', black and white pencil sketch, concept art drawing, hand-drawn automotive design sketch, pencil shading, sketch lines, monochrome, technical drawing style, artist concept sketch'
     };
     prompt += stylePrompts[scene.styleKey as keyof typeof stylePrompts] || '';
   }
