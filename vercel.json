@@ -9,6 +9,19 @@
       "maxDuration": 30
     }
   },
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "https://www.tunedup.dev?openExternalBrowser=1",
+      "permanent": false,
+      "has": [
+        {
+          "type": "host",
+          "value": "app.tunedup.dev"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!api|assets|favicon.ico|.*\\.).*)",
