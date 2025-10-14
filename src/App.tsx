@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '../shared/contexts/AuthContext';
+import { BrowserPrompt } from '../shared/components/BrowserPrompt';
 import Home from './pages/Home';
 import SimpleLogin from './pages/SimpleLogin';
 import Dashboard from './pages/Dashboard';
@@ -16,6 +17,7 @@ import AuthenticatedOnSite from '../on-site/AuthenticatedApp';
 function App() {
   return (
     <AuthProvider>
+      <BrowserPrompt />
       <Router>
         <Routes>
           <Route path="/" element={<Home />} />
