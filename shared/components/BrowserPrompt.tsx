@@ -74,6 +74,29 @@ export const BrowserPrompt: React.FC = () => {
         padding: '20px',
         color: 'white'
       }}>
+        <button
+          onClick={() => setShowInAppPrompt(false)}
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: 'rgba(255,255,255,0.2)',
+            border: 'none',
+            color: 'white',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            cursor: 'pointer',
+            fontSize: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 'bold',
+            backdropFilter: 'blur(10px)'
+          }}
+        >
+          ×
+        </button>
         <div style={{
           maxWidth: '500px',
           textAlign: 'center'
@@ -97,7 +120,7 @@ export const BrowserPrompt: React.FC = () => {
               marginBottom: '24px',
               backdropFilter: 'blur(10px)'
             }}>
-              <li>Tap the <strong>⋯</strong> menu (bottom right)</li>
+              <li>Tap the <strong>⋯</strong> menu (top right)</li>
               <li>Select <strong>"Open in Safari"</strong></li>
               <li>Enjoy full functionality!</li>
             </ol>
@@ -147,6 +170,23 @@ export const BrowserPrompt: React.FC = () => {
           }}>
             Then paste the link in {isIOS ? 'Safari' : 'Chrome'}
           </p>
+
+          <button
+            onClick={() => setShowInAppPrompt(false)}
+            style={{
+              marginTop: '24px',
+              padding: '12px 24px',
+              fontSize: '14px',
+              background: 'transparent',
+              color: 'white',
+              border: '2px solid rgba(255,255,255,0.5)',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}
+          >
+            Continue Anyway (Not Recommended)
+          </button>
         </div>
       </div>
     );
