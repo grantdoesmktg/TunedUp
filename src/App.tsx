@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '../shared/contexts/AuthContext';
 import { BrowserPrompt } from '../shared/components/BrowserPrompt';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 import Home from './pages/Home';
 import SimpleLogin from './pages/SimpleLogin';
 import Dashboard from './pages/Dashboard';
@@ -15,6 +17,14 @@ import AuthenticatedBuildPlanner from '../build-planner/AuthenticatedApp';
 import AuthenticatedOnSite from '../on-site/AuthenticatedApp';
 
 function App() {
+  useEffect(() => {
+    // Configure status bar for native apps
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setStyle({ style: Style.Dark });
+      StatusBar.setBackgroundColor({ color: '#0f0f23' });
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <BrowserPrompt />
