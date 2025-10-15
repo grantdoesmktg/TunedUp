@@ -5,6 +5,7 @@ export const BrowserPrompt: React.FC = () => {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     const ua = navigator.userAgent || navigator.vendor || '';
@@ -39,6 +40,18 @@ export const BrowserPrompt: React.FC = () => {
         setTimeout(() => setShowInstallPrompt(true), 3000);
       }
     }
+
+    // Listen for PWA install prompt (Android Chrome)
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
 
   // Check if app is in standalone mode (already installed)
@@ -50,6 +63,22 @@ export const BrowserPrompt: React.FC = () => {
   const dismissInstallPrompt = () => {
     setShowInstallPrompt(false);
     localStorage.setItem('tunedup_install_prompt_dismissed', 'true');
+  };
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      // Show the install prompt for Android Chrome
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+
+      if (outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+        setShowInstallPrompt(false);
+        localStorage.setItem('tunedup_install_prompt_dismissed', 'true');
+      }
+
+      setDeferredPrompt(null);
+    }
   };
 
   const copyLink = () => {
@@ -268,6 +297,27 @@ export const BrowserPrompt: React.FC = () => {
           <p style={{ fontSize: '12px', opacity: 0.8 }}>
             ✨ Works offline • 🚀 Faster loading • 📲 App-like experience
           </p>
+
+          {isAndroid && deferredPrompt && (
+            <button
+              onClick={handleInstallClick}
+              style={{
+                marginTop: '16px',
+                padding: '12px 24px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                background: 'rgba(255,255,255,0.9)',
+                color: '#d82c83',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                width: '100%',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}
+            >
+              📲 Install Now
+            </button>
+          )}
         </div>
       </div>
     );

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TunedUp</string>
+    <string name="title_activity_main">TunedUp</string>
+    <string name="package_name">com.tunedup.app</string>
+    <string name="custom_url_scheme">com.tunedup.app</string>
+</resources>
