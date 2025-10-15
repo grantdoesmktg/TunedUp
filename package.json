@@ -10,6 +10,10 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/cli": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/ios": "^7.4.3",
     "@google/generative-ai": "^0.21.0",
     "@prisma/client": "^6.16.2",
     "@vercel/blob": "^2.0.0",
@@ -24,6 +28,7 @@
     "stripe": "^18.5.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
