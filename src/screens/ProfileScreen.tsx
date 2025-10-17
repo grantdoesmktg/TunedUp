@@ -1,0 +1,309 @@
+// NATIVE APP - Profile screen (basic shell, will build out later)
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
+import { useQuota } from '../contexts/QuotaContext';
+import { PricingModal } from '../components/PricingModal';
+import { initializeStripePayment } from '../services/stripe';
+import { colors } from '../theme/colors';
+import type { PlanCode } from '../types/quota';
+
+const ProfileScreen = ({ navigation }: any) => {
+  const { user, isAuthenticated, logout } = useAuth();
+  const { quotaInfo } = useQuota();
+  const [pricingModalVisible, setPricingModalVisible] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  const handleSelectPlan = async (planCode: PlanCode, priceId: string) => {
+    // Initialize Stripe payment flow
+    await initializeStripePayment(planCode, priceId, user?.email);
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyIcon}>👤</Text>
+          <Text style={styles.emptyTitle}>Sign In Required</Text>
+          <Text style={styles.emptyText}>
+            Sign in to view your profile, saved cars, and build history
+          </Text>
+          <TouchableOpacity
+            style={styles.signInButton}
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Text style={styles.signInButtonText}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Profile</Text>
+      </View>
+
+      {/* User Info Card */}
+      <View style={styles.card}>
+        <View style={styles.avatarContainer}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {user?.email.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.email}>{user?.email}</Text>
+        <View style={styles.planBadge}>
+          <Text style={styles.planText}>{user?.planCode.toUpperCase()}</Text>
+        </View>
+      </View>
+
+      {/* Upgrade Plan Card */}
+      <View style={styles.upgradeCard}>
+        <Text style={styles.upgradeTitle}>Want More?</Text>
+        <Text style={styles.upgradeText}>
+          Upgrade your plan to unlock higher limits and premium features
+        </Text>
+        <TouchableOpacity
+          style={styles.upgradeButton}
+          onPress={() => setPricingModalVisible(true)}
+        >
+          <Text style={styles.upgradeButtonText}>View Plans & Pricing</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Usage Stats */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Monthly Usage</Text>
+        <View style={styles.statsGrid}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{user?.perfUsed || 0}</Text>
+            <Text style={styles.statLabel}>Performance</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{user?.buildUsed || 0}</Text>
+            <Text style={styles.statLabel}>Build Plans</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{user?.imageUsed || 0}</Text>
+            <Text style={styles.statLabel}>AI Images</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{user?.communityUsed || 0}</Text>
+            <Text style={styles.statLabel}>Community</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Coming Soon Section */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Coming Soon</Text>
+        <Text style={styles.comingSoonText}>
+          • Saved Cars Showcase{'\n'}
+          • Build History{'\n'}
+          • Profile Customization{'\n'}
+          • Social Features
+        </Text>
+      </View>
+
+      {/* Logout Button */}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Sign Out</Text>
+      </TouchableOpacity>
+
+      {/* Pricing Modal */}
+      <PricingModal
+        visible={pricingModalVisible}
+        onClose={() => setPricingModalVisible(false)}
+        currentPlan={quotaInfo?.planCode}
+        onSelectPlan={handleSelectPlan}
+      />
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    paddingBottom: 24,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 24,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyIcon: {
+    fontSize: 80,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  signInButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  signInButtonText: {
+    color: colors.background,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  card: {
+    backgroundColor: colors.secondary,
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.divider,
+  },
+  avatarContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: colors.background,
+  },
+  email: {
+    fontSize: 18,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  planBadge: {
+    backgroundColor: colors.divider,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    alignSelf: 'center',
+  },
+  planText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 16,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  statItem: {
+    width: '48%',
+    backgroundColor: colors.background,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  comingSoonText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 24,
+  },
+  upgradeCard: {
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  upgradeTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: colors.background,
+    marginBottom: 8,
+  },
+  upgradeText: {
+    fontSize: 14,
+    color: colors.background,
+    textAlign: 'center',
+    marginBottom: 16,
+    opacity: 0.9,
+  },
+  upgradeButton: {
+    backgroundColor: colors.background,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  upgradeButtonText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  logoutButton: {
+    backgroundColor: colors.secondary,
+    marginHorizontal: 20,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.error,
+  },
+  logoutText: {
+    color: colors.error,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});
+
+export default ProfileScreen;

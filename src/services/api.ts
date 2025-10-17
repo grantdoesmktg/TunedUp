@@ -1,0 +1,180 @@
+// NATIVE APP - API Service with JWT authentication
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { User, AuthResponse } from '../types';
+import { getDeviceFingerprint } from './fingerprint';
+
+const API_BASE_URL = 'https://www.tunedup.dev';
+
+// Token management
+export const getToken = async (): Promise<string | null> => {
+  return await AsyncStorage.getItem('auth_token');
+};
+
+export const setToken = async (token: string): Promise<void> => {
+  await AsyncStorage.setItem('auth_token', token);
+};
+
+export const removeToken = async (): Promise<void> => {
+  await AsyncStorage.removeItem('auth_token');
+};
+
+// API request helper
+async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const token = await getToken();
+  const fingerprint = await getDeviceFingerprint();
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-fingerprint': fingerprint,
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Network error' }));
+    throw new Error(error.error || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// Auth API
+export const authAPI = {
+  // Send magic link email
+  sendMagicLink: async (email: string): Promise<AuthResponse> => {
+    return apiRequest('/api/auth?action=send-link', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  // Verify code and get JWT
+  verifyCode: async (email: string, code: string): Promise<AuthResponse> => {
+    const response = await apiRequest<AuthResponse>('/api/auth?action=verify', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
+    });
+
+    // Store token if login successful
+    if (response.success && response.token) {
+      await setToken(response.token);
+    }
+
+    return response;
+  },
+
+  // Get current user
+  getMe: async (): Promise<{ user: User }> => {
+    return apiRequest('/api/auth?action=me');
+  },
+
+  // Logout
+  logout: async (): Promise<void> => {
+    await apiRequest('/api/auth?action=logout', {
+      method: 'POST',
+    });
+    await removeToken();
+  },
+};
+
+// Community API
+export const communityAPI = {
+  getImages: async (page: number = 1, limit: number = 40) => {
+    return apiRequest(`/api/community?action=images&page=${page}&limit=${limit}`);
+  },
+
+  likeImage: async (imageId: string) => {
+    return apiRequest('/api/community?action=like', {
+      method: 'POST',
+      body: JSON.stringify({ imageId }),
+    });
+  },
+};
+
+// Saved Cars API
+export const carsAPI = {
+  getSavedCars: async () => {
+    return apiRequest('/api/saved-cars');
+  },
+
+  saveCar: async (carData: any) => {
+    return apiRequest('/api/saved-cars', {
+      method: 'POST',
+      body: JSON.stringify(carData),
+    });
+  },
+};
+
+// Performance Calculator API
+export const performanceAPI = {
+  calculatePerformance: async (carInput: {
+    make: string;
+    model: string;
+    year: string;
+    trim: string;
+    drivetrain: string;
+    transmission: string;
+    modifications: string;
+    tireType: string;
+    fuelType: string;
+    launchTechnique: string;
+  }) => {
+    return apiRequest('/api/performance', {
+      method: 'POST',
+      body: JSON.stringify(carInput),
+    });
+  },
+};
+
+// Build Planner API
+export const buildPlannerAPI = {
+  generateBuildPlan: async (vehicleSpec: {
+    year: string;
+    make: string;
+    model: string;
+    trim: string;
+    question: string;
+  }) => {
+    return apiRequest('/api/build-plan', {
+      method: 'POST',
+      body: JSON.stringify({ vehicleSpec }),
+    });
+  },
+};
+
+// Image Generator API
+export const imageGeneratorAPI = {
+  generateImage: async (promptSpec: any, imageParams: any, referenceImage?: string) => {
+    return apiRequest('/api/generate', {
+      method: 'POST',
+      body: JSON.stringify({ promptSpec, imageParams, referenceImage }),
+    });
+  },
+};
+
+// Quota API
+export const quotaAPI = {
+  // Get quota info for current user/device
+  getQuotaInfo: async () => {
+    return apiRequest('/api/quota?action=info');
+  },
+
+  // Check if user can perform an action
+  checkQuota: async (toolType: 'performance' | 'build' | 'image' | 'community') => {
+    return apiRequest('/api/quota?action=check', {
+      method: 'POST',
+      body: JSON.stringify({ toolType }),
+    });
+  },
+};

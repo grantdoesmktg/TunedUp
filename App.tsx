@@ -1,20 +1,25 @@
+// NATIVE APP - Root component
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StripeProvider } from '@stripe/stripe-react-native';
+import { AuthProvider } from './src/contexts/AuthContext';
+import { QuotaProvider } from './src/contexts/QuotaContext';
+import { AppNavigator } from './src/navigation/AppNavigator';
+
+const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_live_51SDTmp5rYqPF2MhhaWkd2ZSREADQMcc22Xn9mgkOQg97aqVKv13TpMj1GnGxX5t8tgDVrUXYges7ngDES0h5bi5D00scO1avGg';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <QuotaProvider>
+            <AppNavigator />
+            <StatusBar style="light" />
+          </QuotaProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </StripeProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
