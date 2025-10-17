@@ -2,6 +2,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node'
 import { jwtVerify, SignJWT } from 'jose'
 import { Resend } from 'resend'
 import { prisma } from './lib/prisma.js'
+import { getToken } from './lib/auth.js'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -262,33 +263,14 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    let sessionCookie = req.headers.cookie
-      ?.split(';')
-      .find(c => c.trim().startsWith('session='))
-      ?.split('=')[1]
+    // Use the getToken helper that supports both Authorization header (mobile) and cookies (web)
+    const payload = await getToken(req)
 
-    if (!sessionCookie) {
-      const vercelJwtCookie = req.headers.cookie
-        ?.split(';')
-        .find(c => c.trim().startsWith('_vercel_jwt='))
-        ?.split('=')[1]
-
-      if (vercelJwtCookie) {
-        sessionCookie = vercelJwtCookie.split(',')[0]
-      }
-    }
-
-    if (!sessionCookie) {
+    if (!payload || !payload.email) {
       return res.status(401).json({ error: 'Not authenticated' })
     }
 
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
-    const { payload } = await jwtVerify(sessionCookie, secret)
     const email = payload.email as string
-
-    if (!email) {
-      return res.status(401).json({ error: 'Invalid session' })
-    }
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -301,6 +283,7 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
         perfUsed: true,
         buildUsed: true,
         imageUsed: true,
+        communityUsed: true,
         resetDate: true,
         createdAt: true
       }
@@ -320,6 +303,7 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
           perfUsed: 0,
           buildUsed: 0,
           imageUsed: 0,
+          communityUsed: 0,
           resetDate: now
         },
         select: {
@@ -331,6 +315,7 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
           perfUsed: true,
           buildUsed: true,
           imageUsed: true,
+          communityUsed: true,
           resetDate: true,
           createdAt: true
         }
