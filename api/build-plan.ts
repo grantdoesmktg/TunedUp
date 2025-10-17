@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { checkQuota, incrementUsage } from '../lib/quota.js';
+import { getToken } from './lib/auth.js';
 import { setCorsHeaders } from '../lib/corsConfig.js';
 import { logToolUsage } from '../lib/analytics.js';
 
@@ -163,9 +164,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Check quota (get email from header)
-    const userEmail = req.headers['x-user-email'] as string || null;
-    const quotaCheck = await checkQuota(userEmail, 'build');
+    // Check quota (get email from JWT token or header)
+    const token = await getToken(req);
+    const userEmail = token?.email as string || null;
+    const fingerprint = req.headers['x-fingerprint'] as string || null;
+    const quotaCheck = await checkQuota(userEmail, 'build', fingerprint);
     
     if (!quotaCheck.allowed) {
       return res.status(429).json({ 
@@ -220,10 +223,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('Build plan completed successfully');
 
     // Increment usage after successful calculation
-    await incrementUsage(userEmail, 'build');
+    await incrementUsage(userEmail, 'build', fingerprint);
 
     // Log analytics
-    const fingerprint = req.headers['x-fingerprint'] as string || null;
     await logToolUsage('build', userEmail, fingerprint, true);
 
     return res.status(200).json(data as BuildPlanResponse);
