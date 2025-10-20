@@ -53,6 +53,15 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
     }
   };
 
+  // Format image URI
+  const imageUri = results.image.startsWith('data:')
+    ? results.image
+    : `data:image/png;base64,${results.image}`;
+
+  const handleShareToCommunity = async () => {
+    Alert.alert('Coming Soon', 'Share to Community feature will be available soon!');
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -61,62 +70,16 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.backButton}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>Generated Image</Text>
-          <Text style={styles.carInfo}>
-            {carSpec.year} {carSpec.make} {carSpec.model}
-          </Text>
+          <Text style={styles.title}>Your Custom {carSpec.year} {carSpec.make} {carSpec.model}</Text>
         </View>
 
         {/* Generated Image */}
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: results.image }}
+            source={{ uri: imageUri }}
             style={styles.image}
             resizeMode="contain"
           />
-        </View>
-
-        {/* Car Details */}
-        <View style={styles.detailsCard}>
-          <Text style={styles.detailsTitle}>Car Details</Text>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Color:</Text>
-            <Text style={styles.detailValue}>{carSpec.color}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Wheels:</Text>
-            <Text style={styles.detailValue}>{carSpec.wheelsColor}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>View:</Text>
-            <Text style={styles.detailValue}>{carSpec.position}</Text>
-          </View>
-          {carSpec.addModel && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>With Model:</Text>
-              <Text style={styles.detailValue}>Yes</Text>
-            </View>
-          )}
-          {carSpec.deBadged && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>De-Badged:</Text>
-              <Text style={styles.detailValue}>Yes</Text>
-            </View>
-          )}
-          {carSpec.chromeDelete && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Chrome Delete:</Text>
-              <Text style={styles.detailValue}>Yes</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Prompt Used */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>AI Prompt</Text>
-          <View style={styles.promptCard}>
-            <Text style={styles.promptText}>{results.prompt}</Text>
-          </View>
         </View>
 
         {/* Action Buttons */}
@@ -125,14 +88,14 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
             style={styles.primaryButton}
             onPress={handleSaveImage}
           >
-            <Text style={styles.primaryButtonText}>💾 Save to Photos</Text>
+            <Text style={styles.primaryButtonText}>Save to Photos</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.secondaryButton}
-            onPress={handleShareImage}
+            onPress={handleShareToCommunity}
           >
-            <Text style={styles.secondaryButtonText}>📤 Share Image</Text>
+            <Text style={styles.secondaryButtonText}>Share to Community</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -140,13 +103,6 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
             onPress={() => navigation.navigate('ImageGenerator')}
           >
             <Text style={styles.secondaryButtonText}>Generate Another</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.tertiaryButton}
-            onPress={() => navigation.navigate('MainTabs')}
-          >
-            <Text style={styles.tertiaryButtonText}>Back to Home</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
