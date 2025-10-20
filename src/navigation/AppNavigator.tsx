@@ -1,9 +1,10 @@
 // NATIVE APP - Main navigation structure
 import React from 'react';
-import { Text } from 'react-native';
+import { Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { colors } from '../theme/colors';
 
@@ -63,9 +64,9 @@ const MainTabs = () => (
         backgroundColor: colors.secondary,
         borderTopColor: colors.divider,
         borderTopWidth: 1,
-        paddingBottom: 8,
+        paddingBottom: Platform.OS === 'ios' ? 24 : 8,
         paddingTop: 8,
-        height: 60,
+        height: Platform.OS === 'ios' ? 88 : 60,
       },
       tabBarActiveTintColor: colors.primary,
       tabBarInactiveTintColor: colors.textSecondary,
@@ -79,48 +80,39 @@ const MainTabs = () => (
       name="Home"
       component={HomeScreen}
       options={{
-        tabBarIcon: ({ color, size }) => <HomeIcon color={color} size={size} />,
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="home" size={size} color={color} />
+        ),
       }}
     />
     <Tab.Screen
       name="Tools"
       component={ToolsScreen}
       options={{
-        tabBarIcon: ({ color, size }) => <ToolsIcon color={color} size={size} />,
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="construct" size={size} color={color} />
+        ),
       }}
     />
     <Tab.Screen
       name="Community"
       component={CommunityScreen}
       options={{
-        tabBarIcon: ({ color, size }) => <CommunityIcon color={color} size={size} />,
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="people" size={size} color={color} />
+        ),
       }}
     />
     <Tab.Screen
       name="Profile"
       component={ProfileScreen}
       options={{
-        tabBarIcon: ({ color, size }) => <ProfileIcon color={color} size={size} />,
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="person-circle" size={size} color={color} />
+        ),
       }}
     />
   </Tab.Navigator>
-);
-
-// Simple icon components using Text (emoji fallback)
-const HomeIcon = ({ color }: { color: string; size: number }) => (
-  <Text style={{ fontSize: 24, color }}>🏠</Text>
-);
-
-const ToolsIcon = ({ color }: { color: string; size: number }) => (
-  <Text style={{ fontSize: 24, color }}>🔧</Text>
-);
-
-const CommunityIcon = ({ color }: { color: string; size: number }) => (
-  <Text style={{ fontSize: 24, color }}>👥</Text>
-);
-
-const ProfileIcon = ({ color }: { color: string; size: number }) => (
-  <Text style={{ fontSize: 24, color }}>👤</Text>
 );
 
 export const AppNavigator = () => {
