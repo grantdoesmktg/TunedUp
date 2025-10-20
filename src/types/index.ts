@@ -112,6 +112,7 @@ export interface CarSpec {
   addModel: boolean;
   deBadged: boolean;
   chromeDelete: boolean;
+  darkTint: boolean;
   position: 'front' | 'quarter' | 'three-quarter' | 'back';
   details: string;
 }

@@ -166,29 +166,27 @@ const BuildPlannerScreen = ({ navigation }: any) => {
           {/* Budget */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Budget *</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={budget}
-                onValueChange={(value) => {
-                  setBudget(value);
-                  // Update question to include budget
-                  if (value) {
-                    const budgetText = BUDGET_OPTIONS.find(opt => opt.value === value)?.label || '';
-                    const currentQuestion = vehicleSpec.question.replace(/^\$[\d,]+\s*-?\s*/i, '');
-                    setVehicleSpec({
-                      ...vehicleSpec,
-                      question: budgetText ? `${budgetText} - ${currentQuestion}` : currentQuestion
-                    });
-                  }
-                }}
-                style={styles.picker}
-                enabled={!loading}
-              >
-                {BUDGET_OPTIONS.map((option) => (
-                  <Picker.Item key={option.value} label={option.label} value={option.value} />
-                ))}
-              </Picker>
-            </View>
+            <Picker
+              selectedValue={budget}
+              onValueChange={(value) => {
+                setBudget(value);
+                // Update question to include budget
+                if (value) {
+                  const budgetText = BUDGET_OPTIONS.find(opt => opt.value === value)?.label || '';
+                  const currentQuestion = vehicleSpec.question.replace(/^\$[\d,]+\s*-?\s*/i, '');
+                  setVehicleSpec({
+                    ...vehicleSpec,
+                    question: budgetText ? `${budgetText} - ${currentQuestion}` : currentQuestion
+                  });
+                }
+              }}
+              style={styles.picker}
+              enabled={!loading}
+            >
+              {BUDGET_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={option.label} value={option.value} color={colors.textPrimary} />
+              ))}
+            </Picker>
           </View>
 
           {/* Question/Goal */}
@@ -289,16 +287,12 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
-  pickerContainer: {
+  picker: {
+    color: colors.textPrimary,
     backgroundColor: colors.secondary,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.divider,
-    overflow: 'hidden',
-  },
-  picker: {
-    color: colors.textPrimary,
-    backgroundColor: colors.secondary,
   },
   button: {
     backgroundColor: colors.primary,

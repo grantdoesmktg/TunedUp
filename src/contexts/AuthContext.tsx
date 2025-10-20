@@ -75,13 +75,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const refreshUser = async () => {
+    console.log('🔄 Refreshing user data...');
     try {
       const response = await authAPI.getMe();
+      console.log('✅ User data refreshed:', {
+        perfUsed: response.user.perfUsed,
+        buildUsed: response.user.buildUsed,
+        imageUsed: response.user.imageUsed,
+        communityUsed: response.user.communityUsed,
+      });
       setUser(response.user);
       // Quota context will automatically update when user state changes
     } catch (error) {
-      console.error('Failed to refresh user:', error);
-      setUser(null);
+      console.error('❌ Failed to refresh user:', error);
+      // Don't set user to null on refresh error - keep existing user data
     }
   };
 

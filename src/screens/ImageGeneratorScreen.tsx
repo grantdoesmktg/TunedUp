@@ -10,7 +10,7 @@ import { colors } from '../theme/colors';
 import type { CarSpec, ImageGeneratorResponse } from '../types';
 
 const ImageGeneratorScreen = ({ navigation }: any) => {
-  const { refreshUser } = useAuth();
+  const { refreshUser, user } = useAuth();
   const { checkQuota, refreshQuota } = useQuota();
   const [carSpec, setCarSpec] = useState<CarSpec>({
     year: '',
@@ -21,13 +21,14 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
     addModel: false,
     deBadged: false,
     chromeDelete: false,
+    darkTint: false,
     position: 'quarter',
     details: '',
   });
   const [location, setLocation] = useState('tokyo_shibuya');
   const [timeOfDay, setTimeOfDay] = useState('dusk');
   const [style, setStyle] = useState('photoreal');
-  const [colorPalette, setColorPalette] = useState('cool_teal');
+  const [colorPalette, setColorPalette] = useState('warm_sunset');
   const [loading, setLoading] = useState(false);
 
   // Location options grouped by country
@@ -63,22 +64,16 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
 
   const artStyles = [
     { label: '📷 Photorealistic', value: 'photoreal' },
-    { label: '🎨 Borderlands (Cell-Shaded)', value: 'borderlands' },
+    { label: '🎨 Borderlands', value: 'borderlands' },
     { label: '🌊 Vaporwave', value: 'vaporwave' },
-    { label: '✏️ Concept Art Sketch', value: 'concept_art' },
+    { label: '✏️ Concept Sketch', value: 'concept_art' },
   ];
 
   const palettes = [
-    { label: '❄️ Cool Teal', value: 'cool_teal' },
     { label: '🌅 Warm Sunset', value: 'warm_sunset' },
-    { label: '⚫ Monochrome Slate', value: 'monochrome_slate' },
     { label: '🌃 Neo Tokyo', value: 'neo_tokyo' },
-    { label: '📼 Vintage Film', value: 'vintage_film' },
     { label: '🥂 Champagne Gold', value: 'champagne_gold' },
-    { label: '🏁 Racing Heritage', value: 'racing_heritage' },
     { label: '🎨 Graffiti Pop', value: 'graffiti_pop' },
-    { label: '🏜️ Earth & Sand', value: 'earth_sand' },
-    { label: '🌈 Holographic Fade', value: 'holographic_fade' },
   ];
 
   const colors_list = ['Red', 'Blue', 'Black', 'White', 'Silver', 'Gray', 'Green', 'Yellow', 'Orange', 'Purple', 'Brown', 'Gold'];
@@ -151,6 +146,30 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
   const handleUpgradePress = () => {
     navigation.navigate('Profile');
   };
+
+  // Get character limit based on plan
+  const getDetailsCharLimit = () => {
+    if (!user) return 0; // Anonymous users get 0 characters (locked)
+    const planCode = user.planCode || 'ANONYMOUS';
+    switch (planCode) {
+      case 'ANONYMOUS':
+        return 0;
+      case 'FREE':
+        return 10;
+      case 'PLUS':
+        return 50;
+      case 'PRO':
+        return 100;
+      case 'ULTRA':
+      case 'ADMIN':
+        return 250;
+      default:
+        return 0;
+    }
+  };
+
+  const detailsCharLimit = getDetailsCharLimit();
+  const isDetailsLocked = !user || detailsCharLimit === 0;
 
   return (
     <KeyboardAvoidingView
@@ -226,10 +245,11 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
                 selectedValue={carSpec.color}
                 onValueChange={(value) => setCarSpec({ ...carSpec, color: value })}
                 style={styles.picker}
+                mode="dropdown"
                 enabled={!loading}
               >
                 {colors_list.map((color) => (
-                  <Picker.Item key={color} label={color} value={color} />
+                  <Picker.Item key={color} label={color} value={color} color={colors.textPrimary} />
                 ))}
               </Picker>
             </View>
@@ -242,26 +262,11 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
                 selectedValue={carSpec.wheelsColor}
                 onValueChange={(value) => setCarSpec({ ...carSpec, wheelsColor: value })}
                 style={styles.picker}
+                mode="dropdown"
                 enabled={!loading}
               >
                 {colors_list.map((color) => (
-                  <Picker.Item key={color} label={color} value={color} />
-                ))}
-              </Picker>
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Camera Angle</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={carSpec.position}
-                onValueChange={(value) => setCarSpec({ ...carSpec, position: value as any })}
-                style={styles.picker}
-                enabled={!loading}
-              >
-                {positions.map((pos) => (
-                  <Picker.Item key={pos.value} label={pos.label} value={pos.value} />
+                  <Picker.Item key={color} label={color} value={color} color={colors.textPrimary} />
                 ))}
               </Picker>
             </View>
@@ -277,10 +282,11 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
                 selectedValue={location}
                 onValueChange={setLocation}
                 style={styles.picker}
+                mode="dropdown"
                 enabled={!loading}
               >
                 {locations.map((loc) => (
-                  <Picker.Item key={loc.value} label={loc.label} value={loc.value} />
+                  <Picker.Item key={loc.value} label={loc.label} value={loc.value} color={colors.textPrimary} />
                 ))}
               </Picker>
             </View>
@@ -288,101 +294,231 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Time of Day</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={timeOfDay}
-                onValueChange={setTimeOfDay}
-                style={styles.picker}
-                enabled={!loading}
-              >
-                {times.map((time) => (
-                  <Picker.Item key={time.value} label={time.label} value={time.value} />
-                ))}
-              </Picker>
+            <View style={styles.buttonGrid}>
+              {times.map((time) => (
+                <TouchableOpacity
+                  key={time.value}
+                  style={[
+                    styles.optionButton,
+                    timeOfDay === time.value && styles.optionButtonSelected
+                  ]}
+                  onPress={() => setTimeOfDay(time.value)}
+                  disabled={loading}
+                >
+                  <Text style={[
+                    styles.optionButtonText,
+                    timeOfDay === time.value && styles.optionButtonTextSelected
+                  ]}>
+                    {time.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Art Style</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={style}
-                onValueChange={setStyle}
-                style={styles.picker}
-                enabled={!loading}
-              >
-                {artStyles.map((s) => (
-                  <Picker.Item key={s.value} label={s.label} value={s.value} />
-                ))}
-              </Picker>
+            <View style={styles.buttonGrid}>
+              {artStyles.map((s) => (
+                <TouchableOpacity
+                  key={s.value}
+                  style={[
+                    styles.optionButton,
+                    style === s.value && styles.optionButtonSelected
+                  ]}
+                  onPress={() => setStyle(s.value)}
+                  disabled={loading}
+                >
+                  <Text style={[
+                    styles.optionButtonText,
+                    style === s.value && styles.optionButtonTextSelected
+                  ]}>
+                    {s.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Color Palette</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={colorPalette}
-                onValueChange={setColorPalette}
-                style={styles.picker}
-                enabled={!loading}
-              >
-                {palettes.map((p) => (
-                  <Picker.Item key={p.value} label={p.label} value={p.value} />
-                ))}
-              </Picker>
+            <View style={styles.buttonGrid}>
+              {palettes.map((p) => (
+                <TouchableOpacity
+                  key={p.value}
+                  style={[
+                    styles.optionButton,
+                    colorPalette === p.value && styles.optionButtonSelected
+                  ]}
+                  onPress={() => setColorPalette(p.value)}
+                  disabled={loading}
+                >
+                  <Text style={[
+                    styles.optionButtonText,
+                    colorPalette === p.value && styles.optionButtonTextSelected
+                  ]}>
+                    {p.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Camera Angle</Text>
+            <View style={styles.buttonGrid}>
+              {positions.map((pos) => (
+                <TouchableOpacity
+                  key={pos.value}
+                  style={[
+                    styles.optionButton,
+                    carSpec.position === pos.value && styles.optionButtonSelected
+                  ]}
+                  onPress={() => setCarSpec({ ...carSpec, position: pos.value as any })}
+                  disabled={loading}
+                >
+                  <Text style={[
+                    styles.optionButtonText,
+                    carSpec.position === pos.value && styles.optionButtonTextSelected
+                  ]}>
+                    {pos.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
           {/* Styling Options Section */}
           <Text style={styles.sectionHeader}>Styling Options</Text>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Select Options (Multiple)</Text>
+            <View style={styles.buttonGrid}>
+              <TouchableOpacity
+                style={[
+                  styles.multiSelectButton,
+                  carSpec.addModel && styles.multiSelectButtonSelected
+                ]}
+                onPress={() => setCarSpec({ ...carSpec, addModel: !carSpec.addModel })}
+                disabled={loading}
+              >
+                <Text style={[
+                  styles.multiSelectButtonText,
+                  carSpec.addModel && styles.multiSelectButtonTextSelected
+                ]}>
+                  Add Model
+                </Text>
+              </TouchableOpacity>
 
-          <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>Add Model</Text>
-            <Switch
-              value={carSpec.addModel}
-              onValueChange={(value) => setCarSpec({ ...carSpec, addModel: value })}
-              disabled={loading}
-              trackColor={{ false: colors.divider, true: colors.primary }}
-              thumbColor={carSpec.addModel ? colors.background : colors.textSecondary}
-            />
-          </View>
+              <TouchableOpacity
+                style={[
+                  styles.multiSelectButton,
+                  carSpec.deBadged && styles.multiSelectButtonSelected
+                ]}
+                onPress={() => setCarSpec({ ...carSpec, deBadged: !carSpec.deBadged })}
+                disabled={loading}
+              >
+                <Text style={[
+                  styles.multiSelectButtonText,
+                  carSpec.deBadged && styles.multiSelectButtonTextSelected
+                ]}>
+                  De-Badged
+                </Text>
+              </TouchableOpacity>
 
-          <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>De-Badged</Text>
-            <Switch
-              value={carSpec.deBadged}
-              onValueChange={(value) => setCarSpec({ ...carSpec, deBadged: value })}
-              disabled={loading}
-              trackColor={{ false: colors.divider, true: colors.primary }}
-              thumbColor={carSpec.deBadged ? colors.background : colors.textSecondary}
-            />
-          </View>
+              <TouchableOpacity
+                style={[
+                  styles.multiSelectButton,
+                  carSpec.chromeDelete && styles.multiSelectButtonSelected
+                ]}
+                onPress={() => setCarSpec({ ...carSpec, chromeDelete: !carSpec.chromeDelete })}
+                disabled={loading}
+              >
+                <Text style={[
+                  styles.multiSelectButtonText,
+                  carSpec.chromeDelete && styles.multiSelectButtonTextSelected
+                ]}>
+                  Chrome Delete
+                </Text>
+              </TouchableOpacity>
 
-          <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>Chrome Delete</Text>
-            <Switch
-              value={carSpec.chromeDelete}
-              onValueChange={(value) => setCarSpec({ ...carSpec, chromeDelete: value })}
-              disabled={loading}
-              trackColor={{ false: colors.divider, true: colors.primary }}
-              thumbColor={carSpec.chromeDelete ? colors.background : colors.textSecondary}
-            />
+              <TouchableOpacity
+                style={[
+                  styles.multiSelectButton,
+                  carSpec.darkTint && styles.multiSelectButtonSelected
+                ]}
+                onPress={() => setCarSpec({ ...carSpec, darkTint: !carSpec.darkTint })}
+                disabled={loading}
+              >
+                <Text style={[
+                  styles.multiSelectButtonText,
+                  carSpec.darkTint && styles.multiSelectButtonTextSelected
+                ]}>
+                  Dark Tint
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Additional Details */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Additional Details (Optional)</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="e.g., lowered suspension, custom body kit..."
-              placeholderTextColor={colors.textSecondary}
-              value={carSpec.details}
-              onChangeText={(text) => setCarSpec({ ...carSpec, details: text })}
-              multiline
-              numberOfLines={3}
-              editable={!loading}
-            />
+          <View style={[styles.inputGroup, styles.detailsSection]}>
+            <View style={styles.detailsHeader}>
+              <Text style={styles.detailsTitle}>✨ Additional Details</Text>
+              <Text style={styles.detailsSubtitle}>Let your creativity shine!</Text>
+            </View>
+
+            {isDetailsLocked ? (
+              <View style={styles.lockedContainer}>
+                <View style={styles.lockedOverlay}>
+                  <Text style={styles.lockedIcon}>🔒</Text>
+                  <Text style={styles.lockedText}>Sign in to unlock custom details</Text>
+                  <TouchableOpacity
+                    style={styles.upgradeButton}
+                    onPress={handleUpgradePress}
+                  >
+                    <Text style={styles.upgradeButtonText}>Sign In / Upgrade</Text>
+                  </TouchableOpacity>
+                </View>
+                <TextInput
+                  style={[styles.input, styles.textArea, styles.lockedInput]}
+                  placeholder="e.g., lowered suspension, custom body kit, neon underglow..."
+                  placeholderTextColor={colors.textSecondary}
+                  multiline
+                  numberOfLines={3}
+                  editable={false}
+                />
+              </View>
+            ) : (
+              <>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="e.g., lowered suspension, custom body kit, neon underglow..."
+                  placeholderTextColor={colors.textSecondary}
+                  value={carSpec.details}
+                  onChangeText={(text) => {
+                    if (text.length <= detailsCharLimit) {
+                      setCarSpec({ ...carSpec, details: text });
+                    }
+                  }}
+                  multiline
+                  numberOfLines={3}
+                  editable={!loading}
+                  maxLength={detailsCharLimit}
+                />
+                <View style={styles.charCountContainer}>
+                  <Text style={[
+                    styles.charCount,
+                    carSpec.details.length >= detailsCharLimit && styles.charCountLimit
+                  ]}>
+                    {carSpec.details.length} / {detailsCharLimit} characters
+                  </Text>
+                  {detailsCharLimit < 250 && (
+                    <TouchableOpacity onPress={handleUpgradePress}>
+                      <Text style={styles.upgradeLink}>Upgrade for more</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </>
+            )}
           </View>
 
           {/* Submit Button */}
@@ -480,22 +616,140 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     backgroundColor: colors.secondary,
   },
-  switchRow: {
+  pickerItem: {
+    color: colors.textPrimary,
+  },
+  buttonGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  optionButton: {
+    backgroundColor: colors.secondary,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    minWidth: '48%',
+    alignItems: 'center',
+  },
+  optionButtonSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  optionButtonText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  optionButtonTextSelected: {
+    color: colors.background,
+  },
+  multiSelectButton: {
+    backgroundColor: colors.secondary,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    minWidth: '48%',
+    alignItems: 'center',
+  },
+  multiSelectButtonSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  multiSelectButtonText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  multiSelectButtonTextSelected: {
+    color: colors.background,
+  },
+  detailsSection: {
+    backgroundColor: colors.secondary,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    marginTop: 8,
+  },
+  detailsHeader: {
+    marginBottom: 12,
+  },
+  detailsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  detailsSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+  },
+  lockedContainer: {
+    position: 'relative',
+  },
+  lockedOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    padding: 20,
+  },
+  lockedInput: {
+    opacity: 0.5,
+  },
+  lockedIcon: {
+    fontSize: 40,
+    marginBottom: 8,
+  },
+  lockedText: {
+    fontSize: 16,
+    color: colors.textPrimary,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  upgradeButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  upgradeButtonText: {
+    color: colors.background,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  charCountContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: colors.secondary,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.divider,
+    marginTop: 8,
   },
-  switchLabel: {
-    fontSize: 16,
-    color: colors.textPrimary,
-    fontWeight: '500',
+  charCount: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  charCountLimit: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  upgradeLink: {
+    fontSize: 12,
+    color: colors.primary,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   button: {
     backgroundColor: colors.primary,
