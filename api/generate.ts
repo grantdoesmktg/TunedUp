@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { checkQuota, incrementUsage } from '../lib/quota.js';
+import { getToken } from './lib/auth.js';
 import { setCorsHeaders } from '../lib/corsConfig.js';
 import { logToolUsage } from '../lib/analytics.js';
 
@@ -289,9 +290,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Check quota (get email from header)
-    const userEmail = req.headers['x-user-email'] as string || null;
-    const quotaCheck = await checkQuota(userEmail, 'image');
+    // Check quota (get email from JWT token)
+    const token = await getToken(req);
+    const userEmail = token?.email as string || null;
+    const fingerprint = req.headers['x-fingerprint'] as string || null;
+    const quotaCheck = await checkQuota(userEmail, 'image', fingerprint);
     
     if (!quotaCheck.allowed) {
       return res.status(429).json({ 
@@ -373,10 +376,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Increment usage after successful generation
-    await incrementUsage(userEmail, 'image');
+    await incrementUsage(userEmail, 'image', fingerprint);
 
     // Log analytics
-    const fingerprint = req.headers['x-fingerprint'] as string || null;
     await logToolUsage('image', userEmail, fingerprint, true);
 
     return res.status(200).json({
@@ -405,9 +407,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Log failed analytics
-    const userEmail = req.headers['x-user-email'] as string || null;
-    const fingerprint = req.headers['x-fingerprint'] as string || null;
-    await logToolUsage('image', userEmail, fingerprint, false, errorMessage);
+    const token = await getToken(req);
+    const failedUserEmail = token?.email as string || null;
+    const failedFingerprint = req.headers['x-fingerprint'] as string || null;
+    await logToolUsage('image', failedUserEmail, failedFingerprint, false, errorMessage);
     
     return res.status(statusCode).json({ error: errorMessage });
   }
