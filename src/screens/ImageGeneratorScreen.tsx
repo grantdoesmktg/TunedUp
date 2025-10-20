@@ -61,7 +61,7 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
     { label: '🌙 Midnight', value: 'midnight' },
   ];
 
-  const styles = [
+  const artStyles = [
     { label: '📷 Photorealistic', value: 'photoreal' },
     { label: '🎨 Borderlands (Cell-Shaded)', value: 'borderlands' },
     { label: '🌊 Vaporwave', value: 'vaporwave' },
@@ -311,7 +311,7 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
                 style={styles.picker}
                 enabled={!loading}
               >
-                {styles.map((s) => (
+                {artStyles.map((s) => (
                   <Picker.Item key={s.value} label={s.label} value={s.value} />
                 ))}
               </Picker>

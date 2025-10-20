@@ -8,6 +8,22 @@ import { QuotaDisplay } from '../components/QuotaDisplay';
 import { colors } from '../theme/colors';
 import type { CarInput, AIResponse } from '../types';
 
+const QUICK_ADD_MODS = [
+  "Catback Exhaust",
+  "ECU Tune Stage 1",
+  "Cold Air Intake",
+  "Muffler Delete",
+  "High-Flow air filter",
+  "Axle-Back Exhaust",
+  "Downpipes Catted",
+  "Downpipes Catless",
+  "Upgraded Intercooler",
+  "Upgraded Fuel Pump",
+  "Ported Intake Manifold",
+  "Coilovers",
+  "Lowering Springs",
+];
+
 const PerformanceCalculatorScreen = ({ navigation }: any) => {
   const { refreshUser } = useAuth();
   const { checkQuota, refreshQuota } = useQuota();
@@ -70,6 +86,17 @@ const PerformanceCalculatorScreen = ({ navigation }: any) => {
 
   const handleUpgradePress = () => {
     navigation.navigate('Profile');
+  };
+
+  const handleQuickAdd = (mod: string) => {
+    setCarInput(prev => {
+      const existingMods = prev.modifications.trim();
+      if (existingMods.toLowerCase().includes(mod.toLowerCase())) {
+        return prev;
+      }
+      const newMods = existingMods ? `${existingMods}, ${mod}` : mod;
+      return { ...prev, modifications: newMods };
+    });
   };
 
   return (
@@ -165,6 +192,19 @@ const PerformanceCalculatorScreen = ({ navigation }: any) => {
               numberOfLines={4}
               editable={!loading}
             />
+            <Text style={styles.quickAddLabel}>Quick Add:</Text>
+            <View style={styles.quickAddContainer}>
+              {QUICK_ADD_MODS.map((mod) => (
+                <TouchableOpacity
+                  key={mod}
+                  style={styles.quickAddButton}
+                  onPress={() => handleQuickAdd(mod)}
+                  disabled={loading}
+                >
+                  <Text style={styles.quickAddButtonText}>{mod}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           {/* Submit Button */}
@@ -243,6 +283,31 @@ const styles = StyleSheet.create({
   textArea: {
     height: 100,
     textAlignVertical: 'top',
+  },
+  quickAddLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  quickAddContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  quickAddButton: {
+    backgroundColor: colors.secondary,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  quickAddButtonText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '500',
   },
   button: {
     backgroundColor: colors.primary,

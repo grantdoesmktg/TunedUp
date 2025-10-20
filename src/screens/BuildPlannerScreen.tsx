@@ -1,12 +1,28 @@
 // NATIVE APP - Build Planner Screen
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { buildPlannerAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuota } from '../contexts/QuotaContext';
 import { QuotaDisplay } from '../components/QuotaDisplay';
 import { colors } from '../theme/colors';
 import type { VehicleSpec, BuildPlanResponse } from '../types';
+
+const BUDGET_OPTIONS = [
+  { label: 'Select Budget', value: '' },
+  { label: '$1,000', value: '1000' },
+  { label: '$2,500', value: '2500' },
+  { label: '$5,000', value: '5000' },
+  { label: '$7,500', value: '7500' },
+  { label: '$10,000', value: '10000' },
+  { label: '$12,500', value: '12500' },
+  { label: '$15,000', value: '15000' },
+  { label: '$20,000', value: '20000' },
+  { label: '$30,000', value: '30000' },
+  { label: '$40,000', value: '40000' },
+  { label: '$50,000', value: '50000' },
+];
 
 const BuildPlannerScreen = ({ navigation }: any) => {
   const { refreshUser } = useAuth();
@@ -18,6 +34,7 @@ const BuildPlannerScreen = ({ navigation }: any) => {
     trim: '',
     question: '',
   });
+  const [budget, setBudget] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleGenerate = async () => {
@@ -146,15 +163,49 @@ const BuildPlannerScreen = ({ navigation }: any) => {
             />
           </View>
 
+          {/* Budget */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Budget *</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={budget}
+                onValueChange={(value) => {
+                  setBudget(value);
+                  // Update question to include budget
+                  if (value) {
+                    const budgetText = BUDGET_OPTIONS.find(opt => opt.value === value)?.label || '';
+                    const currentQuestion = vehicleSpec.question.replace(/^\$[\d,]+\s*-?\s*/i, '');
+                    setVehicleSpec({
+                      ...vehicleSpec,
+                      question: budgetText ? `${budgetText} - ${currentQuestion}` : currentQuestion
+                    });
+                  }
+                }}
+                style={styles.picker}
+                enabled={!loading}
+              >
+                {BUDGET_OPTIONS.map((option) => (
+                  <Picker.Item key={option.value} label={option.label} value={option.value} />
+                ))}
+              </Picker>
+            </View>
+          </View>
+
           {/* Question/Goal */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Build Goal *</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="e.g., I want a $5000 power-focused build for track days..."
+              placeholder="e.g., power-focused build for track days..."
               placeholderTextColor={colors.textSecondary}
-              value={vehicleSpec.question}
-              onChangeText={(text) => setVehicleSpec({ ...vehicleSpec, question: text })}
+              value={vehicleSpec.question.replace(/^\$[\d,]+\s*-?\s*/i, '')}
+              onChangeText={(text) => {
+                const budgetText = budget ? (BUDGET_OPTIONS.find(opt => opt.value === budget)?.label || '') : '';
+                setVehicleSpec({
+                  ...vehicleSpec,
+                  question: budgetText ? `${budgetText} - ${text}` : text
+                });
+              }}
               multiline
               numberOfLines={4}
               editable={!loading}
@@ -237,6 +288,17 @@ const styles = StyleSheet.create({
   textArea: {
     height: 100,
     textAlignVertical: 'top',
+  },
+  pickerContainer: {
+    backgroundColor: colors.secondary,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    overflow: 'hidden',
+  },
+  picker: {
+    color: colors.textPrimary,
+    backgroundColor: colors.secondary,
   },
   button: {
     backgroundColor: colors.primary,
