@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { checkQuota, incrementUsage } from '../lib/quota.js';
+import { getToken } from './lib/auth.js';
 import { setCorsHeaders } from '../lib/corsConfig.js';
 import { logToolUsage } from '../lib/analytics.js';
 
@@ -127,9 +128,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Check quota (get email from header)
-    const userEmail = req.headers['x-user-email'] as string || null;
-    const quotaCheck = await checkQuota(userEmail, 'performance');
+    // Check quota (get email from JWT token)
+    const token = await getToken(req);
+    const userEmail = token?.email as string || null;
+    const fingerprint = req.headers['x-fingerprint'] as string || null;
+    const quotaCheck = await checkQuota(userEmail, 'performance', fingerprint);
     
     if (!quotaCheck.allowed) {
       return res.status(429).json({ 
@@ -176,10 +179,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('Performance calculation completed successfully');
     
     // Increment usage after successful calculation
-    await incrementUsage(userEmail, 'performance');
+    await incrementUsage(userEmail, 'performance', fingerprint);
 
     // Log analytics
-    const fingerprint = req.headers['x-fingerprint'] as string || null;
     await logToolUsage('performance', userEmail, fingerprint, true);
 
     // Add sources array for consistency with client expectations
@@ -210,9 +212,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Log failed analytics
-    const userEmail = req.headers['x-user-email'] as string || null;
-    const fingerprint = req.headers['x-fingerprint'] as string || null;
-    await logToolUsage('performance', userEmail, fingerprint, false, errorMessage);
+    const token = await getToken(req);
+    const failedUserEmail = token?.email as string || null;
+    const failedFingerprint = req.headers['x-fingerprint'] as string || null;
+    await logToolUsage('performance', failedUserEmail, failedFingerprint, false, errorMessage);
 
     return res.status(statusCode).json({ error: errorMessage });
   }
