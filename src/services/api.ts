@@ -163,32 +163,33 @@ export const imageGeneratorAPI = {
   },
 };
 
-// Quota API
-export const quotaAPI = {
+// Profile API - Consolidated endpoint for quota, saved performance, and saved images
+export const profileAPI = {
+  // ========== QUOTA ACTIONS ==========
+
   // Get quota info for current user/device
   getQuotaInfo: async () => {
-    return apiRequest('/api/quota?action=info');
+    return apiRequest('/api/profile?action=quota-info');
   },
 
   // Check if user can perform an action
   checkQuota: async (toolType: 'performance' | 'build' | 'image' | 'community') => {
-    return apiRequest('/api/quota?action=check', {
+    return apiRequest('/api/profile?action=quota-check', {
       method: 'POST',
       body: JSON.stringify({ toolType }),
     });
   },
-};
 
-// Saved Performance Calculations API
-export const savedPerformanceAPI = {
+  // ========== SAVED PERFORMANCE ACTIONS ==========
+
   // Get user's saved performance calculation (max 1)
   getSavedPerformance: async () => {
-    return apiRequest('/api/saved-performance?action=get');
+    return apiRequest('/api/profile?action=get-performance');
   },
 
   // Save a performance calculation (replaces existing if present)
   savePerformance: async (carInput: any, results: any) => {
-    return apiRequest('/api/saved-performance?action=save', {
+    return apiRequest('/api/profile?action=save-performance', {
       method: 'POST',
       body: JSON.stringify({ carInput, results }),
     });
@@ -196,23 +197,22 @@ export const savedPerformanceAPI = {
 
   // Delete saved performance calculation
   deletePerformance: async (perfId: string) => {
-    return apiRequest('/api/saved-performance?action=delete', {
+    return apiRequest('/api/profile?action=delete-performance', {
       method: 'DELETE',
       body: JSON.stringify({ perfId }),
     });
   },
-};
 
-// Saved Images API
-export const savedImagesAPI = {
+  // ========== SAVED IMAGES ACTIONS ==========
+
   // Get user's saved images (max 3)
   getSavedImages: async () => {
-    return apiRequest('/api/saved-images?action=get');
+    return apiRequest('/api/profile?action=get-images');
   },
 
   // Save an image
   saveImage: async (imageUrl: string, carSpec: any, prompt: string) => {
-    return apiRequest('/api/saved-images?action=save', {
+    return apiRequest('/api/profile?action=save-image', {
       method: 'POST',
       body: JSON.stringify({ imageUrl, carSpec, prompt }),
     });
@@ -220,9 +220,21 @@ export const savedImagesAPI = {
 
   // Delete saved image
   deleteImage: async (imageId: string) => {
-    return apiRequest('/api/saved-images?action=delete', {
+    return apiRequest('/api/profile?action=delete-image', {
       method: 'DELETE',
       body: JSON.stringify({ imageId }),
     });
   },
+
+  // ========== COMBINED ACTIONS ==========
+
+  // Get all profile data in one request (quota + saved performance + saved images)
+  getAllProfileData: async () => {
+    return apiRequest('/api/profile?action=get-all');
+  },
 };
+
+// Legacy exports for backwards compatibility
+export const quotaAPI = profileAPI;
+export const savedPerformanceAPI = profileAPI;
+export const savedImagesAPI = profileAPI;
