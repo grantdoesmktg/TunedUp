@@ -24,8 +24,10 @@ model User {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  communityImages  CommunityImage[]
-  savedCars        SavedCar[]
+  communityImages     CommunityImage[]
+  savedCars           SavedCar[]
+  savedPerformance    SavedPerformance?
+  savedImages         SavedImage[]
 
   @@map("users")
 }
@@ -139,4 +141,30 @@ model PromotionRedemption {
 
   @@unique([promotionId, userEmail])
   @@map("promotion_redemptions")
+}
+
+model SavedPerformance {
+  id        String   @id @default(cuid())
+  userEmail String   @unique // Only one saved performance per user
+  carInput  Json     // CarInput data
+  results   Json     // AIResponse data
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userEmail], references: [email])
+
+  @@map("saved_performance")
+}
+
+model SavedImage {
+  id        String   @id @default(cuid())
+  userEmail String
+  imageUrl  String   // Base64 or Blob URL
+  carSpec   Json     // CarSpec data
+  prompt    String   // Generated prompt
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userEmail], references: [email])
+
+  @@map("saved_images")
 }
