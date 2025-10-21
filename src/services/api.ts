@@ -74,6 +74,21 @@ export const authAPI = {
     return response;
   },
 
+  // DEV ONLY: Auto-login without email verification
+  devLogin: async (email: string): Promise<AuthResponse> => {
+    const response = await apiRequest<AuthResponse>('/api/auth?action=dev-login', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+
+    // Store token if login successful
+    if (response.success && response.token) {
+      await setToken(response.token);
+    }
+
+    return response;
+  },
+
   // Get current user
   getMe: async (): Promise<{ user: User }> => {
     return apiRequest('/api/auth?action=me');

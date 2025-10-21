@@ -1,7 +1,11 @@
 // NATIVE APP - Auth Context with JWT state management
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { authAPI, getToken } from '../services/api';
+import { authAPI, getToken, setToken } from '../services/api';
 import type { User } from '../types';
+
+// 🔧 DEV ONLY: Set to true to auto-login with your account on app start
+const DEV_AUTO_LOGIN = true;
+const DEV_EMAIL = 'grantdoesmktg@gmail.com';
 
 interface AuthContextType {
   user: User | null;
@@ -30,9 +34,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (token) {
         const response = await authAPI.getMe();
         setUser(response.user);
+        return;
+      }
+
+      // 🔧 DEV AUTO-LOGIN: Automatically login without email verification
+      if (DEV_AUTO_LOGIN && !token) {
+        console.log('🔧 DEV MODE: Auto-logging in as', DEV_EMAIL);
+
+        const response = await authAPI.devLogin(DEV_EMAIL);
+        if (response.success && response.user) {
+          setUser(response.user);
+          console.log('✅ DEV AUTO-LOGIN SUCCESS:', response.user.email, '- Plan:', response.user.planCode);
+        } else {
+          console.error('❌ DEV AUTO-LOGIN FAILED:', response.error);
+        }
       }
     } catch (error) {
-      console.log('No valid session');
+      console.log('No valid session:', error);
       setUser(null);
     } finally {
       setIsLoading(false);
