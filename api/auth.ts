@@ -18,6 +18,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return handleSendLink(req, res)
   } else if (action === 'verify') {
     return handleVerify(req, res)
+  } else if (action === 'dev-login') {
+    return handleDevLogin(req, res)
   } else if (action === 'me') {
     return handleMe(req, res)
   } else if (action === 'logout') {
@@ -329,6 +331,68 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
   } catch (error) {
     console.error('Get user error:', error)
     res.status(401).json({ error: 'Invalid session' })
+  }
+}
+
+// /api/auth?action=dev-login (DEV ONLY - bypasses email verification)
+async function handleDevLogin(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  // 🔧 ONLY allow in development - check if we're on localhost or have DEV flag
+  const isDev = process.env.NODE_ENV === 'development' ||
+                process.env.VERCEL_ENV === 'preview' ||
+                req.headers.host?.includes('localhost')
+
+  if (!isDev) {
+    return res.status(403).json({ error: 'Dev login only available in development' })
+  }
+
+  try {
+    const { email } = req.body
+
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: 'Valid email required' })
+    }
+
+    console.log('🔧 DEV LOGIN: Bypassing verification for', email)
+
+    // Find or create user
+    let user = await prisma.user.findUnique({
+      where: { email }
+    })
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          planCode: 'ADMIN', // Give dev user admin access
+          perfUsed: 0,
+          buildUsed: 0,
+          imageUsed: 0,
+          communityUsed: 0
+        }
+      })
+    }
+
+    // Generate JWT token
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
+    const token = await new SignJWT({ email: user.email })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setExpirationTime('30d')
+      .sign(secret)
+
+    return res.status(200).json({
+      success: true,
+      message: 'Dev login successful',
+      token,
+      user
+    })
+
+  } catch (error) {
+    console.error('Dev login error:', error)
+    return res.status(500).json({ error: 'Dev login failed' })
   }
 }
 
