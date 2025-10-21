@@ -14,7 +14,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.TunedUpNative"
+      "bundleIdentifier": "com.anonymous.TunedUpNative",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "TunedUp needs access to your photo library to save your custom car images.",
+        "NSPhotoLibraryAddUsageDescription": "TunedUp needs access to save your custom car images to your photo library."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +26,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.TunedUpNative"
     },
     "web": {
       "favicon": "./assets/favicon.png"

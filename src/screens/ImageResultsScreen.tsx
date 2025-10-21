@@ -1,13 +1,38 @@
 // NATIVE APP - Image Results Screen
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Share, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Share, Alert, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { colors } from '../theme/colors';
+import { useAuth } from '../contexts/AuthContext';
+import { savedImagesAPI } from '../services/api';
 import type { ImageGeneratorResponse, CarSpec } from '../types';
-import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
+import * as FileSystem from 'expo-file-system';
 
 const ImageResultsScreen = ({ route, navigation }: any) => {
   const { results, carSpec }: { results: ImageGeneratorResponse; carSpec: CarSpec } = route.params;
+  const { user } = useAuth();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+  const [description, setDescription] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [savedCount, setSavedCount] = useState(0);
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    loadSavedCount();
+  }, []);
+
+  const loadSavedCount = async () => {
+    if (!user) return;
+    try {
+      const response = await savedImagesAPI.getSavedImages();
+      setSavedCount(response.images?.length || 0);
+    } catch (error: any) {
+      console.error('Failed to load saved images count:', error);
+      // Set to 0 if API doesn't exist yet
+      setSavedCount(0);
+    }
+  };
 
   const handleSaveImage = async () => {
     try {
@@ -20,7 +45,7 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
 
       // Convert base64 to file
       const filename = `tunedup_${Date.now()}.png`;
-      const fileUri = FileSystem.documentDirectory + filename;
+      const fileUri = `${FileSystem.cacheDirectory}${filename}`;
 
       // Remove data:image prefix if present
       const base64Data = results.image.includes('base64,')
@@ -33,12 +58,19 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
 
       // Save to media library
       const asset = await MediaLibrary.createAssetAsync(fileUri);
-      await MediaLibrary.createAlbumAsync('TunedUp', asset, false);
+
+      // Try to create album, but don't fail if it already exists
+      try {
+        await MediaLibrary.createAlbumAsync('TunedUp', asset, false);
+      } catch (albumError) {
+        // Album might already exist, that's okay
+        console.log('Album creation note:', albumError);
+      }
 
       Alert.alert('Success', 'Image saved to your photo library!');
     } catch (error) {
       console.error('Save error:', error);
-      Alert.alert('Error', 'Failed to save image');
+      Alert.alert('Error', `Failed to save image: ${error}`);
     }
   };
 
@@ -58,7 +90,63 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
     ? results.image
     : `data:image/png;base64,${results.image}`;
 
-  const handleShareToCommunity = async () => {
+  const handleSaveToProfile = async () => {
+    if (!user) {
+      Alert.alert(
+        'Login Required',
+        'Please sign in to save images to your profile.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Go to Login', onPress: () => navigation.navigate('Profile') }
+        ]
+      );
+      return;
+    }
+
+    if (savedCount >= 3 && !isSaved) {
+      Alert.alert(
+        'Limit Reached',
+        'You can only save up to 3 images. Delete an existing image from your profile to save a new one.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // Convert base64 to data URL if needed
+      const imageUrl = results.image.startsWith('data:')
+        ? results.image
+        : `data:image/png;base64,${results.image}`;
+
+      await savedImagesAPI.saveImage(imageUrl, carSpec, results.prompt);
+      setIsSaved(true);
+      setSavedCount(prev => prev + 1);
+      Alert.alert('Success', 'Image saved to your profile!');
+    } catch (error: any) {
+      console.error('Save to profile error:', error);
+      Alert.alert('Error', error.message || 'Failed to save image to profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleShareToCommunity = () => {
+    if (!user) {
+      setShowLoginModal(true);
+    } else {
+      setShowDescriptionModal(true);
+    }
+  };
+
+  const submitToCommunity = async () => {
+    if (description.length > 35) {
+      Alert.alert('Description Too Long', 'Please keep your description under 35 characters.');
+      return;
+    }
+
+    // TODO: Implement API call to share image to community
+    setShowDescriptionModal(false);
     Alert.alert('Coming Soon', 'Share to Community feature will be available soon!');
   };
 
@@ -85,10 +173,24 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
         {/* Action Buttons */}
         <View style={styles.actions}>
           <TouchableOpacity
-            style={styles.primaryButton}
+            style={[styles.primaryButton, (saving || isSaved) && styles.buttonDisabled]}
+            onPress={handleSaveToProfile}
+            disabled={saving || isSaved}
+          >
+            {saving ? (
+              <ActivityIndicator color={colors.background} />
+            ) : (
+              <Text style={styles.primaryButtonText}>
+                {isSaved ? '✓ Saved to Profile' : `Save to Profile (${savedCount}/3)`}
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryButton}
             onPress={handleSaveImage}
           >
-            <Text style={styles.primaryButtonText}>Save to Photos</Text>
+            <Text style={styles.secondaryButtonText}>Save to Photos</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -99,13 +201,89 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.secondaryButton}
+            style={styles.tertiaryButton}
             onPress={() => navigation.navigate('ImageGenerator')}
           >
-            <Text style={styles.secondaryButtonText}>Generate Another</Text>
+            <Text style={styles.tertiaryButtonText}>Generate Another</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Custom Login Modal */}
+      <Modal
+        visible={showLoginModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowLoginModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Login Required</Text>
+            <Text style={styles.modalMessage}>
+              Please Login to Post to the Community
+            </Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => {
+                setShowLoginModal(false);
+                navigation.navigate('Profile');
+              }}
+            >
+              <Text style={styles.modalButtonText}>Go to Login</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalCancelButton}
+              onPress={() => setShowLoginModal(false)}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Description Modal for Community Share */}
+      <Modal
+        visible={showDescriptionModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDescriptionModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add a Description</Text>
+            <Text style={styles.modalMessage}>
+              Add a short description for your image (max 35 characters)
+            </Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="e.g., Dream build complete!"
+              placeholderTextColor={colors.textSecondary}
+              value={description}
+              onChangeText={setDescription}
+              maxLength={35}
+              autoFocus
+            />
+            <Text style={styles.charCount}>
+              {description.length}/35 characters
+            </Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={submitToCommunity}
+            >
+              <Text style={styles.modalButtonText}>Share to Community</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalCancelButton}
+              onPress={() => {
+                setShowDescriptionModal(false);
+                setDescription('');
+              }}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -219,6 +397,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
   secondaryButton: {
     backgroundColor: colors.secondary,
     borderRadius: 12,
@@ -245,6 +426,75 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: colors.secondary,
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    borderWidth: 1,
+    borderColor: colors.divider,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  modalButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalButtonText: {
+    color: colors.background,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalCancelButton: {
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    color: colors.textSecondary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  textInput: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: colors.textPrimary,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    marginBottom: 8,
+  },
+  charCount: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 16,
+    textAlign: 'right',
   },
 });
 

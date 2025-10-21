@@ -122,3 +122,21 @@ export interface ImageGeneratorResponse {
   prompt: string;
   timestamp: number;
 }
+
+// Saved Performance Calculation and Image Types
+export interface SavedPerformanceCalc {
+  id: string;
+  userId: string;
+  carInput: CarInput;
+  results: AIResponse;
+  createdAt: string;
+}
+
+export interface SavedImage {
+  id: string;
+  userId: string;
+  imageUrl: string;
+  carSpec: CarSpec;
+  prompt: string;
+  createdAt: string;
+}

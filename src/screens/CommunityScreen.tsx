@@ -1,6 +1,6 @@
 // NATIVE APP - Community screen (Instagram-style grid)
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Dimensions, Alert } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Dimensions, Alert, Modal } from 'react-native';
 import { communityAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuota } from '../contexts/QuotaContext';
@@ -15,6 +15,8 @@ const CommunityScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
+  const [selectedImage, setSelectedImage] = useState<CommunityImage | null>(null);
+  const [likedImages, setLikedImages] = useState<Set<string>>(new Set());
   const { isAuthenticated } = useAuth();
   const { checkQuota, refreshQuota } = useQuota();
 
@@ -25,6 +27,11 @@ const CommunityScreen = () => {
   const loadImages = async () => {
     try {
       const response = await communityAPI.getImages(1, 40);
+      console.log('📸 Community images loaded:', response.images?.length);
+      console.log('🎨 Sample planCodes:', response.images?.slice(0, 3).map((img: any) => ({
+        id: img.id.substring(0, 8),
+        planCode: img.planCode
+      })));
       setImages(response.images || []);
     } catch (error) {
       console.error('Failed to load community images:', error);
@@ -46,6 +53,12 @@ const CommunityScreen = () => {
       return;
     }
 
+    // Check if already liked
+    if (likedImages.has(imageId)) {
+      Alert.alert('Already Liked', 'You have already liked this image');
+      return;
+    }
+
     // Check quota before liking
     const quotaCheck = await checkQuota('community');
     if (!quotaCheck.allowed) {
@@ -59,6 +72,10 @@ const CommunityScreen = () => {
 
     try {
       await communityAPI.likeImage(imageId);
+
+      // Add to liked images set
+      setLikedImages(prev => new Set(prev).add(imageId));
+
       // Update local state
       setImages(prevImages =>
         prevImages.map(img =>
@@ -67,6 +84,12 @@ const CommunityScreen = () => {
             : img
         )
       );
+
+      // Update selected image if it's currently open
+      if (selectedImage && selectedImage.id === imageId) {
+        setSelectedImage({ ...selectedImage, likesCount: selectedImage.likesCount + 1 });
+      }
+
       // Refresh quota
       await refreshQuota();
     } catch (error: any) {
@@ -77,16 +100,39 @@ const CommunityScreen = () => {
           [{ text: 'OK' }]
         );
         await refreshQuota();
+      } else if (error.message?.includes('already liked')) {
+        // Server says already liked, update local state
+        setLikedImages(prev => new Set(prev).add(imageId));
+        Alert.alert('Already Liked', 'You have already liked this image');
       } else {
         console.error('Failed to like image:', error);
       }
     }
   };
 
+  // Get tier glow color
+  const getTierGlowColor = (planCode: string): string => {
+    const tier = planCode?.toUpperCase();
+    if (tier === 'PLUS') return 'rgba(50, 205, 50, 0.8)'; // Lime green
+    if (tier === 'PRO') return 'rgba(255, 215, 0, 0.8)'; // Yellow
+    if (tier === 'ULTRA') return 'rgba(220, 20, 60, 0.9)'; // Rich red
+    if (tier === 'ADMIN') return 'rgba(255, 215, 0, 1)'; // Vibrant gold
+    return 'rgba(255, 255, 255, 0)'; // No glow for FREE tier
+  };
+
+  const getTierGlowSize = (planCode: string): number => {
+    const tier = planCode?.toUpperCase();
+    if (tier === 'PLUS') return 10;
+    if (tier === 'PRO') return 15;
+    if (tier === 'ULTRA') return 18;
+    if (tier === 'ADMIN') return 22;
+    return 0;
+  };
+
   const renderImage = ({ item }: { item: CommunityImage }) => (
     <TouchableOpacity
       style={styles.imageContainer}
-      onPress={() => handleLike(item.id)}
+      onPress={() => setSelectedImage(item)}
       activeOpacity={0.9}
     >
       <Image
@@ -139,6 +185,67 @@ const CommunityScreen = () => {
             Sign in to like images and share your own!
           </Text>
         </View>
+      )}
+
+      {/* Image Detail Modal */}
+      {selectedImage && (
+        <Modal
+          visible={true}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setSelectedImage(null)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setSelectedImage(null)}
+          >
+            <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+              {/* Image with tier-based glow */}
+              <View
+                style={[
+                  styles.glowWrapper,
+                  {
+                    shadowColor: getTierGlowColor(selectedImage.planCode),
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 1,
+                    shadowRadius: getTierGlowSize(selectedImage.planCode),
+                  },
+                ]}
+              >
+                <View style={styles.detailImageWrapper}>
+                  <Image
+                    source={{ uri: selectedImage.imageUrl }}
+                    style={styles.detailImage}
+                    resizeMode="contain"
+                  />
+                </View>
+              </View>
+
+              {/* Description and Likes */}
+              <View style={styles.detailInfo}>
+                {selectedImage.description && (
+                  <Text style={styles.description}>{selectedImage.description}</Text>
+                )}
+                <TouchableOpacity
+                  onPress={() => handleLike(selectedImage.id)}
+                  style={[
+                    styles.likeButton,
+                    likedImages.has(selectedImage.id) && styles.likeButtonActive
+                  ]}
+                  disabled={likedImages.has(selectedImage.id)}
+                >
+                  <Text style={[
+                    styles.likeButtonText,
+                    likedImages.has(selectedImage.id) && styles.likeButtonTextActive
+                  ]}>
+                    ❤️ {selectedImage.likesCount} {selectedImage.likesCount === 1 ? 'like' : 'likes'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Modal>
       )}
     </View>
   );
@@ -219,6 +326,66 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 14,
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 500,
+    alignItems: 'center',
+  },
+  glowWrapper: {
+    width: '100%',
+    padding: 10,
+  },
+  detailImageWrapper: {
+    width: '100%',
+    aspectRatio: 1,
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  detailImage: {
+    width: '100%',
+    height: '100%',
+  },
+  detailInfo: {
+    width: '100%',
+    marginTop: 20,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  description: {
+    fontSize: 18,
+    color: colors.textPrimary,
+    marginBottom: 16,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  likeButton: {
+    backgroundColor: colors.secondary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: colors.divider,
+  },
+  likeButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  likeButtonText: {
+    color: colors.textSecondary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  likeButtonTextActive: {
+    color: colors.background,
   },
 });
 

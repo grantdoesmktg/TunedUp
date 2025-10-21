@@ -178,3 +178,51 @@ export const quotaAPI = {
     });
   },
 };
+
+// Saved Performance Calculations API
+export const savedPerformanceAPI = {
+  // Get user's saved performance calculation (max 1)
+  getSavedPerformance: async () => {
+    return apiRequest('/api/saved-performance?action=get');
+  },
+
+  // Save a performance calculation (replaces existing if present)
+  savePerformance: async (carInput: any, results: any) => {
+    return apiRequest('/api/saved-performance?action=save', {
+      method: 'POST',
+      body: JSON.stringify({ carInput, results }),
+    });
+  },
+
+  // Delete saved performance calculation
+  deletePerformance: async (perfId: string) => {
+    return apiRequest('/api/saved-performance?action=delete', {
+      method: 'DELETE',
+      body: JSON.stringify({ perfId }),
+    });
+  },
+};
+
+// Saved Images API
+export const savedImagesAPI = {
+  // Get user's saved images (max 3)
+  getSavedImages: async () => {
+    return apiRequest('/api/saved-images?action=get');
+  },
+
+  // Save an image
+  saveImage: async (imageUrl: string, carSpec: any, prompt: string) => {
+    return apiRequest('/api/saved-images?action=save', {
+      method: 'POST',
+      body: JSON.stringify({ imageUrl, carSpec, prompt }),
+    });
+  },
+
+  // Delete saved image
+  deleteImage: async (imageId: string) => {
+    return apiRequest('/api/saved-images?action=delete', {
+      method: 'DELETE',
+      body: JSON.stringify({ imageId }),
+    });
+  },
+};

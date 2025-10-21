@@ -1,18 +1,49 @@
 // NATIVE APP - Performance Results Screen
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../theme/colors';
+import { savedPerformanceAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import type { AIResponse, CarInput } from '../types';
 
 const PerformanceResultsScreen = ({ route, navigation }: any) => {
   const { results, carInput }: { results: AIResponse; carInput: CarInput } = route.params;
+  const { user } = useAuth();
+  const [saving, setSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   const confidenceColor = {
     Low: colors.error,
     Medium: '#FFA500',
     High: colors.success,
   }[results.confidence];
+
+  const handleSavePerformance = async () => {
+    if (!user) {
+      Alert.alert(
+        'Login Required',
+        'Please sign in to save your performance calculation.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Go to Login', onPress: () => navigation.navigate('Profile') }
+        ]
+      );
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await savedPerformanceAPI.savePerformance(carInput, results);
+      setIsSaved(true);
+      Alert.alert('Success', 'Performance calculation saved to your profile!');
+    } catch (error: any) {
+      console.error('Save performance error:', error);
+      Alert.alert('Error', error.message || 'Failed to save performance calculation');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -110,16 +141,29 @@ const PerformanceResultsScreen = ({ route, navigation }: any) => {
         {/* Action Buttons */}
         <View style={styles.actions}>
           <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => navigation.navigate('PerformanceCalculator')}
+            style={[styles.primaryButton, (saving || isSaved) && styles.buttonDisabled]}
+            onPress={handleSavePerformance}
+            disabled={saving || isSaved}
           >
-            <Text style={styles.primaryButtonText}>Calculate Another</Text>
+            {saving ? (
+              <ActivityIndicator color={colors.background} />
+            ) : (
+              <Text style={styles.primaryButtonText}>
+                {isSaved ? '✓ Saved to Profile' : 'Save to Profile'}
+              </Text>
+            )}
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.secondaryButton}
+            onPress={() => navigation.navigate('PerformanceCalculator')}
+          >
+            <Text style={styles.secondaryButtonText}>Calculate Another</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tertiaryButton}
             onPress={() => navigation.navigate('MainTabs')}
           >
-            <Text style={styles.secondaryButtonText}>Back to Home</Text>
+            <Text style={styles.tertiaryButtonText}>Back to Home</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -245,7 +289,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
   secondaryButton: {
+    backgroundColor: colors.secondary,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  secondaryButtonText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  tertiaryButton: {
     backgroundColor: colors.secondary,
     borderRadius: 12,
     padding: 16,
@@ -253,7 +314,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.divider,
   },
-  secondaryButtonText: {
+  tertiaryButtonText: {
     color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
