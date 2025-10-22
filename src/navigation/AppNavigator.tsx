@@ -21,6 +21,7 @@ import BuildPlannerScreen from '../screens/BuildPlannerScreen';
 import BuildPlanResultsScreen from '../screens/BuildPlanResultsScreen';
 import ImageGeneratorScreen from '../screens/ImageGeneratorScreen';
 import ImageResultsScreen from '../screens/ImageResultsScreen';
+import PublicProfileScreen from '../screens/PublicProfileScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -82,6 +83,7 @@ const RootNavigator = () => (
     <RootStack.Screen name="BuildPlanResults" component={BuildPlanResultsScreen} />
     <RootStack.Screen name="ImageGenerator" component={ImageGeneratorScreen} />
     <RootStack.Screen name="ImageResults" component={ImageResultsScreen} />
+    <RootStack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ headerShown: true, title: 'Profile' }} />
   </RootStack.Navigator>
 );
 

@@ -10,7 +10,11 @@ import type { CommunityImage } from '../types';
 const { width } = Dimensions.get('window');
 const IMAGE_SIZE = (width - 3) / 3; // 3 columns with 1px gaps
 
-const CommunityScreen = () => {
+interface CommunityScreenProps {
+  navigation: any;
+}
+
+const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
   const [images, setImages] = useState<CommunityImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -129,6 +133,14 @@ const CommunityScreen = () => {
     return 0;
   };
 
+  const getDisplayName = (image: CommunityImage): string => {
+    return image.userNickname || image.userName || 'TunedUp User';
+  };
+
+  const navigateToProfile = (userId: string) => {
+    navigation.navigate('PublicProfile', { userId });
+  };
+
   const renderImage = ({ item }: { item: CommunityImage }) => (
     <TouchableOpacity
       style={styles.imageContainer}
@@ -222,8 +234,17 @@ const CommunityScreen = () => {
                 </View>
               </View>
 
-              {/* Description and Likes */}
+              {/* User Info and Description */}
               <View style={styles.detailInfo}>
+                {/* User Name */}
+                <TouchableOpacity
+                  style={styles.userInfoContainer}
+                  onPress={() => navigateToProfile(selectedImage.userId)}
+                >
+                  <Text style={styles.userIcon}>{selectedImage.profileIcon || '👤'}</Text>
+                  <Text style={styles.userName}>{getDisplayName(selectedImage)}</Text>
+                </TouchableOpacity>
+
                 {selectedImage.description && (
                   <Text style={styles.description}>{selectedImage.description}</Text>
                 )}
@@ -359,6 +380,24 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingHorizontal: 20,
     alignItems: 'center',
+  },
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    backgroundColor: colors.secondary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  userIcon: {
+    fontSize: 24,
+    marginRight: 8,
+  },
+  userName: {
+    fontSize: 16,
+    color: colors.textPrimary,
+    fontWeight: '600',
   },
   description: {
     fontSize: 18,

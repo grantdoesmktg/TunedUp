@@ -104,6 +104,10 @@ export const communityAPI = {
       body: JSON.stringify({ imageId }),
     });
   },
+
+  getPublicProfile: async (userId: string) => {
+    return apiRequest(`/api/community?action=public-profile&userId=${userId}`);
+  },
 };
 
 // Saved Cars API

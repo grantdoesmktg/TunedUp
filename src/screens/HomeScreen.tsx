@@ -6,6 +6,44 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { profileAPI, communityAPI } from '../services/api';
 import { colors } from '../theme/colors';
+import ImageViewerModal from '../components/ImageViewerModal'; // Import the new modal
+import { ColorValue } from 'react-native'; // Import ColorValue for LinearGradient
+
+// Define interfaces for API responses
+interface PerformanceResult {
+  stockPerformance: { horsepower: number; whp: number; zeroToSixty: number };
+  estimatedPerformance: { horsepower: number; whp: number; zeroToSixty: number };
+}
+
+interface CarInput {
+  year: string;
+  make: string;
+  model: string;
+}
+
+interface SavedPerformance {
+  results: PerformanceResult;
+  carInput: CarInput;
+}
+
+interface SavedImage {
+  id: string;
+  imageUrl: string;
+  description?: string;
+  likesCount?: number;
+}
+
+interface PerformanceResponse {
+  performance: SavedPerformance | null;
+}
+
+interface ImagesResponse {
+  images: SavedImage[];
+}
+
+interface CommunityResponse {
+  images: SavedImage[];
+}
 
 const HomeScreen = ({ navigation }: any) => {
   const { user, isAuthenticated } = useAuth();
@@ -13,6 +51,8 @@ const HomeScreen = ({ navigation }: any) => {
   const [savedImages, setSavedImages] = useState<any[]>([]);
   const [featuredCommunity, setFeaturedCommunity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageViewerVisible, setImageViewerVisible] = useState(false); // State for image viewer modal
+  const [selectedImageUri, setSelectedImageUri] = useState(''); // State for selected image URI
 
   // Reload data when screen comes into focus
   useFocusEffect(
@@ -27,15 +67,15 @@ const HomeScreen = ({ navigation }: any) => {
       // Load user's garage (if authenticated)
       if (isAuthenticated) {
         const [perfResponse, imagesResponse] = await Promise.all([
-          profileAPI.getSavedPerformance().catch(() => ({ performance: null })),
-          profileAPI.getSavedImages().catch(() => ({ images: [] })),
+          profileAPI.getSavedPerformance().catch(() => ({ performance: null })) as Promise<PerformanceResponse>,
+          profileAPI.getSavedImages().catch(() => ({ images: [] })) as Promise<ImagesResponse>,
         ]);
         setSavedPerformance(perfResponse.performance);
         setSavedImages(imagesResponse.images || []);
       }
 
       // Load random community images (always, even if not authenticated)
-      const communityResponse = await communityAPI.getRandomImages(3);
+      const communityResponse = await communityAPI.getRandomImages(3) as CommunityResponse;
       setFeaturedCommunity(communityResponse.images || []);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -44,7 +84,12 @@ const HomeScreen = ({ navigation }: any) => {
     }
   };
 
-  const tools = [
+  const tools: {
+    icon: string;
+    name: string;
+    route: string;
+    gradientColors: ColorValue[]; // Define as a mutable array of ColorValues
+  }[] = [
     {
       icon: '⚡',
       name: 'Performance',
@@ -148,15 +193,22 @@ const HomeScreen = ({ navigation }: any) => {
                 {savedImages.length > 0 ? (
                   <View style={styles.garageImagesSection}>
                     <Text style={styles.garageImagesTitle}>Saved Images ({savedImages.length}/3)</Text>
-                    <View style={styles.garageImages}>
-                      {savedImages.map((image) => (
+                  <View style={styles.garageImages}>
+                    {savedImages.map((image) => (
+                      <TouchableOpacity
+                        key={image.id}
+                        onPress={() => {
+                          setSelectedImageUri(image.imageUrl);
+                          setImageViewerVisible(true);
+                        }}
+                      >
                         <Image
-                          key={image.id}
                           source={{ uri: image.imageUrl }}
                           style={styles.garageImage}
                           resizeMode="cover"
                         />
-                      ))}
+                      </TouchableOpacity>
+                    ))}
                     </View>
                   </View>
                 ) : (
@@ -236,7 +288,7 @@ const HomeScreen = ({ navigation }: any) => {
                 activeOpacity={0.7}
               >
                 <LinearGradient
-                  colors={tool.gradientColors}
+                  colors={tool.gradientColors as ColorValue[]} // Explicitly cast to ColorValue[]
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.toolButtonGradient}
@@ -265,6 +317,13 @@ const HomeScreen = ({ navigation }: any) => {
           </View>
         )}
       </ScrollView>
+
+      {/* Image Viewer Modal */}
+      <ImageViewerModal
+        visible={imageViewerVisible}
+        onClose={() => setImageViewerVisible(false)}
+        imageUrl={selectedImageUri}
+      />
     </View>
   );
 };

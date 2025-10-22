@@ -27,8 +27,40 @@ export interface CommunityImage {
   description?: string;
   likesCount: number;
   createdAt: string;
+  userId: string;
+  userName?: string;
+  userNickname?: string;
+  profileIcon?: string;
   userEmail: string;
   planCode: string;
+}
+
+export interface PublicProfile {
+  id: string;
+  name?: string;
+  nickname?: string;
+  displayName: string;
+  location?: string;
+  instagramHandle?: string;
+  profileIcon: string;
+  bannerImageUrl?: string;
+  planCode: string;
+  memberSince: string;
+}
+
+export interface PublicProfileResponse {
+  user: PublicProfile;
+  images: Array<{
+    id: string;
+    imageUrl: string;
+    description?: string;
+    likesCount: number;
+    createdAt: string;
+  }>;
+  stats: {
+    totalImages: number;
+    totalLikes: number;
+  };
 }
 
 export interface SavedCar {
