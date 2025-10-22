@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { profileAPI, communityAPI } from '../services/api';
 import { colors } from '../theme/colors';
@@ -13,9 +14,12 @@ const HomeScreen = ({ navigation }: any) => {
   const [featuredCommunity, setFeaturedCommunity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, [isAuthenticated]);
+  // Reload data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadDashboardData();
+    }, [isAuthenticated])
+  );
 
   const loadDashboardData = async () => {
     setLoading(true);
@@ -104,25 +108,43 @@ const HomeScreen = ({ navigation }: any) => {
                       carInput: savedPerformance.carInput
                     })}
                   >
-                    <View style={styles.garageCardHeader}>
-                      <Text style={styles.garageCardTitle}>Performance Calc</Text>
-                      <Text style={styles.garageCardIcon}>⚡</Text>
-                    </View>
                     <Text style={styles.garageCardVehicle}>
                       {savedPerformance.carInput.year} {savedPerformance.carInput.make} {savedPerformance.carInput.model}
                     </Text>
                     <View style={styles.garageCardStats}>
-                      <View style={styles.garageStat}>
+                      {/* Header Row */}
+                      <View style={styles.garageStatsRow}>
+                        <Text style={styles.garageStatHeader}></Text>
+                        <Text style={styles.garageStatHeader}>HP</Text>
+                        <Text style={styles.garageStatHeader}>WHP</Text>
+                        <Text style={styles.garageStatHeader}>0-60</Text>
+                      </View>
+
+                      {/* Stock Row */}
+                      <View style={styles.garageStatsRow}>
                         <Text style={styles.garageStatLabel}>Stock</Text>
                         <Text style={styles.garageStatValue}>
-                          {savedPerformance.results.stockPerformance.whp} WHP
+                          {savedPerformance.results.stockPerformance.horsepower}
+                        </Text>
+                        <Text style={styles.garageStatValue}>
+                          {savedPerformance.results.stockPerformance.whp}
+                        </Text>
+                        <Text style={styles.garageStatValue}>
+                          {savedPerformance.results.stockPerformance.zeroToSixty}s
                         </Text>
                       </View>
-                      <Text style={styles.garageArrow}>→</Text>
-                      <View style={styles.garageStat}>
+
+                      {/* Modified Row */}
+                      <View style={styles.garageStatsRow}>
                         <Text style={styles.garageStatLabel}>Modified</Text>
                         <Text style={[styles.garageStatValue, styles.garageStatModified]}>
-                          {savedPerformance.results.estimatedPerformance.whp} WHP
+                          {savedPerformance.results.estimatedPerformance.horsepower}
+                        </Text>
+                        <Text style={[styles.garageStatValue, styles.garageStatModified]}>
+                          {savedPerformance.results.estimatedPerformance.whp}
+                        </Text>
+                        <Text style={[styles.garageStatValue, styles.garageStatModified]}>
+                          {savedPerformance.results.estimatedPerformance.zeroToSixty}s
                         </Text>
                       </View>
                     </View>
@@ -364,31 +386,37 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   garageCardStats: {
+    flexDirection: 'column',
+    gap: 8,
+  },
+  garageStatsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  garageStat: {
+  garageStatHeader: {
     flex: 1,
-    alignItems: 'center',
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
   garageStatLabel: {
-    fontSize: 12,
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
     color: colors.textSecondary,
-    marginBottom: 4,
+    textAlign: 'left',
   },
   garageStatValue: {
+    flex: 1,
     fontSize: 16,
     fontWeight: 'bold',
     color: colors.textPrimary,
+    textAlign: 'center',
   },
   garageStatModified: {
     color: colors.primary,
-  },
-  garageArrow: {
-    fontSize: 18,
-    color: colors.primary,
-    marginHorizontal: 8,
   },
   garageImagesSection: {
     marginTop: 8,
