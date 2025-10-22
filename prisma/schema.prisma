@@ -6,54 +6,59 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
-  // Note: DIRECT_URL is optional for local development
 }
 
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  stripeCustomerId String?   @unique
-  planCode         String    @default("FREE")
-  planRenewsAt     DateTime?
-  extraCredits     Json      @default("{}")
-  perfUsed         Int       @default(0)
-  buildUsed        Int       @default(0)
-  imageUsed        Int       @default(0)
-  communityUsed    Int       @default(0)
-  resetDate        DateTime  @default(now())
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                String             @id @default(cuid())
+  email             String             @unique
+  stripeCustomerId  String?            @unique
+  planCode          String             @default("FREE")
+  planRenewsAt      DateTime?
+  extraCredits      Json               @default("{}")
+  perfUsed          Int                @default(0)
+  buildUsed         Int                @default(0)
+  imageUsed         Int                @default(0)
+  resetDate         DateTime           @default(now())
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  communityUsed     Int                @default(0)
 
-  communityImages     CommunityImage[]
-  savedCars           SavedCar[]
-  savedPerformance    SavedPerformance?
-  savedImages         SavedImage[]
+  // Profile customization fields
+  name              String?
+  nickname          String?
+  location          String?
+  instagramHandle   String?
+  profileIcon       String?            @default("👤")
+  bannerImageUrl    String?
+
+  communityImages   CommunityImage[]
+  savedCars         SavedCar[]
+  saved_images      saved_images[]
+  saved_performance saved_performance?
 
   @@map("users")
 }
 
 model CommunityImage {
-  id          String   @id @default(cuid())
+  id          String               @id @default(cuid())
   userEmail   String
   imageUrl    String
   description String?
-  approved    Boolean  @default(false)
-  likesCount  Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user        User     @relation(fields: [userEmail], references: [email])
+  approved    Boolean              @default(false)
+  likesCount  Int                  @default(0)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
   likes       CommunityImageLike[]
+  user        User                 @relation(fields: [userEmail], references: [email])
 
   @@map("community_images")
 }
 
 model CommunityImageLike {
-  id        String   @id @default(cuid())
+  id        String         @id @default(cuid())
   imageId   String
   userEmail String
-  createdAt DateTime @default(now())
-
+  createdAt DateTime       @default(now())
   image     CommunityImage @relation(fields: [imageId], references: [id], onDelete: Cascade)
 
   @@unique([imageId, userEmail])
@@ -61,31 +66,20 @@ model CommunityImageLike {
 }
 
 model SavedCar {
-  id               String   @id @default(cuid())
-  userEmail        String
-  name             String   // User-given name like "My Track Build"
-
-  // Car details
-  make             String
-  model            String
-  year             String
-  trim             String?
-
-  // Image
-  imageUrl         String?  // User's chosen image for this car
-
-  // Performance data (JSON to store full calculation results)
-  performanceData  Json?    // Stores the AI performance calculation results
-
-  // Build plan data (JSON to store full build plan)
-  buildPlanData    Json?    // Stores the AI build plan results
-
-  // Metadata
-  isActive         Boolean  @default(false) // Only one active car per user
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  user             User     @relation(fields: [userEmail], references: [email])
+  id              String   @id @default(cuid())
+  userEmail       String
+  name            String
+  make            String
+  model           String
+  year            String
+  trim            String?
+  imageUrl        String?
+  performanceData Json?
+  buildPlanData   Json?
+  isActive        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userEmail], references: [email])
 
   @@map("saved_cars")
 }
@@ -101,70 +95,58 @@ model VerificationCode {
   @@map("verification_codes")
 }
 
-model ToolUsage {
-  id            String   @id @default(cuid())
-  toolType      String   // "performance", "build", "image"
-  userEmail     String?  // null for anonymous users
-  fingerprint   String?  // browser fingerprint for anonymous tracking
-  success       Boolean  @default(true)
-  errorMessage  String?
-  createdAt     DateTime @default(now())
-
-  @@index([toolType, createdAt])
-  @@index([userEmail])
-  @@index([fingerprint])
-  @@map("tool_usage")
-}
-
-model Promotion {
-  id          String   @id @default(cuid())
-  code        String   @unique // e.g., "FIRST50"
-  planCode    String   // Plan to upgrade to (e.g., "PLUS")
-  maxUses     Int      // Maximum number of uses (e.g., 50)
-  usedCount   Int      @default(0)
-  active      Boolean  @default(true)
-  expiresAt   DateTime?
-  createdAt   DateTime @default(now())
-
-  redemptions PromotionRedemption[]
-
-  @@map("promotions")
-}
-
-model PromotionRedemption {
-  id           String    @id @default(cuid())
-  promotionId  String
-  userEmail    String
-  redeemedAt   DateTime  @default(now())
-
-  promotion    Promotion @relation(fields: [promotionId], references: [id])
+model promotion_redemptions {
+  id          String     @id
+  promotionId String
+  userEmail   String
+  redeemedAt  DateTime   @default(now())
+  promotions  promotions @relation(fields: [promotionId], references: [id])
 
   @@unique([promotionId, userEmail])
-  @@map("promotion_redemptions")
 }
 
-model SavedPerformance {
-  id        String   @id @default(cuid())
-  userEmail String   @unique // Only one saved performance per user
-  carInput  Json     // CarInput data
-  results   Json     // AIResponse data
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user      User     @relation(fields: [userEmail], references: [email])
-
-  @@map("saved_performance")
+model promotions {
+  id                    String                  @id
+  code                  String                  @unique
+  planCode              String
+  maxUses               Int
+  usedCount             Int                     @default(0)
+  active                Boolean                 @default(true)
+  expiresAt             DateTime?
+  createdAt             DateTime                @default(now())
+  promotion_redemptions promotion_redemptions[]
 }
 
-model SavedImage {
-  id        String   @id @default(cuid())
+model saved_images {
+  id        String   @id
   userEmail String
-  imageUrl  String   // Base64 or Blob URL
-  carSpec   Json     // CarSpec data
-  prompt    String   // Generated prompt
+  imageUrl  String
+  carSpec   Json
+  prompt    String
   createdAt DateTime @default(now())
+  users     User     @relation(fields: [userEmail], references: [email])
+}
 
-  user      User     @relation(fields: [userEmail], references: [email])
+model saved_performance {
+  id        String   @id
+  userEmail String   @unique
+  carInput  Json
+  results   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  users     User     @relation(fields: [userEmail], references: [email])
+}
 
-  @@map("saved_images")
+model tool_usage {
+  id           String   @id
+  toolType     String
+  userEmail    String?
+  fingerprint  String?
+  success      Boolean  @default(true)
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  @@index([fingerprint])
+  @@index([toolType, createdAt])
+  @@index([userEmail])
 }

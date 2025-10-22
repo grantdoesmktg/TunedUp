@@ -248,6 +248,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       }
 
+      // ==================== UPDATE PROFILE ====================
+
+      // Update profile customization fields
+      if (action === 'update-profile' && req.method === 'POST') {
+        const { name, nickname, location, instagramHandle, profileIcon, bannerImageUrl } = req.body
+
+        const updatedUser = await prisma.user.update({
+          where: { email: userEmail },
+          data: {
+            name: name || null,
+            nickname: nickname || null,
+            location: location || null,
+            instagramHandle: instagramHandle || null,
+            profileIcon: profileIcon || '👤',
+            bannerImageUrl: bannerImageUrl || null,
+          },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            nickname: true,
+            location: true,
+            instagramHandle: true,
+            profileIcon: true,
+            bannerImageUrl: true,
+          }
+        })
+
+        return res.status(200).json({
+          success: true,
+          user: updatedUser
+        })
+      }
+
       return res.status(400).json({ error: 'Invalid action' })
 
     } catch (error) {
