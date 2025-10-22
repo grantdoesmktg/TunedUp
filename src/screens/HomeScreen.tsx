@@ -1,37 +1,63 @@
-// NATIVE APP - Home screen with large tool cards
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from 'react-native';
+// NATIVE APP - Dashboard Home screen with Your Garage and Featured Community
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
+import { profileAPI, communityAPI } from '../services/api';
 import { colors } from '../theme/colors';
 
 const HomeScreen = ({ navigation }: any) => {
   const { user, isAuthenticated } = useAuth();
+  const [savedPerformance, setSavedPerformance] = useState<any>(null);
+  const [savedImages, setSavedImages] = useState<any[]>([]);
+  const [featuredCommunity, setFeaturedCommunity] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [isAuthenticated]);
+
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      // Load user's garage (if authenticated)
+      if (isAuthenticated) {
+        const [perfResponse, imagesResponse] = await Promise.all([
+          profileAPI.getSavedPerformance().catch(() => ({ performance: null })),
+          profileAPI.getSavedImages().catch(() => ({ images: [] })),
+        ]);
+        setSavedPerformance(perfResponse.performance);
+        setSavedImages(imagesResponse.images || []);
+      }
+
+      // Load random community images (always, even if not authenticated)
+      const communityResponse = await communityAPI.getRandomImages(3);
+      setFeaturedCommunity(communityResponse.images || []);
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const tools = [
     {
-      name: 'Performance Calculator',
-      description: 'Get AI-powered estimates for horsepower, torque, and 0-60 times based on your mods',
       icon: '⚡',
+      name: 'Performance',
+      route: 'PerformanceCalculator',
       gradientColors: [colors.performance.start, colors.performance.end],
-      usage: user ? `${user.perfUsed}/100` : '0/10',
-      type: 'performance',
     },
     {
-      name: 'Build Planner',
-      description: 'Create detailed upgrade plans with parts recommendations and cost estimates',
       icon: '🔧',
+      name: 'Build',
+      route: 'BuildPlanner',
       gradientColors: [colors.build.start, colors.build.end],
-      usage: user ? `${user.buildUsed}/100` : '0/10',
-      type: 'build',
     },
     {
-      name: 'AI Image Generator',
-      description: 'Generate stunning visuals of your dream car with AI-powered image generation',
       icon: '🎨',
+      name: 'Image',
+      route: 'ImageGenerator',
       gradientColors: [colors.image.start, colors.image.end],
-      usage: user ? `${user.imageUsed}/100` : '0/10',
-      type: 'image',
     },
   ];
 
@@ -41,8 +67,10 @@ const HomeScreen = ({ navigation }: any) => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logo}>TunedUp</Text>
-          {isAuthenticated ? (
-            <Text style={styles.welcomeText}>Welcome back, {user?.email}</Text>
+          {isAuthenticated && user ? (
+            <View style={styles.userBadge}>
+              <Text style={styles.userPlan}>{user.planCode}</Text>
+            </View>
           ) : (
             <TouchableOpacity
               style={styles.signInButton}
@@ -53,61 +81,182 @@ const HomeScreen = ({ navigation }: any) => {
           )}
         </View>
 
-        {/* Hero Section */}
-        <View style={styles.hero}>
-          <Text style={styles.heroTitle}>Automotive Tools Powered by AI</Text>
-          <Text style={styles.heroSubtitle}>
-            Calculate performance, plan builds, and generate stunning car images
-          </Text>
-        </View>
+        {/* Your Garage Section */}
+        {isAuthenticated && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>🏁 Your Garage</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+                <Text style={styles.sectionLink}>View Profile →</Text>
+              </TouchableOpacity>
+            </View>
 
-        {/* Tools Grid */}
-        <View style={styles.toolsSection}>
-          <Text style={styles.sectionTitle}>Available Tools</Text>
-          {tools.map((tool, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.toolCard}
-              onPress={() => {
-                if (tool.type === 'performance') {
-                  navigation.navigate('PerformanceCalculator');
-                } else if (tool.type === 'build') {
-                  navigation.navigate('BuildPlanner');
-                } else if (tool.type === 'image') {
-                  navigation.navigate('ImageGenerator');
-                } else {
-                  navigation.navigate('Tools');
-                }
-              }}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={tool.gradientColors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.toolGradient}
-              >
-                <View style={styles.toolIconContainer}>
-                  <Text style={styles.toolIcon}>{tool.icon}</Text>
-                </View>
-                <View style={styles.usageBadge}>
-                  <Text style={styles.usageText}>{tool.usage}</Text>
-                </View>
-              </LinearGradient>
-              <View style={styles.toolContent}>
-                <Text style={styles.toolName}>{tool.name}</Text>
-                <Text style={styles.toolDescription}>{tool.description}</Text>
-              </View>
+            {loading ? (
+              <ActivityIndicator color={colors.primary} style={styles.loader} />
+            ) : (
+              <>
+                {/* Saved Performance */}
+                {savedPerformance ? (
+                  <TouchableOpacity
+                    style={styles.garageCard}
+                    onPress={() => navigation.navigate('PerformanceResults', {
+                      results: savedPerformance.results,
+                      carInput: savedPerformance.carInput
+                    })}
+                  >
+                    <View style={styles.garageCardHeader}>
+                      <Text style={styles.garageCardTitle}>Performance Calc</Text>
+                      <Text style={styles.garageCardIcon}>⚡</Text>
+                    </View>
+                    <Text style={styles.garageCardVehicle}>
+                      {savedPerformance.carInput.year} {savedPerformance.carInput.make} {savedPerformance.carInput.model}
+                    </Text>
+                    <View style={styles.garageCardStats}>
+                      <View style={styles.garageStat}>
+                        <Text style={styles.garageStatLabel}>Stock</Text>
+                        <Text style={styles.garageStatValue}>
+                          {savedPerformance.results.stockPerformance.whp} WHP
+                        </Text>
+                      </View>
+                      <Text style={styles.garageArrow}>→</Text>
+                      <View style={styles.garageStat}>
+                        <Text style={styles.garageStatLabel}>Modified</Text>
+                        <Text style={[styles.garageStatValue, styles.garageStatModified]}>
+                          {savedPerformance.results.estimatedPerformance.whp} WHP
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.emptyGarage}>
+                    <Text style={styles.emptyText}>No saved performance yet</Text>
+                    <TouchableOpacity
+                      style={styles.emptyButton}
+                      onPress={() => navigation.navigate('PerformanceCalculator')}
+                    >
+                      <Text style={styles.emptyButtonText}>Calculate Now</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* Saved Images */}
+                {savedImages.length > 0 ? (
+                  <View style={styles.garageImagesSection}>
+                    <Text style={styles.garageImagesTitle}>Saved Images ({savedImages.length}/3)</Text>
+                    <View style={styles.garageImages}>
+                      {savedImages.map((image) => (
+                        <Image
+                          key={image.id}
+                          source={{ uri: image.imageUrl }}
+                          style={styles.garageImage}
+                          resizeMode="cover"
+                        />
+                      ))}
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.emptyGarage}>
+                    <Text style={styles.emptyText}>No saved images yet</Text>
+                    <TouchableOpacity
+                      style={styles.emptyButton}
+                      onPress={() => navigation.navigate('ImageGenerator')}
+                    >
+                      <Text style={styles.emptyButtonText}>Generate Image</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        )}
+
+        {/* Featured Community Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>✨ Featured from Community</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Community')}>
+              <Text style={styles.sectionLink}>See All →</Text>
             </TouchableOpacity>
-          ))}
+          </View>
+
+          {loading ? (
+            <ActivityIndicator color={colors.primary} style={styles.loader} />
+          ) : featuredCommunity.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.featuredScroll}
+              contentContainerStyle={styles.featuredContent}
+            >
+              {featuredCommunity.map((image) => (
+                <TouchableOpacity
+                  key={image.id}
+                  style={styles.featuredCard}
+                  onPress={() => navigation.navigate('Community')}
+                >
+                  <Image
+                    source={{ uri: image.imageUrl }}
+                    style={styles.featuredImage}
+                    resizeMode="cover"
+                  />
+                  {image.description && (
+                    <View style={styles.featuredOverlay}>
+                      <Text style={styles.featuredDescription} numberOfLines={1}>
+                        {image.description}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.featuredLikes}>
+                    <Text style={styles.featuredLikesText}>❤️ {image.likesCount}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.emptyGarage}>
+              <Text style={styles.emptyText}>No community posts yet</Text>
+            </View>
+          )}
         </View>
 
-        {/* Free Tier Notice */}
+        {/* Quick Actions - Tool Buttons */}
+        <View style={styles.quickActions}>
+          <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+          <View style={styles.toolButtons}>
+            {tools.map((tool, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.toolButton}
+                onPress={() => navigation.navigate(tool.route)}
+                activeOpacity={0.7}
+              >
+                <LinearGradient
+                  colors={tool.gradientColors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.toolButtonGradient}
+                >
+                  <Text style={styles.toolButtonIcon}>{tool.icon}</Text>
+                  <Text style={styles.toolButtonName}>{tool.name}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Sign In CTA for unauthenticated users */}
         {!isAuthenticated && (
-          <View style={styles.notice}>
-            <Text style={styles.noticeText}>
-              🎉 Try all tools for free! Sign in to save your work and get more credits.
+          <View style={styles.ctaCard}>
+            <Text style={styles.ctaTitle}>Save Your Work</Text>
+            <Text style={styles.ctaText}>
+              Sign in to save your calculations, generated images, and access your garage from any device
             </Text>
+            <TouchableOpacity
+              style={styles.ctaButton}
+              onPress={() => navigation.navigate('Login')}
+            >
+              <Text style={styles.ctaButtonText}>Sign In Free</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -124,7 +273,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: 100,
   },
   header: {
     flexDirection: 'row',
@@ -139,9 +288,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.primary,
   },
-  welcomeText: {
-    fontSize: 14,
-    color: colors.textSecondary,
+  userBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  userPlan: {
+    color: colors.background,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   signInButton: {
     backgroundColor: colors.secondary,
@@ -156,95 +312,246 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  hero: {
+  section: {
     paddingHorizontal: 20,
-    paddingVertical: 24,
+    marginBottom: 32,
   },
-  heroTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  heroSubtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    lineHeight: 24,
-  },
-  toolsSection: {
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
   },
-  toolCard: {
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+  },
+  sectionLink: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  loader: {
+    marginVertical: 20,
+  },
+  garageCard: {
     backgroundColor: colors.secondary,
     borderRadius: 16,
-    overflow: 'hidden',
+    padding: 16,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: colors.divider,
   },
-  toolGradient: {
-    height: 160,
+  garageCardHeader: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 16,
-    opacity: 0.9,
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  toolIconContainer: {
-    width: 56,
-    height: 56,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 28,
-    justifyContent: 'center',
+  garageCardTitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  garageCardIcon: {
+    fontSize: 24,
+  },
+  garageCardVehicle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 12,
+  },
+  garageCardStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     alignItems: 'center',
   },
-  toolIcon: {
-    fontSize: 32,
+  garageStat: {
+    flex: 1,
+    alignItems: 'center',
   },
-  usageBadge: {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    alignSelf: 'flex-end',
+  garageStatLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 4,
   },
-  usageText: {
+  garageStatValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
     color: colors.textPrimary,
+  },
+  garageStatModified: {
+    color: colors.primary,
+  },
+  garageArrow: {
+    fontSize: 18,
+    color: colors.primary,
+    marginHorizontal: 8,
+  },
+  garageImagesSection: {
+    marginTop: 8,
+  },
+  garageImagesTitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 12,
+    fontWeight: '600',
+  },
+  garageImages: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  garageImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    backgroundColor: colors.secondary,
+  },
+  emptyGarage: {
+    backgroundColor: colors.secondary,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.divider,
+    marginBottom: 16,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 12,
+  },
+  emptyButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  emptyButtonText: {
+    color: colors.background,
     fontSize: 14,
     fontWeight: '600',
   },
-  toolContent: {
-    padding: 16,
+  featuredScroll: {
+    marginHorizontal: -20,
   },
-  toolName: {
+  featuredContent: {
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  featuredCard: {
+    width: 200,
+    height: 200,
+    borderRadius: 16,
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: colors.secondary,
+  },
+  featuredImage: {
+    width: '100%',
+    height: '100%',
+  },
+  featuredOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 12,
+  },
+  featuredDescription: {
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  featuredLikes: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  featuredLikesText: {
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  quickActions: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  quickActionsTitle: {
     fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 16,
+  },
+  toolButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  toolButton: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  toolButtonGradient: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 100,
+  },
+  toolButtonIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  toolButtonName: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  ctaCard: {
+    marginHorizontal: 20,
+    backgroundColor: colors.secondary,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  ctaTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: colors.textPrimary,
     marginBottom: 8,
   },
-  toolDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  notice: {
-    marginHorizontal: 20,
-    marginTop: 8,
-    padding: 16,
-    backgroundColor: colors.secondary,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  noticeText: {
+  ctaText: {
     fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
+    marginBottom: 16,
     lineHeight: 20,
+  },
+  ctaButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  ctaButtonText: {
+    color: colors.background,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

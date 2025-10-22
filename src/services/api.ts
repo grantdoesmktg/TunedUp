@@ -94,6 +94,10 @@ export const communityAPI = {
     return apiRequest(`/api/community?action=images&page=${page}&limit=${limit}`);
   },
 
+  getRandomImages: async (count: number = 3) => {
+    return apiRequest(`/api/community?action=random&count=${count}`);
+  },
+
   likeImage: async (imageId: string) => {
     return apiRequest('/api/community?action=like', {
       method: 'POST',
