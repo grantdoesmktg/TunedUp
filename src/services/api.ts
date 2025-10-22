@@ -236,6 +236,21 @@ export const profileAPI = {
   getAllProfileData: async () => {
     return apiRequest('/api/profile?action=get-all');
   },
+
+  // Update profile customization fields
+  updateProfile: async (profileData: {
+    name?: string;
+    nickname?: string;
+    location?: string;
+    instagramHandle?: string;
+    profileIcon?: string;
+    bannerImageUrl?: string;
+  }) => {
+    return apiRequest('/api/profile?action=update-profile', {
+      method: 'POST',
+      body: JSON.stringify(profileData),
+    });
+  },
 };
 
 // Legacy exports for backwards compatibility
