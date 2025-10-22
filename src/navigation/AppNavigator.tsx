@@ -1,6 +1,6 @@
 // NATIVE APP - Main navigation structure
 import React from 'react';
-import { Platform } from 'react-native';
+import { Platform, Image, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -24,6 +24,36 @@ import ImageResultsScreen from '../screens/ImageResultsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+// Header components
+const HeaderLeft = () => (
+  <Image
+    source={require('../../assets/logo-horizontal.png')}
+    style={styles.headerLogo}
+    resizeMode="contain"
+  />
+);
+
+const HeaderRight = ({ navigation }: any) => {
+  const { user, isAuthenticated } = useAuth();
+
+  return (
+    <View style={styles.headerRight}>
+      {isAuthenticated && user ? (
+        <Text style={styles.userEmail} numberOfLines={1}>
+          {user.email}
+        </Text>
+      ) : (
+        <TouchableOpacity
+          style={styles.signInButton}
+          onPress={() => navigation.navigate('Login')}
+        >
+          <Text style={styles.signInText}>Sign In</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
 // Auth stack for login flow
 const AuthStack = () => (
@@ -58,8 +88,15 @@ const RootNavigator = () => (
 // Main app tabs (available to all users, auth optional)
 const MainTabs = () => (
   <Tab.Navigator
-    screenOptions={{
-      headerShown: false,
+    screenOptions={({ navigation }) => ({
+      headerShown: true,
+      headerTitle: '',
+      headerLeft: () => <HeaderLeft />,
+      headerRight: () => <HeaderRight navigation={navigation} />,
+      headerStyle: {
+        backgroundColor: colors.background,
+      },
+      headerShadowVisible: false,
       tabBarStyle: {
         backgroundColor: colors.secondary,
         borderTopColor: colors.divider,
@@ -74,7 +111,7 @@ const MainTabs = () => (
         fontSize: 12,
         fontWeight: '600',
       },
-    }}
+    })}
   >
     <Tab.Screen
       name="Home"
@@ -122,3 +159,31 @@ export const AppNavigator = () => {
     </NavigationContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  headerLogo: {
+    height: 32,
+    width: 120,
+    marginLeft: 16,
+  },
+  headerRight: {
+    marginRight: 16,
+  },
+  userEmail: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '500',
+    maxWidth: 150,
+  },
+  signInButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  signInText: {
+    color: colors.background,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});

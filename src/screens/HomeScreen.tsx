@@ -68,23 +68,6 @@ const HomeScreen = ({ navigation }: any) => {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.logo}>TunedUp</Text>
-          {isAuthenticated && user ? (
-            <View style={styles.userBadge}>
-              <Text style={styles.userPlan}>{user.planCode}</Text>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={styles.signInButton}
-              onPress={() => navigation.navigate('Login')}
-            >
-              <Text style={styles.signInText}>Sign In</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
         {/* Your Garage Section */}
         {isAuthenticated && (
           <View style={styles.section}>
