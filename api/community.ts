@@ -51,6 +51,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else if (action === 'like') {
       console.log('Calling handleLike...')
       return handleLike(req, res)
+    } else if (action === 'public-profile') {
+      return handleGetPublicProfile(req, res)
     } else {
       return res.status(400).json({ error: 'Invalid action' })
     }
@@ -175,8 +177,12 @@ async function handleGetImages(req: VercelRequest, res: VercelResponse) {
       include: {
         user: {
           select: {
+            id: true,
             email: true,
-            planCode: true
+            planCode: true,
+            name: true,
+            nickname: true,
+            profileIcon: true
           }
         }
       },
@@ -203,6 +209,10 @@ async function handleGetImages(req: VercelRequest, res: VercelResponse) {
         description: img.description,
         likesCount: img.likesCount,
         createdAt: img.createdAt,
+        userId: img.user.id,
+        userName: img.user.name,
+        userNickname: img.user.nickname,
+        profileIcon: img.user.profileIcon,
         userEmail: img.user.email.replace(/(.{2}).*@/, '$1***@'), // Partially hide email
         planCode: img.user.planCode
       })),
@@ -234,7 +244,7 @@ async function handleGetRandom(req: VercelRequest, res: VercelResponse) {
 
     // Get random approved community images using SQL for better randomization
     const images = await prisma.$queryRaw`
-      SELECT ci.*, u.email, u."planCode"
+      SELECT ci.*, u.id as "userId", u.email, u."planCode", u.name as "userName", u.nickname as "userNickname", u."profileIcon"
       FROM community_images ci
       JOIN users u ON ci."userEmail" = u.email
       WHERE ci.approved = true
@@ -249,6 +259,10 @@ async function handleGetRandom(req: VercelRequest, res: VercelResponse) {
         description: img.description,
         likesCount: img.likesCount,
         createdAt: img.createdAt,
+        userId: img.userId,
+        userName: img.userName,
+        userNickname: img.userNickname,
+        profileIcon: img.profileIcon,
         userEmail: img.email.replace(/(.{2}).*@/, '$1***@'), // Partially hide email
         planCode: img.planCode
       }))
@@ -397,6 +411,84 @@ async function handleLike(req: VercelRequest, res: VercelResponse) {
     res.status(500).json({
       error: 'Failed to process like request',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    })
+  }
+}
+
+async function handleGetPublicProfile(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  try {
+    const { userId } = req.query
+
+    if (!userId || typeof userId !== 'string') {
+      return res.status(400).json({ error: 'User ID is required' })
+    }
+
+    // Get user public profile data
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        nickname: true,
+        location: true,
+        instagramHandle: true,
+        profileIcon: true,
+        bannerImageUrl: true,
+        planCode: true,
+        createdAt: true,
+      }
+    })
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    // Get user's community images
+    const images = await prisma.communityImage.findMany({
+      where: {
+        userEmail: (await prisma.user.findUnique({ where: { id: userId }, select: { email: true } }))?.email,
+        approved: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 20
+    })
+
+    res.status(200).json({
+      user: {
+        id: user.id,
+        name: user.name,
+        nickname: user.nickname,
+        displayName: user.nickname || user.name || 'TunedUp User',
+        location: user.location,
+        instagramHandle: user.instagramHandle,
+        profileIcon: user.profileIcon || '👤',
+        bannerImageUrl: user.bannerImageUrl,
+        planCode: user.planCode,
+        memberSince: user.createdAt
+      },
+      images: images.map(img => ({
+        id: img.id,
+        imageUrl: img.imageUrl,
+        description: img.description,
+        likesCount: img.likesCount,
+        createdAt: img.createdAt
+      })),
+      stats: {
+        totalImages: images.length,
+        totalLikes: images.reduce((sum, img) => sum + img.likesCount, 0)
+      }
+    })
+
+  } catch (error) {
+    console.error('Get public profile error:', error)
+    res.status(500).json({
+      error: 'Failed to fetch public profile'
     })
   }
 }
