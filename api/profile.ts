@@ -95,7 +95,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(400).json({ error: 'carInput and results are required' })
         }
 
-        const savedPerformance = await prisma.savedPerformance.upsert({
+        const savedPerformance = await prisma.saved_performance.upsert({
           where: { userEmail },
           update: {
             carInput,
@@ -123,7 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(400).json({ error: 'perfId is required' })
         }
 
-        await prisma.savedPerformance.delete({
+        await prisma.saved_performance.delete({
           where: {
             id: perfId,
             userEmail // Ensure user owns this
@@ -137,7 +137,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Get saved images
       if (action === 'get-images' && req.method === 'GET') {
-        const savedImages = await prisma.savedImage.findMany({
+        const savedImages = await prisma.saved_images.findMany({
           where: { userEmail },
           orderBy: { createdAt: 'desc' },
           take: MAX_SAVED_IMAGES
@@ -157,7 +157,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // Check current count
-        const currentCount = await prisma.savedImage.count({
+        const currentCount = await prisma.saved_images.count({
           where: { userEmail }
         })
 
@@ -167,7 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           })
         }
 
-        const savedImage = await prisma.savedImage.create({
+        const savedImage = await prisma.saved_images.create({
           data: {
             userEmail,
             imageUrl,
@@ -190,7 +190,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(400).json({ error: 'imageId is required' })
         }
 
-        await prisma.savedImage.delete({
+        await prisma.saved_images.delete({
           where: {
             id: imageId,
             userEmail // Ensure user owns this
@@ -217,10 +217,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               planRenewsAt: true
             }
           }),
-          prisma.savedPerformance.findUnique({
+          prisma.saved_performance.findUnique({
             where: { userEmail }
           }),
-          prisma.savedImage.findMany({
+          prisma.saved_images.findMany({
             where: { userEmail },
             orderBy: { createdAt: 'desc' },
             take: MAX_SAVED_IMAGES
