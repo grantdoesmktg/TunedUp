@@ -46,6 +46,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return handleUpload(req, res)
     } else if (action === 'images') {
       return handleGetImages(req, res)
+    } else if (action === 'random') {
+      return handleGetRandom(req, res)
     } else if (action === 'like') {
       console.log('Calling handleLike...')
       return handleLike(req, res)
@@ -217,6 +219,45 @@ async function handleGetImages(req: VercelRequest, res: VercelResponse) {
     console.error('Get community images error:', error)
     res.status(500).json({
       error: 'Failed to fetch community images'
+    })
+  }
+}
+
+async function handleGetRandom(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  try {
+    const { count = '3' } = req.query
+    const countNum = parseInt(count as string)
+
+    // Get random approved community images using SQL for better randomization
+    const images = await prisma.$queryRaw`
+      SELECT ci.*, u.email, u."planCode"
+      FROM community_images ci
+      JOIN users u ON ci."userEmail" = u.email
+      WHERE ci.approved = true
+      ORDER BY RANDOM()
+      LIMIT ${countNum}
+    ` as any[]
+
+    res.status(200).json({
+      images: images.map(img => ({
+        id: img.id,
+        imageUrl: img.imageUrl,
+        description: img.description,
+        likesCount: img.likesCount,
+        createdAt: img.createdAt,
+        userEmail: img.email.replace(/(.{2}).*@/, '$1***@'), // Partially hide email
+        planCode: img.planCode
+      }))
+    })
+
+  } catch (error) {
+    console.error('Get random community images error:', error)
+    res.status(500).json({
+      error: 'Failed to fetch random community images'
     })
   }
 }
