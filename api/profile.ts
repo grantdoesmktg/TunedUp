@@ -1,8 +1,8 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
-import { jwtVerify } from 'jose'
 import { setCorsHeaders } from '../lib/corsConfig.js'
 import { prisma } from './lib/prisma.js'
 import { checkQuota } from '../lib/quota.js'
+import { getToken } from './lib/auth.js'
 
 const MAX_SAVED_IMAGES = 3
 
@@ -14,21 +14,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end()
   }
 
-  // Verify JWT authentication
-  const authHeader = req.headers.authorization
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Not authenticated' })
-  }
-
+  // Verify JWT authentication using shared helper
   try {
-    const token = authHeader.split(' ')[1]
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
-    const { payload } = await jwtVerify(token, secret)
-    const userEmail = payload.email as string
+    const payload = await getToken(req)
 
-    if (!userEmail) {
-      return res.status(401).json({ error: 'Invalid session' })
+    if (!payload || !payload.email) {
+      return res.status(401).json({ error: 'Not authenticated' })
     }
+
+    const userEmail = payload.email as string
 
     const { action } = req.query
 
