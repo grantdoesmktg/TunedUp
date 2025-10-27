@@ -36,17 +36,29 @@ async function apiRequest<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  console.log('🌐 API Request:', endpoint);
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
   });
 
+  console.log('📡 API Response status:', response.status, response.statusText);
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Network error' }));
+    console.error('❌ API Error:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: error,
+      endpoint: endpoint
+    });
     throw new Error(error.error || `HTTP ${response.status}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log('✅ API Response data received');
+  return data;
 }
 
 // Auth API
@@ -249,6 +261,7 @@ export const profileAPI = {
     instagramHandle?: string;
     profileIcon?: string;
     bannerImageUrl?: string;
+    backgroundTheme?: string;
   }) => {
     return apiRequest('/api/profile?action=update-profile', {
       method: 'POST',

@@ -25,8 +25,8 @@ const QUICK_ADD_MODS = [
 ];
 
 const PerformanceCalculatorScreen = ({ navigation }: any) => {
-  const { refreshUser } = useAuth();
-  const { checkQuota, refreshQuota } = useQuota();
+  const { refreshUser, isAuthenticated } = useAuth();
+  const { checkQuota, refreshQuota, incrementAnonymousUsage, quotaInfo } = useQuota();
   const [carInput, setCarInput] = useState<CarInput>({
     make: '',
     model: '',
@@ -61,6 +61,12 @@ const PerformanceCalculatorScreen = ({ navigation }: any) => {
     setLoading(true);
     try {
       const response: AIResponse = await performanceAPI.calculatePerformance(carInput);
+
+      // Increment usage for anonymous users
+      if (!isAuthenticated && quotaInfo?.planCode === 'ANONYMOUS') {
+        await incrementAnonymousUsage('performance');
+      }
+
       // Refresh quota and user data to update usage counts
       await Promise.all([
         refreshQuota(),

@@ -1,6 +1,6 @@
-// NATIVE APP - Community screen (Instagram-style grid)
+// NATIVE APP - Community screen (Social media scrollable feed)
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Dimensions, Alert, Modal } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Dimensions, Alert } from 'react-native';
 import { communityAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuota } from '../contexts/QuotaContext';
@@ -8,7 +8,6 @@ import { colors } from '../theme/colors';
 import type { CommunityImage } from '../types';
 
 const { width } = Dimensions.get('window');
-const IMAGE_SIZE = (width - 3) / 3; // 3 columns with 1px gaps
 
 interface CommunityScreenProps {
   navigation: any;
@@ -18,8 +17,6 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
   const [images, setImages] = useState<CommunityImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
-  const [selectedImage, setSelectedImage] = useState<CommunityImage | null>(null);
   const [likedImages, setLikedImages] = useState<Set<string>>(new Set());
   const { isAuthenticated } = useAuth();
   const { checkQuota, refreshQuota } = useQuota();
@@ -28,15 +25,27 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
     loadImages();
   }, []);
 
+  // Shuffle array using Fisher-Yates algorithm
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   const loadImages = async () => {
     try {
-      const response = await communityAPI.getImages(1, 40);
+      const response = await communityAPI.getImages(1, 40) as { images: CommunityImage[] };
       console.log('📸 Community images loaded:', response.images?.length);
       console.log('🎨 Sample planCodes:', response.images?.slice(0, 3).map((img: any) => ({
         id: img.id.substring(0, 8),
         planCode: img.planCode
       })));
-      setImages(response.images || []);
+      // Shuffle images for random order every time
+      const shuffledImages = shuffleArray(response.images || []);
+      setImages(shuffledImages);
     } catch (error) {
       console.error('Failed to load community images:', error);
     } finally {
@@ -46,7 +55,6 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    setPage(1);
     await loadImages();
     setRefreshing(false);
   };
@@ -89,11 +97,6 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
         )
       );
 
-      // Update selected image if it's currently open
-      if (selectedImage && selectedImage.id === imageId) {
-        setSelectedImage({ ...selectedImage, likesCount: selectedImage.likesCount + 1 });
-      }
-
       // Refresh quota
       await refreshQuota();
     } catch (error: any) {
@@ -114,48 +117,73 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
     }
   };
 
-  // Get tier glow color
-  const getTierGlowColor = (planCode: string): string => {
-    const tier = planCode?.toUpperCase();
-    if (tier === 'PLUS') return 'rgba(50, 205, 50, 0.8)'; // Lime green
-    if (tier === 'PRO') return 'rgba(255, 215, 0, 0.8)'; // Yellow
-    if (tier === 'ULTRA') return 'rgba(220, 20, 60, 0.9)'; // Rich red
-    if (tier === 'ADMIN') return 'rgba(255, 215, 0, 1)'; // Vibrant gold
-    return 'rgba(255, 255, 255, 0)'; // No glow for FREE tier
-  };
-
-  const getTierGlowSize = (planCode: string): number => {
-    const tier = planCode?.toUpperCase();
-    if (tier === 'PLUS') return 10;
-    if (tier === 'PRO') return 15;
-    if (tier === 'ULTRA') return 18;
-    if (tier === 'ADMIN') return 22;
-    return 0;
-  };
-
   const getDisplayName = (image: CommunityImage): string => {
-    return image.userNickname || image.userName || 'TunedUp User';
+    if (image.userNickname) return image.userNickname;
+    if (image.userEmail) return image.userEmail.substring(0, 4);
+    return 'User';
+  };
+
+  const getTierBadge = (planCode: string): string => {
+    const tier = planCode?.toUpperCase();
+    if (tier === 'PLUS') return '⭐';
+    if (tier === 'PRO') return '⚡';
+    if (tier === 'ULTRA') return '👑';
+    if (tier === 'ADMIN') return '🔥';
+    return '';
   };
 
   const navigateToProfile = (userId: string) => {
     navigation.navigate('PublicProfile', { userId });
   };
 
-  const renderImage = ({ item }: { item: CommunityImage }) => (
-    <TouchableOpacity
-      style={styles.imageContainer}
-      onPress={() => setSelectedImage(item)}
-      activeOpacity={0.9}
-    >
+  const renderFeedCard = ({ item }: { item: CommunityImage }) => (
+    <View style={styles.feedCard}>
+      {/* User info header */}
+      <TouchableOpacity
+        style={styles.userHeader}
+        onPress={() => navigateToProfile(item.userId)}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.userIcon}>{item.profileIcon || '👤'}</Text>
+        <View style={styles.userInfo}>
+          <View style={styles.userNameRow}>
+            <Text style={styles.userName}>{getDisplayName(item)}</Text>
+            {getTierBadge(item.planCode) && (
+              <Text style={styles.tierBadge}>{getTierBadge(item.planCode)}</Text>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      {/* Image */}
       <Image
         source={{ uri: item.imageUrl }}
-        style={styles.image}
+        style={styles.feedImage}
         resizeMode="cover"
       />
-      <View style={styles.overlay}>
-        <Text style={styles.likes}>❤️ {item.likesCount}</Text>
-      </View>
-    </TouchableOpacity>
+
+      {/* Description */}
+      {item.description && (
+        <Text style={styles.feedDescription}>{item.description}</Text>
+      )}
+
+      {/* Like button */}
+      <TouchableOpacity
+        onPress={() => handleLike(item.id)}
+        style={[
+          styles.feedLikeButton,
+          likedImages.has(item.id) && styles.feedLikeButtonActive
+        ]}
+        disabled={likedImages.has(item.id)}
+      >
+        <Text style={[
+          styles.feedLikeText,
+          likedImages.has(item.id) && styles.feedLikeTextActive
+        ]}>
+          ❤️ {item.likesCount} {item.likesCount === 1 ? 'like' : 'likes'}
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 
   if (loading) {
@@ -173,18 +201,16 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
       <View style={styles.header}>
         <Text style={styles.title}>Community</Text>
         <Text style={styles.subtitle}>
-          {images.length} images from the TunedUp community
+          {images.length} posts from the TunedUp community
         </Text>
       </View>
 
-      {/* Grid */}
+      {/* Scrollable Feed */}
       <FlatList
         data={images}
-        renderItem={renderImage}
+        renderItem={renderFeedCard}
         keyExtractor={(item) => item.id}
-        numColumns={3}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.gridContent}
+        contentContainerStyle={styles.feedContent}
         refreshing={refreshing}
         onRefresh={handleRefresh}
         showsVerticalScrollIndicator={false}
@@ -197,76 +223,6 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
             Sign in to like images and share your own!
           </Text>
         </View>
-      )}
-
-      {/* Image Detail Modal */}
-      {selectedImage && (
-        <Modal
-          visible={true}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setSelectedImage(null)}
-        >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setSelectedImage(null)}
-          >
-            <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
-              {/* Image with tier-based glow */}
-              <View
-                style={[
-                  styles.glowWrapper,
-                  {
-                    shadowColor: getTierGlowColor(selectedImage.planCode),
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: 1,
-                    shadowRadius: getTierGlowSize(selectedImage.planCode),
-                  },
-                ]}
-              >
-                <View style={styles.detailImageWrapper}>
-                  <Image
-                    source={{ uri: selectedImage.imageUrl }}
-                    style={styles.detailImage}
-                    resizeMode="contain"
-                  />
-                </View>
-              </View>
-
-              {/* User Info and Description */}
-              <View style={styles.detailInfo}>
-                {/* User Name */}
-                <TouchableOpacity
-                  style={styles.userInfoContainer}
-                  onPress={() => navigateToProfile(selectedImage.userId)}
-                >
-                  <Text style={styles.userIcon}>{selectedImage.profileIcon || '👤'}</Text>
-                  <Text style={styles.userName}>{getDisplayName(selectedImage)}</Text>
-                </TouchableOpacity>
-
-                {selectedImage.description && (
-                  <Text style={styles.description}>{selectedImage.description}</Text>
-                )}
-                <TouchableOpacity
-                  onPress={() => handleLike(selectedImage.id)}
-                  style={[
-                    styles.likeButton,
-                    likedImages.has(selectedImage.id) && styles.likeButtonActive
-                  ]}
-                  disabled={likedImages.has(selectedImage.id)}
-                >
-                  <Text style={[
-                    styles.likeButtonText,
-                    likedImages.has(selectedImage.id) && styles.likeButtonTextActive
-                  ]}>
-                    ❤️ {selectedImage.likesCount} {selectedImage.likesCount === 1 ? 'like' : 'likes'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </Modal>
       )}
     </View>
   );
@@ -303,34 +259,76 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
-  gridContent: {
-    paddingBottom: 24,
+  feedContent: {
+    paddingBottom: 100,
   },
-  row: {
-    justifyContent: 'flex-start',
+  feedCard: {
+    backgroundColor: colors.secondary,
+    marginHorizontal: 16,
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.divider,
   },
-  imageContainer: {
-    width: IMAGE_SIZE,
-    height: IMAGE_SIZE,
-    position: 'relative',
-    margin: 0.5,
+  userHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: colors.background,
   },
-  image: {
-    width: '100%',
-    height: '100%',
+  userIcon: {
+    fontSize: 32,
+    marginRight: 12,
   },
-  overlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 8,
+  userInfo: {
+    flex: 1,
   },
-  likes: {
+  userNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  userName: {
+    fontSize: 16,
     color: colors.textPrimary,
-    fontSize: 12,
     fontWeight: '600',
+    marginRight: 8,
+  },
+  tierBadge: {
+    fontSize: 16,
+  },
+  feedImage: {
+    width: '100%',
+    aspectRatio: 1,
+  },
+  feedDescription: {
+    fontSize: 16,
+    color: colors.textPrimary,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  feedLikeButton: {
+    backgroundColor: colors.background,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    margin: 12,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: colors.divider,
+    alignItems: 'center',
+  },
+  feedLikeButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  feedLikeText: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  feedLikeTextActive: {
+    color: colors.background,
   },
   signInPrompt: {
     position: 'absolute',
@@ -347,84 +345,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 14,
     textAlign: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    width: '100%',
-    maxWidth: 500,
-    alignItems: 'center',
-  },
-  glowWrapper: {
-    width: '100%',
-    padding: 10,
-  },
-  detailImageWrapper: {
-    width: '100%',
-    aspectRatio: 1,
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  detailImage: {
-    width: '100%',
-    height: '100%',
-  },
-  detailInfo: {
-    width: '100%',
-    marginTop: 20,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-  },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    backgroundColor: colors.secondary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  userIcon: {
-    fontSize: 24,
-    marginRight: 8,
-  },
-  userName: {
-    fontSize: 16,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  description: {
-    fontSize: 18,
-    color: colors.textPrimary,
-    marginBottom: 16,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  likeButton: {
-    backgroundColor: colors.secondary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: colors.divider,
-  },
-  likeButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  likeButtonText: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  likeButtonTextActive: {
-    color: colors.background,
   },
 });
 

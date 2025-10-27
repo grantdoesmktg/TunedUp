@@ -83,6 +83,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         buildUsed: response.user.buildUsed,
         imageUsed: response.user.imageUsed,
         communityUsed: response.user.communityUsed,
+        name: response.user.name,
+        nickname: response.user.nickname,
+        location: response.user.location,
+        instagramHandle: response.user.instagramHandle,
+        profileIcon: response.user.profileIcon,
+        bannerImageUrl: response.user.bannerImageUrl,
       });
       setUser(response.user);
       // Quota context will automatically update when user state changes

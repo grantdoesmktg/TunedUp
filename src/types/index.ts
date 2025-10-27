@@ -11,6 +11,14 @@ export interface User {
   communityUsed: number;
   resetDate: Date;
   createdAt: Date;
+  // Profile customization fields
+  name?: string;
+  nickname?: string;
+  location?: string;
+  instagramHandle?: string;
+  profileIcon?: string;
+  bannerImageUrl?: string;
+  backgroundTheme?: string;
 }
 
 export interface AuthResponse {
@@ -44,6 +52,7 @@ export interface PublicProfile {
   instagramHandle?: string;
   profileIcon: string;
   bannerImageUrl?: string;
+  backgroundTheme?: string;
   planCode: string;
   memberSince: string;
 }

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, StyleSheet, ActivityIndicator, TouchableOpacity, Dimensions, Linking } from 'react-native';
+import { View, Text, ScrollView, Image, StyleSheet, ActivityIndicator, TouchableOpacity, Dimensions, Linking, ImageBackground } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { communityAPI } from '../services/api';
 import { colors } from '../theme/colors';
 import type { PublicProfileResponse } from '../types';
+import { getBackgroundConfig, parseBackgroundTheme } from '../theme/backgrounds';
+import { getTextureConfig, TexturePattern } from '../theme/textures';
 
 const { width } = Dimensions.get('window');
 const IMAGE_SIZE = (width - 60) / 3; // 3 columns with padding
@@ -27,10 +30,15 @@ const PublicProfileScreen = ({ route, navigation }: PublicProfileScreenProps) =>
 
   const loadProfile = async () => {
     try {
+      console.log('🔍 Loading public profile for userId:', userId);
       const response = await communityAPI.getPublicProfile(userId);
-      setProfile(response);
-    } catch (error) {
-      console.error('Failed to load public profile:', error);
+      console.log('✅ Profile loaded successfully:', response);
+      setProfile(response as any);
+    } catch (error: any) {
+      console.error('❌ Failed to load public profile:', error);
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
+      console.error('Full error:', error);
     } finally {
       setLoading(false);
     }
@@ -65,19 +73,24 @@ const PublicProfileScreen = ({ route, navigation }: PublicProfileScreenProps) =>
 
   const { user, images, stats } = profile;
 
+  // Parse background theme
+  const { gradient: gradientKey, texture: textureKey } = parseBackgroundTheme(user.backgroundTheme || 'midnight');
+  const backgroundConfig = getBackgroundConfig(gradientKey);
+  const textureConfig = textureKey ? getTextureConfig(textureKey as TexturePattern) : null;
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Banner Image */}
-      {user.bannerImageUrl && (
-        <Image
-          source={{ uri: user.bannerImageUrl }}
-          style={styles.banner}
-          resizeMode="cover"
+    <LinearGradient colors={backgroundConfig.colors} style={styles.container}>
+      {textureConfig && (
+        <ImageBackground
+          source={textureConfig.source}
+          style={styles.textureOverlay}
+          imageStyle={{ opacity: textureConfig.opacity }}
+          resizeMode="repeat"
         />
       )}
-
-      {/* Profile Header */}
-      <View style={styles.header}>
+      <ScrollView style={styles.scrollContent}>
+        {/* Profile Header */}
+        <View style={styles.header}>
         <Text style={styles.profileIcon}>{user.profileIcon}</Text>
         <Text style={styles.displayName}>{user.displayName}</Text>
 
@@ -135,18 +148,27 @@ const PublicProfileScreen = ({ route, navigation }: PublicProfileScreenProps) =>
           </View>
         )}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+  },
+  textureOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  scrollContent: {
+    flex: 1,
   },
   centerContainer: {
     flex: 1,
-    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,

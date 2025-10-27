@@ -1,31 +1,16 @@
-// NATIVE APP - Dashboard Home screen with Your Garage and Featured Community
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from 'react-native';
+// NATIVE APP - Dashboard Home screen with Featured Community
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
-import { profileAPI, communityAPI } from '../services/api';
+import { communityAPI } from '../services/api';
 import { colors } from '../theme/colors';
-import ImageViewerModal from '../components/ImageViewerModal'; // Import the new modal
 import { ColorValue } from 'react-native'; // Import ColorValue for LinearGradient
+import { ArticleModal } from '../components/ArticleModal';
+import { ARTICLES, type Article } from '../data/articles';
 
 // Define interfaces for API responses
-interface PerformanceResult {
-  stockPerformance: { horsepower: number; whp: number; zeroToSixty: number };
-  estimatedPerformance: { horsepower: number; whp: number; zeroToSixty: number };
-}
-
-interface CarInput {
-  year: string;
-  make: string;
-  model: string;
-}
-
-interface SavedPerformance {
-  results: PerformanceResult;
-  carInput: CarInput;
-}
-
 interface SavedImage {
   id: string;
   imageUrl: string;
@@ -33,26 +18,16 @@ interface SavedImage {
   likesCount?: number;
 }
 
-interface PerformanceResponse {
-  performance: SavedPerformance | null;
-}
-
-interface ImagesResponse {
-  images: SavedImage[];
-}
-
 interface CommunityResponse {
   images: SavedImage[];
 }
 
 const HomeScreen = ({ navigation }: any) => {
-  const { user, isAuthenticated } = useAuth();
-  const [savedPerformance, setSavedPerformance] = useState<any>(null);
-  const [savedImages, setSavedImages] = useState<any[]>([]);
+  const { isAuthenticated } = useAuth();
   const [featuredCommunity, setFeaturedCommunity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [imageViewerVisible, setImageViewerVisible] = useState(false); // State for image viewer modal
-  const [selectedImageUri, setSelectedImageUri] = useState(''); // State for selected image URI
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
 
   // Reload data when screen comes into focus
   useFocusEffect(
@@ -64,18 +39,8 @@ const HomeScreen = ({ navigation }: any) => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Load user's garage (if authenticated)
-      if (isAuthenticated) {
-        const [perfResponse, imagesResponse] = await Promise.all([
-          profileAPI.getSavedPerformance().catch(() => ({ performance: null })) as Promise<PerformanceResponse>,
-          profileAPI.getSavedImages().catch(() => ({ images: [] })) as Promise<ImagesResponse>,
-        ]);
-        setSavedPerformance(perfResponse.performance);
-        setSavedImages(imagesResponse.images || []);
-      }
-
-      // Load random community images (always, even if not authenticated)
-      const communityResponse = await communityAPI.getRandomImages(3) as CommunityResponse;
+      // Load 6 random community images for the auto-scrolling banner
+      const communityResponse = await communityAPI.getRandomImages(6) as CommunityResponse;
       setFeaturedCommunity(communityResponse.images || []);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -83,6 +48,38 @@ const HomeScreen = ({ navigation }: any) => {
       setLoading(false);
     }
   };
+
+  // Auto-scroll effect using Animated API (doesn't block touches)
+  useEffect(() => {
+    if (featuredCommunity.length === 0) return;
+
+    const CARD_WIDTH = 280; // Width of each card + gap
+    const totalWidth = CARD_WIDTH * featuredCommunity.length;
+    const duration = totalWidth * 50; // milliseconds (slower = longer duration)
+
+    // Animate from 0 to totalWidth
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scrollX, {
+          toValue: totalWidth,
+          duration: duration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scrollX, {
+          toValue: 0,
+          duration: 0, // Instant reset
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    animation.start();
+
+    return () => animation.stop();
+  }, [featuredCommunity, scrollX]);
+
+  console.log('HomeScreen render - ARTICLES count:', ARTICLES.length);
+  console.log('HomeScreen render - selectedArticle:', selectedArticle?.title || 'null');
 
   const tools: {
     icon: string;
@@ -113,162 +110,46 @@ const HomeScreen = ({ navigation }: any) => {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Your Garage Section */}
-        {isAuthenticated && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>🏁 Your Garage</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                <Text style={styles.sectionLink}>View Profile →</Text>
-              </TouchableOpacity>
-            </View>
-
-            {loading ? (
-              <ActivityIndicator color={colors.primary} style={styles.loader} />
-            ) : (
-              <>
-                {/* Saved Performance */}
-                {savedPerformance ? (
-                  <TouchableOpacity
-                    style={styles.garageCard}
-                    onPress={() => navigation.navigate('PerformanceResults', {
-                      results: savedPerformance.results,
-                      carInput: savedPerformance.carInput
-                    })}
-                  >
-                    <Text style={styles.garageCardVehicle}>
-                      {savedPerformance.carInput.year} {savedPerformance.carInput.make} {savedPerformance.carInput.model}
-                    </Text>
-                    <View style={styles.garageCardStats}>
-                      {/* Header Row */}
-                      <View style={styles.garageStatsRow}>
-                        <Text style={styles.garageStatHeader}></Text>
-                        <Text style={styles.garageStatHeader}>HP</Text>
-                        <Text style={styles.garageStatHeader}>WHP</Text>
-                        <Text style={styles.garageStatHeader}>0-60</Text>
-                      </View>
-
-                      {/* Stock Row */}
-                      <View style={styles.garageStatsRow}>
-                        <Text style={styles.garageStatLabel}>Stock</Text>
-                        <Text style={styles.garageStatValue}>
-                          {savedPerformance.results.stockPerformance.horsepower}
-                        </Text>
-                        <Text style={styles.garageStatValue}>
-                          {savedPerformance.results.stockPerformance.whp}
-                        </Text>
-                        <Text style={styles.garageStatValue}>
-                          {savedPerformance.results.stockPerformance.zeroToSixty}s
-                        </Text>
-                      </View>
-
-                      {/* Modified Row */}
-                      <View style={styles.garageStatsRow}>
-                        <Text style={styles.garageStatLabel}>Modified</Text>
-                        <Text style={[styles.garageStatValue, styles.garageStatModified]}>
-                          {savedPerformance.results.estimatedPerformance.horsepower}
-                        </Text>
-                        <Text style={[styles.garageStatValue, styles.garageStatModified]}>
-                          {savedPerformance.results.estimatedPerformance.whp}
-                        </Text>
-                        <Text style={[styles.garageStatValue, styles.garageStatModified]}>
-                          {savedPerformance.results.estimatedPerformance.zeroToSixty}s
-                        </Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={styles.emptyGarage}>
-                    <Text style={styles.emptyText}>No saved performance yet</Text>
-                    <TouchableOpacity
-                      style={styles.emptyButton}
-                      onPress={() => navigation.navigate('PerformanceCalculator')}
-                    >
-                      <Text style={styles.emptyButtonText}>Calculate Now</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {/* Saved Images */}
-                {savedImages.length > 0 ? (
-                  <View style={styles.garageImagesSection}>
-                    <Text style={styles.garageImagesTitle}>Saved Images ({savedImages.length}/3)</Text>
-                  <View style={styles.garageImages}>
-                    {savedImages.map((image) => (
-                      <TouchableOpacity
-                        key={image.id}
-                        onPress={() => {
-                          setSelectedImageUri(image.imageUrl);
-                          setImageViewerVisible(true);
-                        }}
-                      >
-                        <Image
-                          source={{ uri: image.imageUrl }}
-                          style={styles.garageImage}
-                          resizeMode="cover"
-                        />
-                      </TouchableOpacity>
-                    ))}
-                    </View>
-                  </View>
-                ) : (
-                  <View style={styles.emptyGarage}>
-                    <Text style={styles.emptyText}>No saved images yet</Text>
-                    <TouchableOpacity
-                      style={styles.emptyButton}
-                      onPress={() => navigation.navigate('ImageGenerator')}
-                    >
-                      <Text style={styles.emptyButtonText}>Generate Image</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </>
-            )}
-          </View>
-        )}
-
-        {/* Featured Community Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>✨ Featured from Community</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Community')}>
-              <Text style={styles.sectionLink}>See All →</Text>
-            </TouchableOpacity>
-          </View>
-
+        {/* Featured Community Section - Auto-scrolling Banner */}
+        <View style={styles.bannerSection}>
           {loading ? (
             <ActivityIndicator color={colors.primary} style={styles.loader} />
           ) : featuredCommunity.length > 0 ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.featuredScroll}
-              contentContainerStyle={styles.featuredContent}
+            <Animated.View
+              style={[
+                styles.bannerScroll,
+                {
+                  transform: [{ translateX: Animated.multiply(scrollX, -1) }],
+                  flexDirection: 'row',
+                },
+              ]}
             >
-              {featuredCommunity.map((image) => (
+              {/* Duplicate images for seamless looping effect */}
+              {[...featuredCommunity, ...featuredCommunity].map((image, index) => (
                 <TouchableOpacity
-                  key={image.id}
-                  style={styles.featuredCard}
+                  key={`${image.id}-${index}`}
+                  style={styles.bannerCard}
                   onPress={() => navigation.navigate('Community')}
+                  activeOpacity={0.9}
                 >
                   <Image
                     source={{ uri: image.imageUrl }}
-                    style={styles.featuredImage}
+                    style={styles.bannerImage}
                     resizeMode="cover"
                   />
                   {image.description && (
-                    <View style={styles.featuredOverlay}>
-                      <Text style={styles.featuredDescription} numberOfLines={1}>
+                    <View style={styles.bannerOverlay}>
+                      <Text style={styles.bannerDescription} numberOfLines={2}>
                         {image.description}
                       </Text>
                     </View>
                   )}
-                  <View style={styles.featuredLikes}>
-                    <Text style={styles.featuredLikesText}>❤️ {image.likesCount}</Text>
+                  <View style={styles.bannerLikes}>
+                    <Text style={styles.bannerLikesText}>❤️ {image.likesCount}</Text>
                   </View>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </Animated.View>
           ) : (
             <View style={styles.emptyGarage}>
               <Text style={styles.emptyText}>No community posts yet</Text>
@@ -301,6 +182,26 @@ const HomeScreen = ({ navigation }: any) => {
           </View>
         </View>
 
+        {/* Articles Section */}
+        <View style={styles.articlesSection}>
+          {ARTICLES.map((article) => (
+            <TouchableOpacity
+              key={article.id}
+              style={styles.articleCard}
+              onPress={() => {
+                console.log('Article clicked:', article.title);
+                setSelectedArticle(article);
+              }}
+              activeOpacity={0.8}
+            >
+              <View style={styles.articleHeader} pointerEvents="none">
+                <Text style={styles.articleTitle}>{article.title}</Text>
+              </View>
+              <Text style={styles.articlePreview} pointerEvents="none">{article.preview}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* Sign In CTA for unauthenticated users */}
         {!isAuthenticated && (
           <View style={styles.ctaCard}>
@@ -318,12 +219,18 @@ const HomeScreen = ({ navigation }: any) => {
         )}
       </ScrollView>
 
-      {/* Image Viewer Modal */}
-      <ImageViewerModal
-        visible={imageViewerVisible}
-        onClose={() => setImageViewerVisible(false)}
-        imageUrl={selectedImageUri}
-      />
+      {/* Article Modal */}
+      {selectedArticle && (
+        <ArticleModal
+          visible={true}
+          onClose={() => {
+            console.log('Closing article modal');
+            setSelectedArticle(null);
+          }}
+          title={selectedArticle.title}
+          content={selectedArticle.content}
+        />
+      )}
     </View>
   );
 };
@@ -380,21 +287,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 32,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+  bannerSection: {
+    marginBottom: 32,
+    height: 320,
+    overflow: 'hidden',
   },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-  },
-  sectionLink: {
-    fontSize: 14,
-    color: colors.primary,
-    fontWeight: '600',
+  bannerScroll: {
+    height: 320,
   },
   loader: {
     marginVertical: 20,
@@ -504,50 +403,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  featuredScroll: {
-    marginHorizontal: -20,
-  },
-  featuredContent: {
-    paddingHorizontal: 20,
-    gap: 16,
-  },
-  featuredCard: {
-    width: 200,
-    height: 200,
-    borderRadius: 16,
+  bannerCard: {
+    width: 260,
+    height: 300,
+    borderRadius: 20,
     overflow: 'hidden',
     position: 'relative',
     backgroundColor: colors.secondary,
+    marginRight: 20,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
-  featuredImage: {
+  bannerImage: {
     width: '100%',
     height: '100%',
   },
-  featuredOverlay: {
+  bannerOverlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    padding: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    padding: 16,
   },
-  featuredDescription: {
+  bannerDescription: {
     color: colors.textPrimary,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
+    lineHeight: 20,
   },
-  featuredLikes: {
+  bannerLikes: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
+    top: 16,
+    right: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
   },
-  featuredLikesText: {
+  bannerLikesText: {
     color: colors.textPrimary,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
   quickActions: {
@@ -589,6 +488,38 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  articlesSection: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+    gap: 16,
+  },
+  articleCard: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.divider,
+    marginBottom: 12,
+  },
+  articleHeader: {
+    backgroundColor: colors.secondary,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  articleTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+  },
+  articlePreview: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    lineHeight: 20,
   },
   ctaCard: {
     marginHorizontal: 20,

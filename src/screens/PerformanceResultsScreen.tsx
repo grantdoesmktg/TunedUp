@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../theme/colors';
-import { savedPerformanceAPI } from '../services/api';
+import { profileAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { AIResponse, CarInput } from '../types';
 
@@ -34,7 +34,7 @@ const PerformanceResultsScreen = ({ route, navigation }: any) => {
 
     setSaving(true);
     try {
-      await savedPerformanceAPI.savePerformance(carInput, results);
+      await profileAPI.savePerformance(carInput, results);
       setIsSaved(true);
       Alert.alert('Success', 'Performance calculation saved to your profile!');
     } catch (error: any) {

@@ -10,8 +10,8 @@ import { colors } from '../theme/colors';
 import type { CarSpec, ImageGeneratorResponse } from '../types';
 
 const ImageGeneratorScreen = ({ navigation }: any) => {
-  const { refreshUser, user } = useAuth();
-  const { checkQuota, refreshQuota } = useQuota();
+  const { refreshUser, user, isAuthenticated } = useAuth();
+  const { checkQuota, refreshQuota, incrementAnonymousUsage, quotaInfo } = useQuota();
   const [carSpec, setCarSpec] = useState<CarSpec>({
     year: '',
     make: '',
@@ -119,6 +119,11 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
       };
 
       const response: ImageGeneratorResponse = await imageGeneratorAPI.generateImage(promptSpec, imageParams);
+
+      // Increment usage for anonymous users, refresh for authenticated users
+      if (!isAuthenticated && quotaInfo?.planCode === 'ANONYMOUS') {
+        await incrementAnonymousUsage('image');
+      }
 
       // Refresh quota and user data to update usage counts
       await Promise.all([

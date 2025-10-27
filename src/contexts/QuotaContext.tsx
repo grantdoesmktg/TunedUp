@@ -1,9 +1,12 @@
 // NATIVE APP - Quota Context for usage tracking and limits
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { quotaAPI } from '../services/api';
 import { useAuth } from './AuthContext';
 import type { QuotaInfo, ToolType, PlanCode, QuotaStatus } from '../types/quota';
 import { PLAN_LIMITS, getPlanLimits } from '../types/quota';
+
+const ANONYMOUS_QUOTA_KEY = '@tunedUp_anonymousQuota';
 
 interface QuotaContextType {
   quotaInfo: QuotaInfo | null;
@@ -12,6 +15,7 @@ interface QuotaContextType {
   refreshQuota: () => Promise<void>;
   getUsagePercentage: (toolType: ToolType) => number;
   getRemainingUses: (toolType: ToolType) => number;
+  incrementAnonymousUsage: (toolType: ToolType) => Promise<void>;
 }
 
 const QuotaContext = createContext<QuotaContextType | undefined>(undefined);
@@ -59,23 +63,85 @@ export const QuotaProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  // Load quota info for anonymous users
-  const loadAnonymousQuota = () => {
-    // For anonymous users, just set default limits
-    // Backend will track usage by fingerprint, but we start fresh in the app
-    const limits = PLAN_LIMITS.ANONYMOUS;
-    setQuotaInfo({
-      planCode: 'ANONYMOUS',
-      perfUsed: 0,
-      perfLimit: limits.perf,
-      buildUsed: 0,
-      buildLimit: limits.build,
-      imageUsed: 0,
-      imageLimit: limits.image,
-      communityUsed: 0,
-      communityLimit: limits.community,
-      resetDate: new Date(),
-    });
+  // Load quota info for anonymous users from local storage
+  const loadAnonymousQuota = async () => {
+    try {
+      const storedQuota = await AsyncStorage.getItem(ANONYMOUS_QUOTA_KEY);
+      const limits = PLAN_LIMITS.ANONYMOUS;
+
+      if (storedQuota) {
+        const parsed = JSON.parse(storedQuota);
+        setQuotaInfo({
+          planCode: 'ANONYMOUS',
+          perfUsed: parsed.perfUsed || 0,
+          perfLimit: limits.perf,
+          buildUsed: parsed.buildUsed || 0,
+          buildLimit: limits.build,
+          imageUsed: parsed.imageUsed || 0,
+          imageLimit: limits.image,
+          communityUsed: parsed.communityUsed || 0,
+          communityLimit: limits.community,
+          resetDate: parsed.resetDate ? new Date(parsed.resetDate) : new Date(),
+        });
+      } else {
+        // First time anonymous user
+        const newQuota = {
+          planCode: 'ANONYMOUS',
+          perfUsed: 0,
+          perfLimit: limits.perf,
+          buildUsed: 0,
+          buildLimit: limits.build,
+          imageUsed: 0,
+          imageLimit: limits.image,
+          communityUsed: 0,
+          communityLimit: limits.community,
+          resetDate: new Date(),
+        };
+        setQuotaInfo(newQuota);
+        await AsyncStorage.setItem(ANONYMOUS_QUOTA_KEY, JSON.stringify(newQuota));
+      }
+    } catch (error) {
+      console.error('Failed to load anonymous quota:', error);
+      // Fallback to default
+      const limits = PLAN_LIMITS.ANONYMOUS;
+      setQuotaInfo({
+        planCode: 'ANONYMOUS',
+        perfUsed: 0,
+        perfLimit: limits.perf,
+        buildUsed: 0,
+        buildLimit: limits.build,
+        imageUsed: 0,
+        imageLimit: limits.image,
+        communityUsed: 0,
+        communityLimit: limits.community,
+        resetDate: new Date(),
+      });
+    }
+  };
+
+  // Increment anonymous usage and save to storage
+  const incrementAnonymousUsage = async (toolType: ToolType) => {
+    if (!quotaInfo || quotaInfo.planCode !== 'ANONYMOUS') return;
+
+    const updatedQuota = { ...quotaInfo };
+
+    switch (toolType) {
+      case 'performance':
+        updatedQuota.perfUsed += 1;
+        break;
+      case 'build':
+        updatedQuota.buildUsed += 1;
+        break;
+      case 'image':
+        updatedQuota.imageUsed += 1;
+        break;
+      case 'community':
+        updatedQuota.communityUsed += 1;
+        break;
+    }
+
+    setQuotaInfo(updatedQuota);
+    await AsyncStorage.setItem(ANONYMOUS_QUOTA_KEY, JSON.stringify(updatedQuota));
   };
 
   // Check if user can perform action (local check, no API call needed)
@@ -185,6 +251,7 @@ export const QuotaProvider = ({ children }: { children: ReactNode }) => {
     refreshQuota,
     getUsagePercentage,
     getRemainingUses,
+    incrementAnonymousUsage,
   };
 
   return <QuotaContext.Provider value={value}>{children}</QuotaContext.Provider>;

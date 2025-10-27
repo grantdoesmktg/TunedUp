@@ -1,5 +1,5 @@
 // NATIVE APP - Main navigation structure
-import React from 'react';
+import React, { useState } from 'react';
 import { Platform, Image, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,6 +7,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { colors } from '../theme/colors';
+import { PricingModal } from '../components/PricingModal';
+import { initializeStripePayment } from '../services/stripe';
+import type { PlanCode } from '../types/quota';
 
 // Placeholder screens - will build these next
 import HomeScreen from '../screens/HomeScreen';
@@ -37,21 +40,74 @@ const HeaderLeft = () => (
 
 const HeaderRight = ({ navigation }: any) => {
   const { user, isAuthenticated } = useAuth();
+  const [showPricingModal, setShowPricingModal] = useState(false);
 
-  return (
-    <View style={styles.headerRight}>
-      {isAuthenticated && user ? (
-        <Text style={styles.userEmail} numberOfLines={1}>
-          {user.email}
-        </Text>
-      ) : (
+  const getPlanBadgeStyle = (planCode: PlanCode) => {
+    switch (planCode) {
+      case 'FREE':
+        return { bg: '#6B7280', text: 'FREE' };
+      case 'PRO':
+        return { bg: '#3B82F6', text: 'PRO' };
+      case 'PLUS':
+        return { bg: '#8B5CF6', text: 'PLUS' };
+      case 'ULTRA':
+        return { bg: '#F59E0B', text: 'ULTRA' };
+      case 'ADMIN':
+        return { bg: '#EF4444', text: 'ADMIN' };
+      default:
+        return { bg: '#6B7280', text: 'FREE' };
+    }
+  };
+
+  const handleBadgePress = () => {
+    if (user?.planCode && ['FREE', 'PRO', 'PLUS', 'ADMIN'].includes(user.planCode)) {
+      setShowPricingModal(true);
+    }
+  };
+
+  const handleUpgrade = async (planCode: PlanCode) => {
+    try {
+      await initializeStripePayment(planCode);
+      setShowPricingModal(false);
+    } catch (error) {
+      console.error('Payment initialization failed:', error);
+    }
+  };
+
+  if (!isAuthenticated || !user) {
+    return (
+      <View style={styles.headerRight}>
         <TouchableOpacity
           style={styles.signInButton}
           onPress={() => navigation.navigate('Login')}
         >
           <Text style={styles.signInText}>Sign In</Text>
         </TouchableOpacity>
-      )}
+      </View>
+    );
+  }
+
+  const planCode = user.planCode || 'FREE';
+  const badgeStyle = getPlanBadgeStyle(planCode);
+  const isUpgradeable = ['FREE', 'PRO', 'PLUS', 'ADMIN'].includes(planCode);
+
+  return (
+    <View style={styles.headerRight}>
+      <TouchableOpacity
+        style={[styles.planBadge, { backgroundColor: badgeStyle.bg }]}
+        onPress={handleBadgePress}
+        disabled={!isUpgradeable}
+        activeOpacity={isUpgradeable ? 0.7 : 1}
+      >
+        <Text style={styles.planBadgeText}>{badgeStyle.text}</Text>
+      </TouchableOpacity>
+
+      <PricingModal
+        visible={showPricingModal}
+        onClose={() => setShowPricingModal(false)}
+        onSelectPlan={handleUpgrade}
+        currentPlan={planCode}
+      />
     </View>
   );
 };
@@ -83,7 +139,7 @@ const RootNavigator = () => (
     <RootStack.Screen name="BuildPlanResults" component={BuildPlanResultsScreen} />
     <RootStack.Screen name="ImageGenerator" component={ImageGeneratorScreen} />
     <RootStack.Screen name="ImageResults" component={ImageResultsScreen} />
-    <RootStack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ headerShown: true, title: 'Profile' }} />
+    <RootStack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ headerShown: false }} />
   </RootStack.Navigator>
 );
 
@@ -171,12 +227,6 @@ const styles = StyleSheet.create({
   headerRight: {
     marginRight: 16,
   },
-  userEmail: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '500',
-    maxWidth: 150,
-  },
   signInButton: {
     backgroundColor: colors.primary,
     paddingHorizontal: 16,
@@ -187,5 +237,19 @@ const styles = StyleSheet.create({
     color: colors.background,
     fontSize: 14,
     fontWeight: '600',
+  },
+  planBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    minWidth: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  planBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });

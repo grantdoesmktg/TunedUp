@@ -25,8 +25,8 @@ const BUDGET_OPTIONS = [
 ];
 
 const BuildPlannerScreen = ({ navigation }: any) => {
-  const { refreshUser } = useAuth();
-  const { checkQuota, refreshQuota } = useQuota();
+  const { refreshUser, isAuthenticated } = useAuth();
+  const { checkQuota, refreshQuota, incrementAnonymousUsage, quotaInfo } = useQuota();
   const [vehicleSpec, setVehicleSpec] = useState<VehicleSpec>({
     make: '',
     model: '',
@@ -57,6 +57,12 @@ const BuildPlannerScreen = ({ navigation }: any) => {
     setLoading(true);
     try {
       const response: BuildPlanResponse = await buildPlannerAPI.generateBuildPlan(vehicleSpec);
+
+      // Increment usage for anonymous users
+      if (!isAuthenticated && quotaInfo?.planCode === 'ANONYMOUS') {
+        await incrementAnonymousUsage('build');
+      }
+
       // Refresh quota and user data to update usage counts
       await Promise.all([
         refreshQuota(),
