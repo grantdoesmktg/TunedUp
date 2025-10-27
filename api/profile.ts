@@ -78,7 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Get saved performance calculation
       if (action === 'get-performance' && req.method === 'GET') {
-        const savedPerformance = await prisma.savedPerformance.findUnique({
+        const savedPerformance = await prisma.saved_performance.findUnique({
           where: { userEmail }
         })
 
@@ -252,7 +252,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Update profile customization fields
       if (action === 'update-profile' && req.method === 'POST') {
-        const { name, nickname, location, instagramHandle, profileIcon, bannerImageUrl } = req.body
+        const { name, nickname, location, instagramHandle, profileIcon, backgroundTheme } = req.body
 
         const updatedUser = await prisma.user.update({
           where: { email: userEmail },
@@ -262,7 +262,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             location: location || null,
             instagramHandle: instagramHandle || null,
             profileIcon: profileIcon || '👤',
-            bannerImageUrl: bannerImageUrl || null,
+            backgroundTheme: backgroundTheme || 'midnight',
           },
           select: {
             id: true,
@@ -272,7 +272,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             location: true,
             instagramHandle: true,
             profileIcon: true,
-            bannerImageUrl: true,
+            backgroundTheme: true,
           }
         })
 
