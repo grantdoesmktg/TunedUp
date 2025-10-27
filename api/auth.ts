@@ -236,12 +236,29 @@ async function createUserSession(email: string, res: VercelResponse, sendHtml: b
       </html>
     `)
     } else {
+      // Return full user object with all fields including profile customization
       res.status(200).json({
         success: true,
         message: 'Authentication successful',
         user: {
+          id: user.id,
           email: user.email,
-          planCode: user.planCode
+          planCode: user.planCode,
+          planRenewsAt: user.planRenewsAt,
+          extraCredits: user.extraCredits,
+          perfUsed: user.perfUsed,
+          buildUsed: user.buildUsed,
+          imageUsed: user.imageUsed,
+          communityUsed: user.communityUsed,
+          resetDate: user.resetDate,
+          createdAt: user.createdAt,
+          // Profile customization fields
+          name: user.name,
+          nickname: user.nickname,
+          location: user.location,
+          instagramHandle: user.instagramHandle,
+          profileIcon: user.profileIcon,
+          backgroundTheme: user.backgroundTheme
         }
       })
     }
@@ -285,13 +302,22 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
         imageUsed: true,
         communityUsed: true,
         resetDate: true,
-        createdAt: true
+        createdAt: true,
+        // Profile customization fields
+        name: true,
+        nickname: true,
+        location: true,
+        instagramHandle: true,
+        profileIcon: true,
+        backgroundTheme: true
       }
     })
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
     }
+
+    console.log('[AUTH ME] User from DB:', JSON.stringify(user, null, 2))
 
     const now = new Date()
     const daysSinceReset = Math.floor((now.getTime() - user.resetDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -317,7 +343,14 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
           imageUsed: true,
           communityUsed: true,
           resetDate: true,
-          createdAt: true
+          createdAt: true,
+          // Profile customization fields
+          name: true,
+          nickname: true,
+          location: true,
+          instagramHandle: true,
+          profileIcon: true,
+          backgroundTheme: true
         }
       })
 
