@@ -440,7 +440,6 @@ async function handleGetPublicProfile(req: VercelRequest, res: VercelResponse) {
         location: true,
         instagramHandle: true,
         profileIcon: true,
-        bannerImageUrl: true,
         backgroundTheme: true,
         planCode: true,
         createdAt: true,
@@ -477,7 +476,6 @@ async function handleGetPublicProfile(req: VercelRequest, res: VercelResponse) {
         location: user.location,
         instagramHandle: user.instagramHandle,
         profileIcon: user.profileIcon || '👤',
-        bannerImageUrl: user.bannerImageUrl,
         backgroundTheme: user.backgroundTheme,
         planCode: user.planCode,
         memberSince: user.createdAt
