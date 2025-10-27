@@ -470,26 +470,26 @@ async function handleGetPublicProfile(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({
       user: {
         id: user.id,
-        name: user.name,
-        nickname: user.nickname,
+        name: user.name || null,
+        nickname: user.nickname || null,
         displayName: user.nickname || user.name || 'TunedUp User',
-        location: user.location,
-        instagramHandle: user.instagramHandle,
+        location: user.location || null,
+        instagramHandle: user.instagramHandle || null,
         profileIcon: user.profileIcon || '👤',
-        backgroundTheme: user.backgroundTheme,
-        planCode: user.planCode,
+        backgroundTheme: user.backgroundTheme || 'midnight',
+        planCode: user.planCode || 'FREE',
         memberSince: user.createdAt
       },
       images: images.map(img => ({
         id: img.id,
         imageUrl: img.imageUrl,
-        description: img.description,
-        likesCount: img.likesCount,
+        description: img.description || null,
+        likesCount: img.likesCount || 0,
         createdAt: img.createdAt
       })),
       stats: {
         totalImages: images.length,
-        totalLikes: images.reduce((sum, img) => sum + img.likesCount, 0)
+        totalLikes: images.reduce((sum, img) => sum + (img.likesCount || 0), 0)
       }
     })
 
