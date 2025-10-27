@@ -422,35 +422,42 @@ async function handleGetPublicProfile(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { userId } = req.query
+    console.log('🔍 handleGetPublicProfile called with userId:', userId)
 
     if (!userId || typeof userId !== 'string') {
+      console.error('❌ Invalid userId:', userId)
       return res.status(400).json({ error: 'User ID is required' })
     }
 
-    // Get user public profile data
+    // Get user public profile data including email for images query
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
+        email: true,
         name: true,
         nickname: true,
         location: true,
         instagramHandle: true,
         profileIcon: true,
         bannerImageUrl: true,
+        backgroundTheme: true,
         planCode: true,
         createdAt: true,
       }
     })
 
     if (!user) {
+      console.error('❌ User not found for userId:', userId)
       return res.status(404).json({ error: 'User not found' })
     }
 
-    // Get user's community images
+    console.log('✅ User found:', { id: user.id, email: user.email })
+
+    // Get user's community images using the email we already have
     const images = await prisma.communityImage.findMany({
       where: {
-        userEmail: (await prisma.user.findUnique({ where: { id: userId }, select: { email: true } }))?.email,
+        userEmail: user.email,
         approved: true
       },
       orderBy: {
@@ -458,6 +465,8 @@ async function handleGetPublicProfile(req: VercelRequest, res: VercelResponse) {
       },
       take: 20
     })
+
+    console.log('✅ Found', images.length, 'images for user')
 
     res.status(200).json({
       user: {
@@ -469,6 +478,7 @@ async function handleGetPublicProfile(req: VercelRequest, res: VercelResponse) {
         instagramHandle: user.instagramHandle,
         profileIcon: user.profileIcon || '👤',
         bannerImageUrl: user.bannerImageUrl,
+        backgroundTheme: user.backgroundTheme,
         planCode: user.planCode,
         memberSince: user.createdAt
       },
@@ -485,10 +495,13 @@ async function handleGetPublicProfile(req: VercelRequest, res: VercelResponse) {
       }
     })
 
-  } catch (error) {
-    console.error('Get public profile error:', error)
+  } catch (error: any) {
+    console.error('❌ Get public profile error:', error)
+    console.error('Error message:', error?.message)
+    console.error('Error stack:', error?.stack)
     res.status(500).json({
-      error: 'Failed to fetch public profile'
+      error: 'Failed to fetch public profile',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
   }
 }
