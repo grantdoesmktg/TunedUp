@@ -40,7 +40,12 @@ async function handleSendLink(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Valid email required' })
     }
 
-    const code = generateVerificationCode()
+    // Demo account bypass - hardcoded verification code for Apple reviewers
+    const DEMO_EMAIL = 'reviewer@tunedup.dev'
+    const DEMO_CODE = '999999'
+    const isDemoAccount = email.toLowerCase() === DEMO_EMAIL.toLowerCase()
+
+    const code = isDemoAccount ? DEMO_CODE : generateVerificationCode()
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
 
     await prisma.verificationCode.deleteMany({
@@ -57,11 +62,13 @@ async function handleSendLink(req: VercelRequest, res: VercelResponse) {
 
     console.log('Generated verification code for', email, ':', code)
 
-    await resend.emails.send({
-      from: 'TunedUp <hello@tunedup.dev>',
-      to: email,
-      subject: '🏁 Your TunedUp Access Code - Ready to Roll!',
-      html: `
+    // Skip sending email for demo account
+    if (!isDemoAccount) {
+      await resend.emails.send({
+        from: 'TunedUp <hello@tunedup.dev>',
+        to: email,
+        subject: '🏁 Your TunedUp Access Code - Ready to Roll!',
+        html: `
         <div style="background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%); color: white; padding: 40px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
           <div style="max-width: 500px; margin: 0 auto; text-align: center;">
             <h1 style="font-size: 48px; margin-bottom: 10px; background: linear-gradient(45deg, #07fef7, #d82c83); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: bold;">TunedUp</h1>
@@ -80,18 +87,20 @@ async function handleSendLink(req: VercelRequest, res: VercelResponse) {
           </div>
         </div>
       `
-    })
+      })
+    }
 
+    // Create or update user - give ULTRA tier to demo account
     await prisma.user.upsert({
       where: { email },
       create: {
         email,
-        planCode: 'FREE',
+        planCode: isDemoAccount ? 'ULTRA' : 'FREE',
         perfUsed: 0,
         buildUsed: 0,
         imageUsed: 0
       },
-      update: {}
+      update: isDemoAccount ? { planCode: 'ULTRA' } : {}
     })
 
     res.status(200).json({
