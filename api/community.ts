@@ -164,7 +164,7 @@ async function handleGetImages(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { page = '1', limit = '20' } = req.query // Reduced default from 40 to 20
+    const { page = '1', limit = '12' } = req.query
     const pageNum = parseInt(page as string)
     const limitNum = parseInt(limit as string)
     const skip = (pageNum - 1) * limitNum
@@ -201,9 +201,6 @@ async function handleGetImages(req: VercelRequest, res: VercelResponse) {
     })
 
     const totalPages = Math.ceil(totalCount / limitNum)
-
-    // Add cache headers for faster subsequent loads (5 minutes)
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
 
     res.status(200).json({
       images: images.map(img => ({
@@ -254,9 +251,6 @@ async function handleGetRandom(req: VercelRequest, res: VercelResponse) {
       ORDER BY RANDOM()
       LIMIT ${countNum}
     ` as any[]
-
-    // Add cache headers for random endpoint (3 minutes)
-    res.setHeader('Cache-Control', 'public, s-maxage=180, stale-while-revalidate=360')
 
     res.status(200).json({
       images: images.map(img => ({
