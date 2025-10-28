@@ -483,6 +483,18 @@ async function handleGetPublicProfile(req: VercelRequest, res: VercelResponse) {
 
     console.log('✅ Found', images.length, 'images for user')
 
+    // Get user's saved performance calculation (if any)
+    const savedPerformance = await prisma.savedCar.findFirst({
+      where: {
+        userEmail: user.email
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+
+    console.log('✅ Saved performance:', savedPerformance ? 'Found' : 'None')
+
     res.status(200).json({
       user: {
         id: user.id,
@@ -503,6 +515,10 @@ async function handleGetPublicProfile(req: VercelRequest, res: VercelResponse) {
         likesCount: img.likesCount || 0,
         createdAt: img.createdAt
       })),
+      savedPerformance: savedPerformance ? {
+        carInput: savedPerformance.carInput,
+        results: savedPerformance.results
+      } : null,
       stats: {
         totalImages: images.length,
         totalLikes: images.reduce((sum, img) => sum + (img.likesCount || 0), 0)
