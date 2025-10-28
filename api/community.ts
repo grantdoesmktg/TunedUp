@@ -495,6 +495,15 @@ async function handleGetPublicProfile(req: VercelRequest, res: VercelResponse) {
 
     console.log('✅ Saved performance:', savedPerformance ? 'Found' : 'None')
 
+    // Prepare savedPerformance data - only include if it has valid data
+    let savedPerformanceData = null
+    if (savedPerformance && savedPerformance.carInput && savedPerformance.results) {
+      savedPerformanceData = {
+        carInput: savedPerformance.carInput,
+        results: savedPerformance.results
+      }
+    }
+
     res.status(200).json({
       user: {
         id: user.id,
@@ -515,10 +524,7 @@ async function handleGetPublicProfile(req: VercelRequest, res: VercelResponse) {
         likesCount: img.likesCount || 0,
         createdAt: img.createdAt
       })),
-      savedPerformance: savedPerformance ? {
-        carInput: savedPerformance.carInput,
-        results: savedPerformance.results
-      } : null,
+      savedPerformance: savedPerformanceData,
       stats: {
         totalImages: images.length,
         totalLikes: images.reduce((sum, img) => sum + (img.likesCount || 0), 0)
