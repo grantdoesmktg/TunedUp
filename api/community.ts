@@ -242,15 +242,31 @@ async function handleGetRandom(req: VercelRequest, res: VercelResponse) {
     const { count = '3' } = req.query
     const countNum = parseInt(count as string)
 
-    // Get random approved community images using SQL for better randomization
-    const images = await prisma.$queryRaw`
-      SELECT ci.*, u.id as "userId", u.email, u."planCode", u.name as "userName", u.nickname as "userNickname", u."profileIcon"
-      FROM community_images ci
-      JOIN users u ON ci."userEmail" = u.email
-      WHERE ci.approved = true
-      ORDER BY RANDOM()
-      LIMIT ${countNum}
-    ` as any[]
+    // Get all approved community images first
+    const allImages = await prisma.communityImage.findMany({
+      where: {
+        approved: true
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            planCode: true,
+            name: true,
+            nickname: true,
+            profileIcon: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+
+    // Shuffle and take random subset
+    const shuffled = allImages.sort(() => Math.random() - 0.5)
+    const images = shuffled.slice(0, countNum)
 
     res.status(200).json({
       images: images.map(img => ({
@@ -259,12 +275,12 @@ async function handleGetRandom(req: VercelRequest, res: VercelResponse) {
         description: img.description,
         likesCount: img.likesCount,
         createdAt: img.createdAt,
-        userId: img.userId,
-        userName: img.userName,
-        userNickname: img.userNickname,
-        profileIcon: img.profileIcon,
-        userEmail: img.email.replace(/(.{2}).*@/, '$1***@'), // Partially hide email
-        planCode: img.planCode
+        userId: img.user.id,
+        userName: img.user.name,
+        userNickname: img.user.nickname,
+        profileIcon: img.user.profileIcon,
+        userEmail: img.user.email.replace(/(.{2}).*@/, '$1***@'), // Partially hide email
+        planCode: img.user.planCode
       }))
     })
 
