@@ -484,12 +484,9 @@ async function handleGetPublicProfile(req: VercelRequest, res: VercelResponse) {
     console.log('✅ Found', images.length, 'images for user')
 
     // Get user's saved performance calculation (if any)
-    const savedPerformance = await prisma.savedCar.findFirst({
+    const savedPerformance = await prisma.saved_performance.findUnique({
       where: {
         userEmail: user.email
-      },
-      orderBy: {
-        createdAt: 'desc'
       }
     })
 
