@@ -32,7 +32,6 @@ model User {
   backgroundTheme   String?            @default("midnight")
 
   communityImages   CommunityImage[]
-  savedCars         SavedCar[]
   saved_images      saved_images[]
   saved_performance saved_performance?
 
@@ -63,25 +62,6 @@ model CommunityImageLike {
 
   @@unique([imageId, userEmail])
   @@map("community_image_likes")
-}
-
-model SavedCar {
-  id              String   @id @default(cuid())
-  userEmail       String
-  name            String
-  make            String
-  model           String
-  year            String
-  trim            String?
-  imageUrl        String?
-  performanceData Json?
-  buildPlanData   Json?
-  isActive        Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  user            User     @relation(fields: [userEmail], references: [email])
-
-  @@map("saved_cars")
 }
 
 model VerificationCode {
