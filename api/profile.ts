@@ -103,9 +103,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             updatedAt: new Date()
           },
           create: {
+            id: `perf_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
             userEmail,
             carInput,
-            results
+            results,
+            createdAt: new Date(),
+            updatedAt: new Date()
           }
         })
 
