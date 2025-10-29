@@ -29,6 +29,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return handleCreateCheckout(req, res)
   } else if (action === 'portal') {
     return handlePortal(req, res)
+  } else if (action === 'cancel-subscription') {
+    return handleCancelSubscription(req, res)
+  } else if (action === 'reactivate-subscription') {
+    return handleReactivateSubscription(req, res)
   } else if (action === 'webhook') {
     return handleWebhook(req, res)
   } else {
@@ -387,6 +391,140 @@ async function handlePortal(req: VercelRequest, res: VercelResponse) {
     console.error('Create portal error:', error)
     res.status(500).json({
       error: 'Failed to create portal session'
+    })
+  }
+}
+
+// Cancel subscription at period end (user keeps access until billing date)
+async function handleCancelSubscription(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  try {
+    // Get user email from JWT token
+    const token = await getToken(req)
+    const email = token?.email as string
+
+    if (!email) {
+      return res.status(401).json({ error: 'Not authenticated' })
+    }
+
+    console.log('🚫 Cancel subscription request for:', email)
+
+    const user = await prisma.user.findUnique({
+      where: { email }
+    })
+
+    if (!user || !user.stripeCustomerId) {
+      return res.status(400).json({ error: 'No subscription found' })
+    }
+
+    // Get all subscriptions for this customer
+    const subscriptions = await stripe.subscriptions.list({
+      customer: user.stripeCustomerId,
+      status: 'active',
+      limit: 1
+    })
+
+    if (subscriptions.data.length === 0) {
+      return res.status(400).json({ error: 'No active subscription found' })
+    }
+
+    const subscription = subscriptions.data[0]
+
+    // Cancel subscription at period end (user keeps access until billing date)
+    const canceledSubscription = await stripe.subscriptions.update(subscription.id, {
+      cancel_at_period_end: true
+    })
+
+    console.log('✅ Subscription will cancel at period end:', {
+      subscriptionId: subscription.id,
+      currentPeriodEnd: new Date((canceledSubscription as any).current_period_end * 1000),
+      cancelAtPeriodEnd: (canceledSubscription as any).cancel_at_period_end
+    })
+
+    res.status(200).json({
+      success: true,
+      message: 'Subscription will be canceled at the end of the billing period',
+      currentPeriodEnd: new Date((canceledSubscription as any).current_period_end * 1000),
+      cancelAtPeriodEnd: (canceledSubscription as any).cancel_at_period_end
+    })
+
+  } catch (error) {
+    console.error('❌ Cancel subscription error:', error)
+    res.status(500).json({
+      error: 'Failed to cancel subscription',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    })
+  }
+}
+
+// Reactivate a subscription that was set to cancel at period end
+async function handleReactivateSubscription(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  try {
+    // Get user email from JWT token
+    const token = await getToken(req)
+    const email = token?.email as string
+
+    if (!email) {
+      return res.status(401).json({ error: 'Not authenticated' })
+    }
+
+    console.log('🔄 Reactivate subscription request for:', email)
+
+    const user = await prisma.user.findUnique({
+      where: { email }
+    })
+
+    if (!user || !user.stripeCustomerId) {
+      return res.status(400).json({ error: 'No subscription found' })
+    }
+
+    // Get all subscriptions for this customer
+    const subscriptions = await stripe.subscriptions.list({
+      customer: user.stripeCustomerId,
+      status: 'active',
+      limit: 1
+    })
+
+    if (subscriptions.data.length === 0) {
+      return res.status(400).json({ error: 'No active subscription found' })
+    }
+
+    const subscription = subscriptions.data[0]
+
+    if (!subscription.cancel_at_period_end) {
+      return res.status(400).json({ error: 'Subscription is not scheduled for cancellation' })
+    }
+
+    // Reactivate subscription by removing cancel_at_period_end
+    const reactivatedSubscription = await stripe.subscriptions.update(subscription.id, {
+      cancel_at_period_end: false
+    })
+
+    console.log('✅ Subscription reactivated:', {
+      subscriptionId: subscription.id,
+      currentPeriodEnd: new Date((reactivatedSubscription as any).current_period_end * 1000),
+      cancelAtPeriodEnd: (reactivatedSubscription as any).cancel_at_period_end
+    })
+
+    res.status(200).json({
+      success: true,
+      message: 'Subscription has been reactivated',
+      currentPeriodEnd: new Date((reactivatedSubscription as any).current_period_end * 1000),
+      cancelAtPeriodEnd: (reactivatedSubscription as any).cancel_at_period_end
+    })
+
+  } catch (error) {
+    console.error('❌ Reactivate subscription error:', error)
+    res.status(500).json({
+      error: 'Failed to reactivate subscription',
+      details: error instanceof Error ? error.message : 'Unknown error'
     })
   }
 }
