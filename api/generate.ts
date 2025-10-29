@@ -203,7 +203,7 @@ function renderPrompt(promptSpec: PromptSpec, hasReferenceImage: boolean = false
   
   // Add styling modifications
   if (car.deBadged) {
-    prompt += ', completely debadged with NO model name badges, NO trim level badges, NO performance badges, NO text badges anywhere on the vehicle body, only the manufacturer logo remains';
+    prompt += ', CRITICAL: completely de-badged vehicle with absolutely NO logos, NO emblems, NO badges, NO manufacturer logos, NO brand symbols, NO model name badges, NO trim level badges, NO performance badges, NO text, NO lettering, NO alphanumeric characters anywhere on the exterior body panels, grille, trunk, hood, doors, fenders, or bumpers. All badge mounting locations must be smooth and body-colored with no holes or indentations visible. The vehicle must appear completely clean and badge-free as if it never had any emblems or logos installed from the factory';
   }
   
   if (car.chromeDelete) {
