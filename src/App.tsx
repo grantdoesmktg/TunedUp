@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '../shared/contexts/AuthContext';
 import { BrowserPrompt } from '../shared/components/BrowserPrompt';
@@ -12,6 +12,7 @@ import AuthVerify from './pages/AuthVerify';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Disclaimer from './pages/Disclaimer';
+import AppDownload from './pages/AppDownload';
 import AuthenticatedPerformanceCalculator from '../performance-calculator/AuthenticatedApp';
 import AuthenticatedBuildPlanner from '../build-planner/AuthenticatedApp';
 import AuthenticatedOnSite from '../on-site/AuthenticatedApp';
@@ -31,6 +32,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/download" element={<AppDownload />} />
           <Route path="/login" element={<SimpleLogin />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/auth/verify/:token" element={<AuthVerify />} />
