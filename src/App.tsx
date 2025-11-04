@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '../shared/contexts/AuthContext';
-import { BrowserPrompt } from '../shared/components/BrowserPrompt';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
 import Home from './pages/Home';
@@ -28,7 +27,6 @@ function App() {
 
   return (
     <AuthProvider>
-      <BrowserPrompt />
       <Router>
         <Routes>
           <Route path="/" element={<Home />} />
