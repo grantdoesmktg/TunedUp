@@ -87,8 +87,29 @@ export default function AppDownload() {
           </div>
         )}
 
+        {/* Example Car Images */}
+        <div className="py-6">
+          <div className="grid grid-cols-3 gap-3 max-w-xl mx-auto">
+            <img
+              src="/images/tuned-up-1757711926260.png"
+              alt="TunedUp Example 1"
+              className="w-full aspect-square object-cover rounded-lg shadow-lg"
+            />
+            <img
+              src="/images/tuned-up-1757971587243.png"
+              alt="TunedUp Example 2"
+              className="w-full aspect-square object-cover rounded-lg shadow-lg"
+            />
+            <img
+              src="/images/tuned-up-1759177229575.png"
+              alt="TunedUp Example 3"
+              className="w-full aspect-square object-cover rounded-lg shadow-lg"
+            />
+          </div>
+        </div>
+
         {/* Footer links */}
-        <div className="pt-8 flex gap-6 justify-center text-xs text-textSecondary">
+        <div className="pt-4 flex gap-6 justify-center text-xs text-textSecondary">
           <a href="/privacy-policy" className="hover:text-primary transition-colors">
             Privacy
           </a>
