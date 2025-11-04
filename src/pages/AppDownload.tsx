@@ -20,44 +20,38 @@ export default function AppDownload() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-textPrimary flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-background text-textPrimary flex flex-col items-center justify-center px-4 py-8">
       {/* Background gradient effect */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-r from-[#07fef7]/20 to-[#d82c83]/20 rounded-full blur-3xl -z-10" />
 
-      <div className="max-w-2xl w-full text-center space-y-8">
-        {/* Logo/Icon */}
-        <div className="flex justify-center mb-8">
-          <div className="w-32 h-32 bg-gradient-to-br from-[#07fef7] to-[#d82c83] rounded-3xl shadow-2xl flex items-center justify-center text-6xl transform hover:scale-105 transition-transform">
-            🔧
-          </div>
+      <div className="max-w-2xl w-full text-center space-y-6">
+        {/* Logo */}
+        <div className="flex justify-center mb-4">
+          <img
+            src="/TunedUp Horiztonal.png"
+            alt="TunedUp"
+            className="h-16 md:h-20 w-auto object-contain"
+          />
         </div>
 
-        {/* Title */}
-        <div className="space-y-4">
-          <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-[#07fef7] to-[#d82c83] bg-clip-text text-transparent">
-            TunedUp
-          </h1>
-          <p className="text-xl md:text-2xl text-textSecondary">
-            Your Ultimate Car Performance Companion
-          </p>
-        </div>
+        {/* Tagline */}
+        <p className="text-lg md:text-xl text-textSecondary mb-6">
+          Your Ultimate Car Performance Companion
+        </p>
 
-        {/* Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-8">
-          <div className="space-y-2">
-            <div className="text-4xl">⚡</div>
-            <h3 className="font-bold text-textPrimary">Performance Calc</h3>
-            <p className="text-sm text-textSecondary">Calculate real-time performance metrics</p>
+        {/* Features - More compact */}
+        <div className="grid grid-cols-3 gap-4 py-4 mb-6">
+          <div className="space-y-1">
+            <div className="text-3xl">⚡</div>
+            <h3 className="font-bold text-textPrimary text-sm">Performance</h3>
           </div>
-          <div className="space-y-2">
-            <div className="text-4xl">🔧</div>
-            <h3 className="font-bold text-textPrimary">Build Planner</h3>
-            <p className="text-sm text-textSecondary">Plan your perfect car build</p>
+          <div className="space-y-1">
+            <div className="text-3xl">🔧</div>
+            <h3 className="font-bold text-textPrimary text-sm">Build Plans</h3>
           </div>
-          <div className="space-y-2">
-            <div className="text-4xl">🎨</div>
-            <h3 className="font-bold text-textPrimary">AI Generator</h3>
-            <p className="text-sm text-textSecondary">Create stunning car images</p>
+          <div className="space-y-1">
+            <div className="text-3xl">🎨</div>
+            <h3 className="font-bold text-textPrimary text-sm">AI Images</h3>
           </div>
         </div>
 
@@ -75,8 +69,8 @@ export default function AppDownload() {
         )}
 
         {platform === 'desktop' && (
-          <div className="space-y-6">
-            <p className="text-textSecondary">
+          <div className="space-y-4">
+            <p className="text-textSecondary text-sm">
               TunedUp is available on iOS
             </p>
             <a
@@ -93,23 +87,8 @@ export default function AppDownload() {
           </div>
         )}
 
-        {/* QR Code Section (optional) */}
-        {platform === 'desktop' && (
-          <div className="pt-8 border-t border-divider">
-            <p className="text-sm text-textSecondary mb-4">
-              Scan with your phone to download
-            </p>
-            {/* You can add a QR code generator here later */}
-            <div className="w-48 h-48 mx-auto bg-white rounded-xl flex items-center justify-center">
-              <p className="text-gray-400 text-xs text-center px-4">
-                QR Code<br/>Coming Soon
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Footer links */}
-        <div className="pt-12 flex gap-6 justify-center text-sm text-textSecondary">
+        <div className="pt-8 flex gap-6 justify-center text-xs text-textSecondary">
           <a href="/privacy-policy" className="hover:text-primary transition-colors">
             Privacy
           </a>
