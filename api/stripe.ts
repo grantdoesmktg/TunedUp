@@ -808,8 +808,73 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
-  // Payment succeeded - subscription continues
-  console.log(`Payment succeeded for customer ${invoice.customer}`)
+  console.log('💰 Payment succeeded webhook received:', {
+    invoiceId: invoice.id,
+    customer: invoice.customer,
+    subscription: invoice.subscription,
+    amount: invoice.amount_paid
+  })
+
+  try {
+    // Get the subscription to extract metadata
+    if (!invoice.subscription) {
+      console.log('⚠️ Invoice has no subscription, skipping user update')
+      return
+    }
+
+    const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string)
+
+    console.log('📋 Subscription details:', {
+      id: subscription.id,
+      status: subscription.status,
+      metadata: subscription.metadata
+    })
+
+    // Get user from database using stripe customer ID
+    const user = await prisma.user.findUnique({
+      where: { stripeCustomerId: invoice.customer as string }
+    })
+
+    if (!user) {
+      console.error('❌ User not found for customer:', invoice.customer)
+      return
+    }
+
+    // Extract plan from subscription metadata
+    const planCode = subscription.metadata.plan
+
+    if (!planCode) {
+      console.error('❌ No plan in subscription metadata')
+      return
+    }
+
+    // Calculate renewal date
+    const planRenewsAt = new Date((subscription as any).current_period_end * 1000)
+
+    // Update user plan in database
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        planCode: planCode,
+        planRenewsAt,
+        // Reset usage when upgrading
+        perfUsed: 0,
+        buildUsed: 0,
+        imageUsed: 0,
+        communityUsed: 0,
+        resetDate: new Date()
+      }
+    })
+
+    console.log(`✅ Plan upgraded for user ${user.id} to ${planCode}`, {
+      userId: updatedUser.id,
+      email: updatedUser.email,
+      newPlan: updatedUser.planCode,
+      renewsAt: updatedUser.planRenewsAt
+    })
+  } catch (error) {
+    console.error('❌ handlePaymentSucceeded error:', error)
+  }
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
