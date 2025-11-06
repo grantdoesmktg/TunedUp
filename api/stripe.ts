@@ -136,7 +136,7 @@ async function handleCreatePaymentIntent(req: VercelRequest, res: VercelResponse
       }
     }
 
-    // Check for existing active subscriptions
+    // Check for existing active subscriptions and cancel them
     console.log('🔍 Checking for existing subscriptions...')
     const existingSubscriptions = await stripe.subscriptions.list({
       customer: customerId,
@@ -145,20 +145,26 @@ async function handleCreatePaymentIntent(req: VercelRequest, res: VercelResponse
     })
 
     if (existingSubscriptions.data.length > 0) {
-      console.log('⚠️ Found existing subscriptions:', existingSubscriptions.data.map(s => ({
-        id: s.id,
-        status: s.status,
-        items: s.items.data.map(i => i.price.id)
-      })))
-
-      // Cancel existing subscriptions before creating new one
+      console.log('⚠️ Found existing subscriptions, canceling them...')
       for (const sub of existingSubscriptions.data) {
-        console.log('🗑️ Canceling existing subscription:', sub.id)
+        console.log('🗑️ Canceling subscription:', sub.id)
         await stripe.subscriptions.cancel(sub.id)
       }
     }
 
-    // Create subscription with payment intent
+    // Remove any default payment method to force payment_intent creation
+    console.log('🧹 Clearing default payment method...')
+    try {
+      await stripe.customers.update(customerId, {
+        invoice_settings: {
+          default_payment_method: null as any
+        }
+      })
+    } catch (err) {
+      console.log('⚠️ Could not clear default payment method:', err)
+    }
+
+    // Create subscription with payment intent - try with explicit settings
     console.log('💳 Creating subscription with payment intent...')
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
@@ -179,42 +185,72 @@ async function handleCreatePaymentIntent(req: VercelRequest, res: VercelResponse
     console.log('📋 Subscription created:', {
       id: subscription.id,
       status: subscription.status,
-      latest_invoice: typeof subscription.latest_invoice,
-      latest_invoice_id: typeof subscription.latest_invoice === 'string' ? subscription.latest_invoice : (subscription.latest_invoice as any)?.id
+      latest_invoice: typeof subscription.latest_invoice
     })
 
+    // Get the invoice
     const invoice = subscription.latest_invoice as any
-    const paymentIntent = invoice?.payment_intent as Stripe.PaymentIntent
 
-    console.log('🔍 Payment intent check:', {
-      hasInvoice: !!invoice,
-      invoiceId: invoice?.id,
-      invoiceStatus: invoice?.status,
-      hasPaymentIntent: !!paymentIntent,
-      paymentIntentType: typeof paymentIntent,
-      paymentIntentId: typeof paymentIntent === 'string' ? paymentIntent : paymentIntent?.id,
-      paymentIntentStatus: typeof paymentIntent === 'object' ? paymentIntent?.status : undefined,
-      hasClientSecret: typeof paymentIntent === 'object' && !!paymentIntent?.client_secret
-    })
-
-    // If payment_intent is just an ID string, we need to retrieve the full object
-    let fullPaymentIntent: Stripe.PaymentIntent
-    if (typeof paymentIntent === 'string') {
-      console.log('⚠️ Payment intent is a string ID, retrieving full object...')
-      fullPaymentIntent = await stripe.paymentIntents.retrieve(paymentIntent)
-      console.log('✅ Retrieved payment intent:', {
-        id: fullPaymentIntent.id,
-        status: fullPaymentIntent.status,
-        hasClientSecret: !!fullPaymentIntent.client_secret
-      })
-    } else if (paymentIntent && typeof paymentIntent === 'object') {
-      fullPaymentIntent = paymentIntent
-    } else {
-      throw new Error(`Failed to create payment intent. Invoice: ${!!invoice}, PaymentIntent: ${!!paymentIntent}, ClientSecret: ${!!paymentIntent?.client_secret}`)
+    if (!invoice) {
+      throw new Error('Subscription created but no invoice found')
     }
 
-    if (!fullPaymentIntent || !fullPaymentIntent.client_secret) {
-      throw new Error(`Failed to get client secret. PaymentIntent ID: ${fullPaymentIntent?.id}, Status: ${fullPaymentIntent?.status}`)
+    console.log('📄 Invoice details:', {
+      id: invoice.id,
+      status: invoice.status,
+      payment_intent: invoice.payment_intent,
+      payment_intent_type: typeof invoice.payment_intent
+    })
+
+    // Handle payment_intent - it might be a string ID or null
+    let fullPaymentIntent: Stripe.PaymentIntent
+
+    if (!invoice.payment_intent) {
+      // No payment intent at all - invoice might be paid or draft
+      console.log('⚠️ No payment_intent on invoice, checking invoice status...')
+
+      if (invoice.status === 'paid') {
+        throw new Error('Invoice already paid - customer may have default payment method')
+      }
+
+      // Invoice is open/draft but no payment intent - manually create one
+      console.log('🔨 Manually creating payment intent for invoice...')
+      fullPaymentIntent = await stripe.paymentIntents.create({
+        amount: invoice.amount_due,
+        currency: invoice.currency,
+        customer: customerId,
+        metadata: {
+          userId: user.id,
+          plan: planCode,
+          email,
+          invoiceId: invoice.id,
+          subscriptionId: subscription.id
+        }
+      })
+
+      console.log('✅ Manual payment intent created:', {
+        id: fullPaymentIntent.id,
+        status: fullPaymentIntent.status
+      })
+    } else if (typeof invoice.payment_intent === 'string') {
+      // Payment intent is a string ID - retrieve it
+      console.log('⚠️ Payment intent is string ID, retrieving...')
+      fullPaymentIntent = await stripe.paymentIntents.retrieve(invoice.payment_intent)
+      console.log('✅ Retrieved payment intent:', {
+        id: fullPaymentIntent.id,
+        status: fullPaymentIntent.status
+      })
+    } else {
+      // Payment intent is already expanded object
+      fullPaymentIntent = invoice.payment_intent as Stripe.PaymentIntent
+      console.log('✅ Payment intent already expanded:', {
+        id: fullPaymentIntent.id,
+        status: fullPaymentIntent.status
+      })
+    }
+
+    if (!fullPaymentIntent.client_secret) {
+      throw new Error(`Payment intent missing client_secret. ID: ${fullPaymentIntent.id}, Status: ${fullPaymentIntent.status}`)
     }
 
     // Create ephemeral key for customer
