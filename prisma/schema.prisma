@@ -9,20 +9,29 @@ datasource db {
 }
 
 model User {
-  id               String           @id @default(cuid())
-  email            String           @unique
-  stripeCustomerId String?          @unique
-  planCode         String           @default("FREE")
-  planRenewsAt     DateTime?
-  extraCredits     Json             @default("{}")
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  buildUsed        Int              @default(0)
-  imageUsed        Int              @default(0)
-  perfUsed         Int              @default(0)
-  resetDate        DateTime         @default(now())
-  communityImages  CommunityImage[]
-  saved_cars       saved_cars[]
+  id                String             @id @default(cuid())
+  email             String             @unique
+  stripeCustomerId  String?            @unique
+  planCode          String             @default("FREE")
+  planRenewsAt      DateTime?
+  extraCredits      Json               @default("{}")
+  perfUsed          Int                @default(0)
+  buildUsed         Int                @default(0)
+  imageUsed         Int                @default(0)
+  resetDate         DateTime           @default(now())
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  communityUsed     Int                @default(0)
+  instagramHandle   String?
+  location          String?
+  name              String?
+  nickname          String?
+  profileIcon       String?            @default("👤")
+  backgroundTheme   String?            @default("midnight")
+  communityImages   CommunityImage[]
+  saved_cars        saved_cars[]
+  saved_images      saved_images[]
+  saved_performance saved_performance?
 
   @@map("users")
 }
@@ -79,4 +88,76 @@ model saved_cars {
   createdAt       DateTime @default(now())
   updatedAt       DateTime
   users           User     @relation(fields: [userEmail], references: [email])
+}
+
+model saved_performance {
+  id        String   @id
+  userEmail String   @unique
+  carInput  Json
+  results   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User     @relation(fields: [userEmail], references: [email])
+
+  @@map("saved_performance")
+}
+
+model anonymous_users {
+  id            String   @id
+  fingerprint   String   @unique
+  perfUsed      Int      @default(0)
+  buildUsed     Int      @default(0)
+  imageUsed     Int      @default(0)
+  communityUsed Int      @default(0)
+  resetDate     DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+
+  @@index([fingerprint])
+}
+
+model promotion_redemptions {
+  id          String     @id
+  promotionId String
+  userEmail   String
+  redeemedAt  DateTime   @default(now())
+  promotions  promotions @relation(fields: [promotionId], references: [id])
+
+  @@unique([promotionId, userEmail])
+}
+
+model promotions {
+  id                    String                  @id
+  code                  String                  @unique
+  planCode              String
+  maxUses               Int
+  usedCount             Int                     @default(0)
+  active                Boolean                 @default(true)
+  expiresAt             DateTime?
+  createdAt             DateTime                @default(now())
+  promotion_redemptions promotion_redemptions[]
+}
+
+model saved_images {
+  id        String   @id
+  userEmail String
+  imageUrl  String
+  carSpec   Json
+  prompt    String
+  createdAt DateTime @default(now())
+  users     User     @relation(fields: [userEmail], references: [email])
+}
+
+model tool_usage {
+  id           String   @id
+  toolType     String
+  userEmail    String?
+  fingerprint  String?
+  success      Boolean  @default(true)
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  @@index([fingerprint])
+  @@index([toolType, createdAt])
+  @@index([userEmail])
 }
