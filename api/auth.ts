@@ -246,9 +246,11 @@ async function createUserSession(email: string, res: VercelResponse, sendHtml: b
     `)
     } else {
       // Return full user object with all fields including profile customization
+      // IMPORTANT: Return the token for native mobile app (cookies don't work in React Native)
       res.status(200).json({
         success: true,
         message: 'Authentication successful',
+        token: sessionToken, // <-- Add token to response for mobile apps
         user: {
           id: user.id,
           email: user.email,
