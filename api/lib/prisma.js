@@ -13,6 +13,9 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   },
 })
 
+// Log database connection on initialization
+console.log('🔗 Prisma connected to:', process.env.DATABASE_URL?.substring(0, 50) + '...')
+
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
 }

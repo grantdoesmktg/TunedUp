@@ -3,6 +3,7 @@ import { put } from '@vercel/blob'
 import { jwtVerify } from 'jose'
 import { prisma } from './lib/prisma.js'
 import { checkQuota, incrementUsage } from '../lib/quota.js'
+import { moderateContent, getModerationErrorMessage } from './lib/moderation.js'
 
 // Auto-create likes table if it doesn't exist
 async function ensureLikesTable() {
@@ -115,6 +116,22 @@ async function handleUpload(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Image is required' })
     }
 
+    // Moderate description if provided
+    if (description && description.trim().length > 0) {
+      console.log('🛡️ Moderating community post description...')
+      const moderationResult = await moderateContent(description)
+
+      if (moderationResult.flagged) {
+        const errorMessage = getModerationErrorMessage(moderationResult)
+        console.log('❌ Content flagged by moderation:', errorMessage)
+        return res.status(400).json({
+          error: 'CONTENT_MODERATION_FAILED',
+          message: errorMessage
+        })
+      }
+      console.log('✅ Content passed moderation')
+    }
+
     // Convert base64 to buffer if needed
     let imageBuffer: Buffer
     if (image.startsWith('data:')) {
@@ -168,6 +185,11 @@ async function handleGetImages(req: VercelRequest, res: VercelResponse) {
     const pageNum = parseInt(page as string)
     const limitNum = parseInt(limit as string)
     const skip = (pageNum - 1) * limitNum
+
+    // DEBUG: Log all users in database
+    const allUsers = await prisma.user.findMany({ select: { email: true } })
+    console.log('📊 DEBUG - Total users in DB:', allUsers.length)
+    console.log('📧 DEBUG - All user emails:', allUsers.map(u => u.email).join(', '))
 
     // Get approved community images
     const images = await prisma.communityImage.findMany({
