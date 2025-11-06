@@ -3,6 +3,7 @@ import { setCorsHeaders } from '../lib/corsConfig.js'
 import { prisma } from './lib/prisma.js'
 import { checkQuota } from '../lib/quota.js'
 import { getToken } from './lib/auth.js'
+import { moderateMultipleFields } from './lib/moderation.js'
 
 const MAX_SAVED_IMAGES = 3
 
@@ -256,6 +257,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Update profile customization fields
       if (action === 'update-profile' && req.method === 'POST') {
         const { name, nickname, location, instagramHandle, profileIcon, backgroundTheme } = req.body
+
+        // Moderate text fields before saving
+        console.log('🛡️ Moderating profile update...')
+        const fieldsToModerate: Record<string, string> = {}
+
+        if (name && name.trim().length > 0) fieldsToModerate.name = name
+        if (nickname && nickname.trim().length > 0) fieldsToModerate.nickname = nickname
+        if (location && location.trim().length > 0) fieldsToModerate.location = location
+        if (instagramHandle && instagramHandle.trim().length > 0) fieldsToModerate.instagramHandle = instagramHandle
+
+        if (Object.keys(fieldsToModerate).length > 0) {
+          const moderationResult = await moderateMultipleFields(fieldsToModerate)
+
+          if (!moderationResult.passed) {
+            console.log('❌ Profile content flagged:', moderationResult.failedField)
+            return res.status(400).json({
+              error: 'CONTENT_MODERATION_FAILED',
+              field: moderationResult.failedField,
+              message: moderationResult.message
+            })
+          }
+          console.log('✅ Profile content passed moderation')
+        }
 
         const updatedUser = await prisma.user.update({
           where: { email: userEmail },

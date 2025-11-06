@@ -4,6 +4,7 @@ import { checkQuota, incrementUsage } from '../lib/quota.js';
 import { getToken } from './lib/auth.js';
 import { setCorsHeaders } from '../lib/corsConfig.js';
 import { logToolUsage } from '../lib/analytics.js';
+import { moderateContent, getModerationErrorMessage } from './lib/moderation.js';
 
 // Types for the request body
 interface CarSpec {
@@ -290,14 +291,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Moderate custom details if provided
+    if (promptSpec.car.details && promptSpec.car.details.trim().length > 0) {
+      console.log('🛡️ Moderating image generation details...');
+      const moderationResult = await moderateContent(promptSpec.car.details);
+
+      if (moderationResult.flagged) {
+        const errorMessage = getModerationErrorMessage(moderationResult);
+        console.log('❌ Image description flagged by moderation:', errorMessage);
+        return res.status(400).json({
+          error: 'CONTENT_MODERATION_FAILED',
+          message: errorMessage
+        });
+      }
+      console.log('✅ Image description passed moderation');
+    }
+
     // Check quota (get email from JWT token)
     const token = await getToken(req);
     const userEmail = token?.email as string || null;
     const fingerprint = req.headers['x-fingerprint'] as string || null;
     const quotaCheck = await checkQuota(userEmail, 'image', fingerprint);
-    
+
     if (!quotaCheck.allowed) {
-      return res.status(429).json({ 
+      return res.status(429).json({
         error: 'QUOTA_EXCEEDED',
         ...quotaCheck
       });

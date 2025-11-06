@@ -3,7 +3,24 @@
 
 const { PrismaClient } = require('@prisma/client')
 
-const prisma = new PrismaClient()
+const databaseUrl =
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.DATABASE_URL ||
+  process.env.PRISMA_DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_URL_NON_POOLING
+
+if (!databaseUrl) {
+  throw new Error('Database connection string missing. Set POSTGRES_PRISMA_URL or DATABASE_URL.')
+}
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: databaseUrl,
+    },
+  },
+})
 
 async function addLikesTable() {
   try {
