@@ -189,8 +189,10 @@ async function handleCreatePaymentIntent(req: VercelRequest, res: VercelResponse
       stack: error instanceof Error ? error.stack : undefined
     })
 
+    // Return the actual error message to help with debugging
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create payment intent'
     res.status(500).json({
-      error: 'Failed to create payment intent',
+      error: errorMessage,
       details: error instanceof Error ? error.message : 'Unknown error'
     })
   }
