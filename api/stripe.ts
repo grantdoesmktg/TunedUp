@@ -136,6 +136,28 @@ async function handleCreatePaymentIntent(req: VercelRequest, res: VercelResponse
       }
     }
 
+    // Check for existing active subscriptions
+    console.log('🔍 Checking for existing subscriptions...')
+    const existingSubscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      status: 'active',
+      limit: 10
+    })
+
+    if (existingSubscriptions.data.length > 0) {
+      console.log('⚠️ Found existing subscriptions:', existingSubscriptions.data.map(s => ({
+        id: s.id,
+        status: s.status,
+        items: s.items.data.map(i => i.price.id)
+      })))
+
+      // Cancel existing subscriptions before creating new one
+      for (const sub of existingSubscriptions.data) {
+        console.log('🗑️ Canceling existing subscription:', sub.id)
+        await stripe.subscriptions.cancel(sub.id)
+      }
+    }
+
     // Create subscription with payment intent
     console.log('💳 Creating subscription with payment intent...')
     const subscription = await stripe.subscriptions.create({
