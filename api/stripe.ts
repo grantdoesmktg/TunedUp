@@ -54,16 +54,24 @@ async function handleCreatePaymentIntent(req: VercelRequest, res: VercelResponse
     }
   })
 
+  // Define variables outside try block for error logging
+  let email: string | undefined
+  let priceId: string | undefined
+  let planCode: string | undefined
+  let user: any
+
   try {
     // Get user email from JWT token (Authorization header for mobile)
     const token = await getToken(req)
-    const email = token?.email as string
+    email = token?.email as string
 
     if (!email) {
       return res.status(401).json({ error: 'Not authenticated' })
     }
 
-    const { priceId, planCode } = req.body
+    // Get request body params
+    priceId = req.body.priceId
+    planCode = req.body.planCode
 
     if (!priceId || !planCode) {
       return res.status(400).json({ error: 'Missing priceId or planCode' })
@@ -78,7 +86,7 @@ async function handleCreatePaymentIntent(req: VercelRequest, res: VercelResponse
     console.log('✅ Authenticated user:', email, 'Plan:', planCode)
 
     // Get or create user
-    let user = await prisma.user.findUnique({
+    user = await prisma.user.findUnique({
       where: { email }
     })
 
@@ -278,13 +286,18 @@ async function handleCreatePaymentIntent(req: VercelRequest, res: VercelResponse
     console.error('❌ Create payment intent error:', error)
     console.error('❌ Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
+      userId: user?.id,
+      email: user?.email,
+      priceId,
+      planCode
     })
 
-    // Return the actual error message to help with debugging
-    const errorMessage = error instanceof Error ? error.message : 'Failed to create payment intent'
+    // User-friendly error message with support contact
+    const errorMessage = error instanceof Error ? error.message : 'Payment processing error'
     res.status(500).json({
       error: errorMessage,
+      supportMessage: 'If this issue persists, please contact support@tunedup.dev for assistance.',
       details: error instanceof Error ? error.message : 'Unknown error'
     })
   }
