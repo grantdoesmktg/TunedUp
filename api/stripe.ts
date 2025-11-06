@@ -167,14 +167,32 @@ async function handleCreatePaymentIntent(req: VercelRequest, res: VercelResponse
     console.log('🔍 Payment intent check:', {
       hasInvoice: !!invoice,
       invoiceId: invoice?.id,
+      invoiceStatus: invoice?.status,
       hasPaymentIntent: !!paymentIntent,
       paymentIntentType: typeof paymentIntent,
-      paymentIntentId: paymentIntent?.id,
-      hasClientSecret: !!paymentIntent?.client_secret
+      paymentIntentId: typeof paymentIntent === 'string' ? paymentIntent : paymentIntent?.id,
+      paymentIntentStatus: typeof paymentIntent === 'object' ? paymentIntent?.status : undefined,
+      hasClientSecret: typeof paymentIntent === 'object' && !!paymentIntent?.client_secret
     })
 
-    if (!paymentIntent || !paymentIntent.client_secret) {
+    // If payment_intent is just an ID string, we need to retrieve the full object
+    let fullPaymentIntent: Stripe.PaymentIntent
+    if (typeof paymentIntent === 'string') {
+      console.log('⚠️ Payment intent is a string ID, retrieving full object...')
+      fullPaymentIntent = await stripe.paymentIntents.retrieve(paymentIntent)
+      console.log('✅ Retrieved payment intent:', {
+        id: fullPaymentIntent.id,
+        status: fullPaymentIntent.status,
+        hasClientSecret: !!fullPaymentIntent.client_secret
+      })
+    } else if (paymentIntent && typeof paymentIntent === 'object') {
+      fullPaymentIntent = paymentIntent
+    } else {
       throw new Error(`Failed to create payment intent. Invoice: ${!!invoice}, PaymentIntent: ${!!paymentIntent}, ClientSecret: ${!!paymentIntent?.client_secret}`)
+    }
+
+    if (!fullPaymentIntent || !fullPaymentIntent.client_secret) {
+      throw new Error(`Failed to get client secret. PaymentIntent ID: ${fullPaymentIntent?.id}, Status: ${fullPaymentIntent?.status}`)
     }
 
     // Create ephemeral key for customer
@@ -185,13 +203,13 @@ async function handleCreatePaymentIntent(req: VercelRequest, res: VercelResponse
 
     console.log('✅ Payment intent created:', {
       subscriptionId: subscription.id,
-      paymentIntentId: paymentIntent.id,
-      clientSecret: paymentIntent.client_secret?.substring(0, 20) + '...'
+      paymentIntentId: fullPaymentIntent.id,
+      clientSecret: fullPaymentIntent.client_secret?.substring(0, 20) + '...'
     })
 
     // Return data for mobile payment sheet
     res.status(200).json({
-      clientSecret: paymentIntent.client_secret,
+      clientSecret: fullPaymentIntent.client_secret,
       ephemeralKey: ephemeralKey.secret,
       customer: customerId,
       subscriptionId: subscription.id,
