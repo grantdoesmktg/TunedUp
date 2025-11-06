@@ -49,8 +49,17 @@ export const initializeStripePayment = async (
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Failed to create payment' }));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
+      const errorData = await response.json().catch(() => ({
+        error: 'Failed to create payment',
+        supportMessage: 'Please contact support@tunedup.dev for assistance.'
+      }));
+
+      // Include support message in error if available
+      const errorMessage = errorData.supportMessage
+        ? `${errorData.error}\n\n${errorData.supportMessage}`
+        : errorData.error || `HTTP ${response.status}`;
+
+      throw new Error(errorMessage);
     }
 
     const { clientSecret, ephemeralKey, customer } = await response.json();
@@ -168,28 +177,84 @@ export const createCheckoutSession = async (
 };
 
 /**
- * Handle subscription cancellation
+ * Handle subscription cancellation (cancel at period end)
  */
-export const cancelSubscription = async (userEmail: string): Promise<void> => {
+export const cancelSubscription = async (): Promise<{ currentPeriodEnd: string; cancelAtPeriodEnd: boolean }> => {
+  try {
+    console.log('🚫 Attempting to cancel subscription...');
+    const token = await AsyncStorage.getItem('auth_token');
+    console.log('🔑 Token retrieved:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
+
+    console.log('📡 Calling cancel-subscription endpoint...');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add token if available (for native app users)
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch('https://www.tunedup.dev/api/stripe?action=cancel-subscription', {
+      method: 'POST',
+      headers,
+      credentials: 'include', // Include cookies for web-based auth
+    });
+
+    console.log('📡 Response status:', response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Failed to cancel subscription' }));
+      console.error('❌ API Error:', errorData);
+      throw new Error(errorData.error || 'Failed to cancel subscription');
+    }
+
+    const data = await response.json();
+    console.log('✅ Cancellation successful:', data);
+    return {
+      currentPeriodEnd: data.currentPeriodEnd,
+      cancelAtPeriodEnd: data.cancelAtPeriodEnd
+    };
+  } catch (error: any) {
+    console.error('Cancel subscription error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Reactivate a cancelled subscription
+ */
+export const reactivateSubscription = async (): Promise<{ currentPeriodEnd: string; cancelAtPeriodEnd: boolean }> => {
   try {
     const token = await AsyncStorage.getItem('auth_token');
 
-    const response = await fetch('https://www.tunedup.dev/api/stripe/cancel-subscription', {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add token if available (for native app users)
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch('https://www.tunedup.dev/api/stripe?action=reactivate-subscription', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : '',
-      },
-      body: JSON.stringify({ userEmail }),
+      headers,
+      credentials: 'include', // Include cookies for web-based auth
     });
 
     if (!response.ok) {
-      throw new Error('Failed to cancel subscription');
+      const errorData = await response.json().catch(() => ({ error: 'Failed to reactivate subscription' }));
+      throw new Error(errorData.error || 'Failed to reactivate subscription');
     }
 
-    Alert.alert('Success', 'Your subscription has been cancelled.');
+    const data = await response.json();
+    return {
+      currentPeriodEnd: data.currentPeriodEnd,
+      cancelAtPeriodEnd: data.cancelAtPeriodEnd
+    };
   } catch (error: any) {
-    console.error('Cancel subscription error:', error);
+    console.error('Reactivate subscription error:', error);
     throw error;
   }
 };
