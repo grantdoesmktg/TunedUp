@@ -154,11 +154,27 @@ async function handleCreatePaymentIntent(req: VercelRequest, res: VercelResponse
       }
     })
 
+    console.log('📋 Subscription created:', {
+      id: subscription.id,
+      status: subscription.status,
+      latest_invoice: typeof subscription.latest_invoice,
+      latest_invoice_id: typeof subscription.latest_invoice === 'string' ? subscription.latest_invoice : (subscription.latest_invoice as any)?.id
+    })
+
     const invoice = subscription.latest_invoice as any
     const paymentIntent = invoice?.payment_intent as Stripe.PaymentIntent
 
+    console.log('🔍 Payment intent check:', {
+      hasInvoice: !!invoice,
+      invoiceId: invoice?.id,
+      hasPaymentIntent: !!paymentIntent,
+      paymentIntentType: typeof paymentIntent,
+      paymentIntentId: paymentIntent?.id,
+      hasClientSecret: !!paymentIntent?.client_secret
+    })
+
     if (!paymentIntent || !paymentIntent.client_secret) {
-      throw new Error('Failed to create payment intent')
+      throw new Error(`Failed to create payment intent. Invoice: ${!!invoice}, PaymentIntent: ${!!paymentIntent}, ClientSecret: ${!!paymentIntent?.client_secret}`)
     }
 
     // Create ephemeral key for customer
