@@ -9,12 +9,13 @@ datasource db {
 }
 
 model User {
-  id                String             @id @default(cuid())
-  email             String             @unique
-  stripeCustomerId  String?            @unique
-  planCode          String             @default("FREE")
-  planRenewsAt      DateTime?
-  extraCredits      Json               @default("{}")
+  id                   String             @id @default(cuid())
+  email                String             @unique
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?
+  planCode             String             @default("FREE")
+  planRenewsAt         DateTime?
+  extraCredits         Json               @default("{}")
   perfUsed          Int                @default(0)
   buildUsed         Int                @default(0)
   imageUsed         Int                @default(0)

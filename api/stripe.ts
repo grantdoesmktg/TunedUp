@@ -523,37 +523,92 @@ async function handleCancelSubscription(req: VercelRequest, res: VercelResponse)
     const user = await prisma.user.findUnique({
       where: { email }
     })
-    console.log('✅ User found:', user ? { email: user.email, stripeCustomerId: user.stripeCustomerId } : 'null')
+    console.log('✅ User found:', user ? {
+      email: user.email,
+      stripeCustomerId: user.stripeCustomerId,
+      stripeSubscriptionId: user.stripeSubscriptionId
+    } : 'null')
 
-    if (!user || !user.stripeCustomerId) {
-      console.error('❌ No user or no Stripe customer ID')
+    if (!user) {
+      console.error('❌ User not found')
+      return res.status(400).json({ error: 'User not found' })
+    }
+
+    // Check if we have a stored subscription ID
+    if (user.stripeSubscriptionId) {
+      console.log('📝 Step 2: Using stored subscription ID:', user.stripeSubscriptionId)
+
+      try {
+        // Retrieve the subscription to verify it exists and check its status
+        const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId)
+        console.log('✅ Subscription found:', { id: subscription.id, status: subscription.status })
+
+        if (subscription.status !== 'active' && subscription.status !== 'trialing') {
+          console.error('❌ Subscription is not active or trialing:', subscription.status)
+          return res.status(400).json({ error: `Subscription is ${subscription.status}` })
+        }
+
+        if ((subscription as any).cancel_at_period_end) {
+          console.error('❌ Subscription already set to cancel')
+          return res.status(400).json({ error: 'Subscription is already set to cancel' })
+        }
+
+        // Cancel subscription at period end
+        console.log('📝 Step 3: Updating subscription to cancel at period end...')
+        const canceledSubscription = await stripe.subscriptions.update(subscription.id, {
+          cancel_at_period_end: true
+        })
+
+        console.log('✅ Subscription will cancel at period end:', {
+          subscriptionId: subscription.id,
+          currentPeriodEnd: new Date((canceledSubscription as any).current_period_end * 1000),
+          cancelAtPeriodEnd: (canceledSubscription as any).cancel_at_period_end
+        })
+
+        res.status(200).json({
+          success: true,
+          message: 'Subscription will be canceled at the end of the billing period',
+          currentPeriodEnd: new Date((canceledSubscription as any).current_period_end * 1000),
+          cancelAtPeriodEnd: (canceledSubscription as any).cancel_at_period_end
+        })
+        return
+      } catch (error: any) {
+        console.error('❌ Error retrieving stored subscription:', error.message)
+        // Fall through to search for subscriptions by customer ID
+      }
+    }
+
+    // Fallback: Search for subscriptions by customer ID
+    if (!user.stripeCustomerId) {
+      console.error('❌ No Stripe customer ID or subscription ID')
       return res.status(400).json({ error: 'No subscription found' })
     }
 
-    // Get all subscriptions for this customer
-    console.log('📝 Step 2: Fetching subscriptions from Stripe for customer:', user.stripeCustomerId)
+    console.log('📝 Step 2 (Fallback): Fetching subscriptions from Stripe for customer:', user.stripeCustomerId)
     const subscriptions = await stripe.subscriptions.list({
       customer: user.stripeCustomerId,
-      status: 'active',
-      limit: 1
+      limit: 10
     })
-    console.log('✅ Found subscriptions:', subscriptions.data.length, subscriptions.data.length > 0 ? { id: subscriptions.data[0].id, status: subscriptions.data[0].status } : 'none')
+    console.log('✅ Found subscriptions:', subscriptions.data.length, subscriptions.data.map(s => ({ id: s.id, status: s.status })))
 
-    if (subscriptions.data.length === 0) {
-      console.error('❌ No active subscriptions found')
+    // Find a subscription that can be canceled (active or trialing)
+    const cancelableSubscription = subscriptions.data.find(s =>
+      (s.status === 'active' || s.status === 'trialing') && !(s as any).cancel_at_period_end
+    )
+
+    if (!cancelableSubscription) {
+      console.error('❌ No cancelable subscriptions found. Statuses:', subscriptions.data.map(s => s.status))
       return res.status(400).json({ error: 'No active subscription found' })
     }
 
-    const subscription = subscriptions.data[0]
-
     // Cancel subscription at period end (user keeps access until billing date)
-    console.log('📝 Step 3: Updating subscription to cancel at period end...')
-    const canceledSubscription = await stripe.subscriptions.update(subscription.id, {
+    console.log('📝 Step 3: Updating subscription to cancel at period end...', { id: cancelableSubscription.id, status: cancelableSubscription.status })
+    const canceledSubscription = await stripe.subscriptions.update(cancelableSubscription.id, {
       cancel_at_period_end: true
     })
 
     console.log('✅ Subscription will cancel at period end:', {
-      subscriptionId: subscription.id,
+      subscriptionId: cancelableSubscription.id,
       currentPeriodEnd: new Date((canceledSubscription as any).current_period_end * 1000),
       cancelAtPeriodEnd: (canceledSubscription as any).cancel_at_period_end
     })
@@ -736,7 +791,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     metadata: session.metadata
   })
 
-  const { customer, subscription, metadata } = session
+  const { customer, metadata } = session
 
   if (!metadata?.userId || !metadata?.plan) {
     console.error('❌ Missing metadata in checkout session:', { metadata })
@@ -819,6 +874,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
       data: {
         planCode: planCode,
         planRenewsAt,
+        stripeSubscriptionId: subscription.id,
         perfUsed: 0,
         buildUsed: 0,
         imageUsed: 0,
@@ -895,22 +951,23 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
+  const invoiceAny = invoice as any
   console.log('💰 Payment succeeded webhook received:', {
     invoiceId: invoice.id,
     customer: invoice.customer,
-    subscription: invoice.subscription,
+    subscription: invoiceAny.subscription,
     amount: invoice.amount_paid
   })
 
   try {
     // Get the subscription to extract metadata
-    if (!invoice.subscription) {
+    if (!invoiceAny.subscription) {
       console.log('⚠️ Invoice has no subscription, skipping user update')
       return
     }
 
-    console.log('🔍 Retrieving subscription:', invoice.subscription)
-    const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string)
+    console.log('🔍 Retrieving subscription:', invoiceAny.subscription)
+    const subscription = await stripe.subscriptions.retrieve(invoiceAny.subscription as string)
 
     console.log('📋 Subscription details:', {
       id: subscription.id,
