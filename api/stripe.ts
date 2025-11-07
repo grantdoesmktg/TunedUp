@@ -793,8 +793,18 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
       return
     }
 
-    // Calculate renewal date
-    const planRenewsAt = new Date((subscription as any).current_period_end * 1000)
+    // Calculate renewal date - check if current_period_end exists
+    let planRenewsAt: Date | null = null
+    const periodEnd = (subscription as any).current_period_end
+    if (periodEnd && typeof periodEnd === 'number') {
+      planRenewsAt = new Date(periodEnd * 1000)
+    } else {
+      // Fallback: set to 1 month from now
+      planRenewsAt = new Date()
+      planRenewsAt.setMonth(planRenewsAt.getMonth() + 1)
+    }
+
+    console.log('📅 Setting planRenewsAt to:', planRenewsAt)
 
     // Update user plan in database (this is a new subscription, so reset usage)
     const updatedUser = await prisma.user.update({
