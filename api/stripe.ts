@@ -519,28 +519,35 @@ async function handleCancelSubscription(req: VercelRequest, res: VercelResponse)
 
     console.log('🚫 Cancel subscription request for:', email)
 
+    console.log('📝 Step 1: Looking up user in database...')
     const user = await prisma.user.findUnique({
       where: { email }
     })
+    console.log('✅ User found:', user ? { email: user.email, stripeCustomerId: user.stripeCustomerId } : 'null')
 
     if (!user || !user.stripeCustomerId) {
+      console.error('❌ No user or no Stripe customer ID')
       return res.status(400).json({ error: 'No subscription found' })
     }
 
     // Get all subscriptions for this customer
+    console.log('📝 Step 2: Fetching subscriptions from Stripe for customer:', user.stripeCustomerId)
     const subscriptions = await stripe.subscriptions.list({
       customer: user.stripeCustomerId,
       status: 'active',
       limit: 1
     })
+    console.log('✅ Found subscriptions:', subscriptions.data.length, subscriptions.data.length > 0 ? { id: subscriptions.data[0].id, status: subscriptions.data[0].status } : 'none')
 
     if (subscriptions.data.length === 0) {
+      console.error('❌ No active subscriptions found')
       return res.status(400).json({ error: 'No active subscription found' })
     }
 
     const subscription = subscriptions.data[0]
 
     // Cancel subscription at period end (user keeps access until billing date)
+    console.log('📝 Step 3: Updating subscription to cancel at period end...')
     const canceledSubscription = await stripe.subscriptions.update(subscription.id, {
       cancel_at_period_end: true
     })
