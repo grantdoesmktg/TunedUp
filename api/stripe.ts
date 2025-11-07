@@ -674,6 +674,11 @@ async function handleWebhook(req: VercelRequest, res: VercelResponse) {
         await handleCheckoutCompleted(checkoutSession)
         break
 
+      case 'customer.subscription.created':
+        const createdSubscription = event.data.object as Stripe.Subscription
+        await handleSubscriptionCreated(createdSubscription)
+        break
+
       case 'customer.subscription.updated':
         const updatedSubscription = event.data.object as Stripe.Subscription
         await handleSubscriptionUpdated(updatedSubscription)
@@ -758,6 +763,61 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   } catch (error) {
     console.error('❌ Failed to update user plan:', error)
     throw error
+  }
+}
+
+async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
+  console.log('🎉 Subscription created webhook received:', {
+    subscriptionId: subscription.id,
+    customer: subscription.customer,
+    status: subscription.status,
+    metadata: subscription.metadata
+  })
+
+  try {
+    // Get user from database using stripe customer ID
+    const user = await prisma.user.findUnique({
+      where: { stripeCustomerId: subscription.customer as string }
+    })
+
+    if (!user) {
+      console.error('❌ User not found for customer:', subscription.customer)
+      return
+    }
+
+    // Extract plan from subscription metadata
+    const planCode = subscription.metadata.plan
+
+    if (!planCode) {
+      console.error('❌ No plan in subscription metadata')
+      return
+    }
+
+    // Calculate renewal date
+    const planRenewsAt = new Date((subscription as any).current_period_end * 1000)
+
+    // Update user plan in database (this is a new subscription, so reset usage)
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        planCode: planCode,
+        planRenewsAt,
+        perfUsed: 0,
+        buildUsed: 0,
+        imageUsed: 0,
+        communityUsed: 0,
+        resetDate: new Date()
+      }
+    })
+
+    console.log(`✅ New subscription created for user ${user.id} - Plan: ${planCode}`, {
+      userId: updatedUser.id,
+      email: updatedUser.email,
+      newPlan: updatedUser.planCode,
+      renewsAt: updatedUser.planRenewsAt
+    })
+  } catch (error) {
+    console.error('❌ handleSubscriptionCreated error:', error)
   }
 }
 
