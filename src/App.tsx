@@ -15,6 +15,7 @@ import AppDownload from './pages/AppDownload';
 import AuthenticatedPerformanceCalculator from '../performance-calculator/AuthenticatedApp';
 import AuthenticatedBuildPlanner from '../build-planner/AuthenticatedApp';
 import AuthenticatedOnSite from '../on-site/AuthenticatedApp';
+import AppStoreRedirect from './components/AppStoreRedirect';
 
 function App() {
   useEffect(() => {
@@ -28,6 +29,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <AppStoreRedirect />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/download" element={<AppDownload />} />
