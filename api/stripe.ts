@@ -698,11 +698,21 @@ async function handleWebhook(req: VercelRequest, res: VercelResponse) {
         console.log(`❓ Unhandled event type: ${event.type}`)
     }
 
+    // Always return 200 to Stripe to prevent retries
     res.status(200).json({ received: true })
 
   } catch (error) {
-    console.error('Webhook handler error:', error)
-    res.status(500).json({ error: 'Webhook handler failed' })
+    console.error('❌ Webhook handler error:', error)
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    console.error('❌ Event type:', event?.type)
+    console.error('❌ Event ID:', event?.id)
+
+    // Still return 200 to prevent Stripe from retrying
+    // We've logged the error for debugging
+    res.status(200).json({
+      received: true,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
   }
 }
 
@@ -822,6 +832,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       return
     }
 
+    console.log('🔍 Retrieving subscription:', invoice.subscription)
     const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string)
 
     console.log('📋 Subscription details:', {
@@ -851,18 +862,24 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     // Calculate renewal date
     const planRenewsAt = new Date((subscription as any).current_period_end * 1000)
 
+    // Check if this is an upgrade (plan change) or renewal (same plan)
+    const isUpgrade = user.planCode !== planCode
+    const isNewSubscription = !user.planRenewsAt
+
     // Update user plan in database
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: {
         planCode: planCode,
         planRenewsAt,
-        // Reset usage when upgrading
-        perfUsed: 0,
-        buildUsed: 0,
-        imageUsed: 0,
-        communityUsed: 0,
-        resetDate: new Date()
+        // Only reset usage on initial purchase or upgrade, not on monthly renewals
+        ...(isUpgrade || isNewSubscription ? {
+          perfUsed: 0,
+          buildUsed: 0,
+          imageUsed: 0,
+          communityUsed: 0,
+          resetDate: new Date()
+        } : {})
       }
     })
 
