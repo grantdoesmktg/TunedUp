@@ -898,37 +898,76 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  console.log('🔄 Subscription updated webhook received:', {
+    subscriptionId: subscription.id,
+    customer: subscription.customer,
+    status: subscription.status,
+    cancelAtPeriodEnd: (subscription as any).cancel_at_period_end
+  })
+
   const customer = await stripe.customers.retrieve(subscription.customer as string)
 
-  if (!customer || customer.deleted) return
+  if (!customer || customer.deleted) {
+    console.log('⚠️ Customer not found or deleted')
+    return
+  }
 
   const user = await prisma.user.findUnique({
     where: { stripeCustomerId: (customer as any).id }
   })
 
-  if (!user) return
+  if (!user) {
+    console.log('⚠️ User not found for customer:', (customer as any).id)
+    return
+  }
 
-  const planRenewsAt = new Date((subscription as any).current_period_end * 1000)
+  // Handle date safely
+  let planRenewsAt: Date | null = null
+  const periodEnd = (subscription as any).current_period_end
+  if (periodEnd && typeof periodEnd === 'number') {
+    planRenewsAt = new Date(periodEnd * 1000)
+  }
 
-  // Map subscription status to plan
-  let planCode = 'FREE'
-  if (subscription.status === 'active') {
-    // Get plan from subscription metadata or line items
-    const lineItem = subscription.items.data[0]
-    if (lineItem && lineItem.price.metadata.plan) {
-      planCode = lineItem.price.metadata.plan
+  // Determine plan code based on subscription status
+  let planCode = user.planCode // Keep current plan by default
+
+  if (subscription.status === 'active' || subscription.status === 'trialing' || subscription.status === 'incomplete') {
+    // Subscription is active - get plan from metadata
+    if (subscription.metadata.plan) {
+      planCode = subscription.metadata.plan
+    } else {
+      // Fallback: try to get from line items
+      const lineItem = subscription.items.data[0]
+      if (lineItem && lineItem.price.metadata?.plan) {
+        planCode = lineItem.price.metadata.plan
+      }
     }
+  } else if (subscription.status === 'canceled' || subscription.status === 'unpaid') {
+    // Subscription ended - downgrade to FREE
+    planCode = 'FREE'
+    planRenewsAt = null
+  }
+
+  // If subscription is set to cancel at period end, keep the current plan until then
+  if ((subscription as any).cancel_at_period_end && planRenewsAt) {
+    console.log(`⏳ Subscription will cancel at period end (${planRenewsAt}), keeping current plan`)
+    // Don't change the plan yet, just update the renewal date
   }
 
   await prisma.user.update({
     where: { id: user.id },
     data: {
       planCode,
-      planRenewsAt
+      planRenewsAt,
+      stripeSubscriptionId: subscription.id
     }
   })
 
-  console.log(`Subscription updated for user ${user.id}: ${planCode}`)
+  console.log(`✅ Subscription updated for user ${user.id}:`, {
+    planCode,
+    planRenewsAt,
+    cancelAtPeriodEnd: (subscription as any).cancel_at_period_end
+  })
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
