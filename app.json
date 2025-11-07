@@ -4,7 +4,7 @@
     "slug": "TunedUpNative",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icons/icon-1024.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.TunedUpNative",
+      "bundleIdentifier": "dev.tunedup.app",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "TunedUp needs access to your photo library to save your custom car images.",
         "NSPhotoLibraryAddUsageDescription": "TunedUp needs access to save your custom car images to your photo library."
