@@ -543,8 +543,9 @@ async function handleCancelSubscription(req: VercelRequest, res: VercelResponse)
         const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId)
         console.log('✅ Subscription found:', { id: subscription.id, status: subscription.status })
 
-        if (subscription.status !== 'active' && subscription.status !== 'trialing') {
-          console.error('❌ Subscription is not active or trialing:', subscription.status)
+        // Allow cancellation for active, trialing, or incomplete (paid but not yet activated) subscriptions
+        if (subscription.status !== 'active' && subscription.status !== 'trialing' && subscription.status !== 'incomplete') {
+          console.error('❌ Subscription cannot be cancelled:', subscription.status)
           return res.status(400).json({ error: `Subscription is ${subscription.status}` })
         }
 
@@ -591,9 +592,11 @@ async function handleCancelSubscription(req: VercelRequest, res: VercelResponse)
     })
     console.log('✅ Found subscriptions:', subscriptions.data.length, subscriptions.data.map(s => ({ id: s.id, status: s.status })))
 
-    // Find a subscription that can be canceled (active or trialing)
+    // Find a subscription that can be canceled
+    // Include 'incomplete' status for subscriptions that were paid but haven't transitioned to 'active' yet
     const cancelableSubscription = subscriptions.data.find(s =>
-      (s.status === 'active' || s.status === 'trialing') && !(s as any).cancel_at_period_end
+      (s.status === 'active' || s.status === 'trialing' || s.status === 'incomplete') &&
+      !(s as any).cancel_at_period_end
     )
 
     if (!cancelableSubscription) {
@@ -1006,6 +1009,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       data: {
         planCode: planCode,
         planRenewsAt,
+        stripeSubscriptionId: subscription.id,
         // Only reset usage on initial purchase or upgrade, not on monthly renewals
         ...(isUpgrade || isNewSubscription ? {
           perfUsed: 0,
