@@ -560,16 +560,22 @@ async function handleCancelSubscription(req: VercelRequest, res: VercelResponse)
           cancel_at_period_end: true
         })
 
+        // Get current_period_end safely
+        const periodEnd = (canceledSubscription as any).current_period_end
+        const currentPeriodEnd = periodEnd && typeof periodEnd === 'number'
+          ? new Date(periodEnd * 1000)
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Fallback: 30 days from now
+
         console.log('✅ Subscription will cancel at period end:', {
           subscriptionId: subscription.id,
-          currentPeriodEnd: new Date((canceledSubscription as any).current_period_end * 1000),
+          currentPeriodEnd,
           cancelAtPeriodEnd: (canceledSubscription as any).cancel_at_period_end
         })
 
         res.status(200).json({
           success: true,
           message: 'Subscription will be canceled at the end of the billing period',
-          currentPeriodEnd: new Date((canceledSubscription as any).current_period_end * 1000),
+          currentPeriodEnd: currentPeriodEnd.toISOString(),
           cancelAtPeriodEnd: (canceledSubscription as any).cancel_at_period_end
         })
         return
@@ -610,16 +616,22 @@ async function handleCancelSubscription(req: VercelRequest, res: VercelResponse)
       cancel_at_period_end: true
     })
 
+    // Get current_period_end safely
+    const periodEnd = (canceledSubscription as any).current_period_end
+    const currentPeriodEnd = periodEnd && typeof periodEnd === 'number'
+      ? new Date(periodEnd * 1000)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Fallback: 30 days from now
+
     console.log('✅ Subscription will cancel at period end:', {
       subscriptionId: cancelableSubscription.id,
-      currentPeriodEnd: new Date((canceledSubscription as any).current_period_end * 1000),
+      currentPeriodEnd,
       cancelAtPeriodEnd: (canceledSubscription as any).cancel_at_period_end
     })
 
     res.status(200).json({
       success: true,
       message: 'Subscription will be canceled at the end of the billing period',
-      currentPeriodEnd: new Date((canceledSubscription as any).current_period_end * 1000),
+      currentPeriodEnd: currentPeriodEnd.toISOString(),
       cancelAtPeriodEnd: (canceledSubscription as any).cancel_at_period_end
     })
 
@@ -762,6 +774,11 @@ async function handleWebhook(req: VercelRequest, res: VercelResponse) {
       case 'invoice.payment_failed':
         const failedInvoice = event.data.object as Stripe.Invoice
         await handlePaymentFailed(failedInvoice)
+        break
+
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object as Stripe.PaymentIntent
+        await handlePaymentIntentSucceeded(paymentIntent)
         break
 
       default:
@@ -1074,4 +1091,102 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   // Payment failed - might want to send notification email
   console.log(`Payment failed for customer ${invoice.customer}`)
+}
+
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  console.log('💳 Payment intent succeeded webhook received:', {
+    paymentIntentId: paymentIntent.id,
+    customer: paymentIntent.customer,
+    amount: paymentIntent.amount,
+    metadata: paymentIntent.metadata
+  })
+
+  try {
+    // Check if this payment intent is associated with an invoice/subscription
+    const invoiceId = paymentIntent.invoice as string | null
+
+    if (!invoiceId) {
+      console.log('⚠️ Payment intent has no invoice, skipping')
+      return
+    }
+
+    console.log('🔍 Retrieving invoice:', invoiceId)
+    const invoice = await stripe.invoices.retrieve(invoiceId)
+
+    if (!invoice.subscription) {
+      console.log('⚠️ Invoice has no subscription, skipping')
+      return
+    }
+
+    console.log('🔍 Retrieving subscription:', invoice.subscription)
+    const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string)
+
+    console.log('📋 Subscription status:', subscription.status)
+
+    // If subscription is incomplete, it means payment just succeeded and we should activate it
+    if (subscription.status === 'incomplete') {
+      console.log('🚀 Activating incomplete subscription after successful payment...')
+
+      // The subscription should automatically transition to active after payment succeeds
+      // But let's check and ensure it's properly set up
+      const updatedSubscription = await stripe.subscriptions.retrieve(subscription.id)
+
+      console.log('✅ Subscription after payment:', {
+        id: updatedSubscription.id,
+        status: updatedSubscription.status,
+        currentPeriodEnd: (updatedSubscription as any).current_period_end
+      })
+
+      // Update user in database with subscription details
+      const user = await prisma.user.findUnique({
+        where: { stripeCustomerId: subscription.customer as string }
+      })
+
+      if (!user) {
+        console.error('❌ User not found for customer:', subscription.customer)
+        return
+      }
+
+      const planCode = subscription.metadata.plan
+      if (!planCode) {
+        console.error('❌ No plan in subscription metadata')
+        return
+      }
+
+      // Get the period end date safely
+      let planRenewsAt: Date | null = null
+      const periodEnd = (updatedSubscription as any).current_period_end
+      if (periodEnd && typeof periodEnd === 'number') {
+        planRenewsAt = new Date(periodEnd * 1000)
+      } else {
+        // Fallback: set to 1 month from now
+        planRenewsAt = new Date()
+        planRenewsAt.setMonth(planRenewsAt.getMonth() + 1)
+      }
+
+      // Update user with subscription info
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          planCode,
+          planRenewsAt,
+          stripeSubscriptionId: subscription.id
+        }
+      })
+
+      console.log('✅ User plan updated after payment intent success:', {
+        userId: user.id,
+        email: user.email,
+        planCode,
+        planRenewsAt,
+        subscriptionId: subscription.id,
+        subscriptionStatus: updatedSubscription.status
+      })
+    } else {
+      console.log(`ℹ️ Subscription already in ${subscription.status} status, no action needed`)
+    }
+
+  } catch (error) {
+    console.error('❌ handlePaymentIntentSucceeded error:', error)
+  }
 }
