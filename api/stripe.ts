@@ -822,16 +822,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   planRenewsAt.setMonth(planRenewsAt.getMonth() + 1)
 
   try {
+    // Get token amount for the plan
+    const { PLAN_TOKENS } = await import('../lib/tokens.js')
+    const tokens = PLAN_TOKENS[metadata.plan as keyof typeof PLAN_TOKENS] || PLAN_TOKENS.FREE
+
     const updatedUser = await prisma.user.update({
       where: { id: metadata.userId },
       data: {
         planCode: metadata.plan,
         stripeCustomerId: customer as string,
         planRenewsAt,
-        // Reset usage when upgrading
-        perfUsed: 0,
-        buildUsed: 0,
-        imageUsed: 0,
+        tokens, // Set tokens based on plan
         communityUsed: 0,
         resetDate: new Date()
       }
@@ -888,16 +889,18 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 
     console.log('📅 Setting planRenewsAt to:', planRenewsAt)
 
-    // Update user plan in database (this is a new subscription, so reset usage)
-    const updatedUser = await prisma.user.update({
+    // Get token amount for the plan
+    const { setTokensForPlan } = await import('../lib/tokens.js')
+
+    // Update user plan in database (this is a new subscription, so reset tokens)
+    const updatedUser = await setTokensForPlan(user.email, planCode)
+
+    // Also update subscription metadata
+    await prisma.user.update({
       where: { id: user.id },
       data: {
-        planCode: planCode,
         planRenewsAt,
         stripeSubscriptionId: subscription.id,
-        perfUsed: 0,
-        buildUsed: 0,
-        imageUsed: 0,
         communityUsed: 0,
         resetDate: new Date()
       }
@@ -1059,6 +1062,10 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     const isUpgrade = user.planCode !== planCode
     const isNewSubscription = !user.planRenewsAt
 
+    // Get token amount for the plan
+    const { PLAN_TOKENS } = await import('../lib/tokens.js')
+    const tokens = PLAN_TOKENS[planCode as keyof typeof PLAN_TOKENS] || PLAN_TOKENS.FREE
+
     // Update user plan in database
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
@@ -1066,11 +1073,9 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
         planCode: planCode,
         planRenewsAt,
         stripeSubscriptionId: subscription.id,
-        // Only reset usage on initial purchase or upgrade, not on monthly renewals
+        // Only reset tokens on initial purchase or upgrade, not on monthly renewals
         ...(isUpgrade || isNewSubscription ? {
-          perfUsed: 0,
-          buildUsed: 0,
-          imageUsed: 0,
+          tokens,
           communityUsed: 0,
           resetDate: new Date()
         } : {})

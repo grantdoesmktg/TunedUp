@@ -16,23 +16,21 @@ model User {
   planCode             String             @default("FREE")
   planRenewsAt         DateTime?
   extraCredits         Json               @default("{}")
-  perfUsed          Int                @default(0)
-  buildUsed         Int                @default(0)
-  imageUsed         Int                @default(0)
-  resetDate         DateTime           @default(now())
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  communityUsed     Int                @default(0)
-  instagramHandle   String?
-  location          String?
-  name              String?
-  nickname          String?
-  profileIcon       String?            @default("👤")
-  backgroundTheme   String?            @default("midnight")
-  communityImages   CommunityImage[]
-  saved_cars        saved_cars[]
-  saved_images      saved_images[]
-  saved_performance saved_performance?
+  tokens               Int                @default(30)
+  resetDate            DateTime           @default(now())
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  communityUsed        Int                @default(0)
+  instagramHandle      String?
+  location             String?
+  name                 String?
+  nickname             String?
+  profileIcon          String?            @default("👤")
+  backgroundTheme      String?            @default("midnight")
+  communityImages      CommunityImage[]
+  saved_cars           saved_cars[]
+  saved_images         saved_images[]
+  saved_performance    saved_performance?
 
   @@map("users")
 }
@@ -106,9 +104,7 @@ model saved_performance {
 model anonymous_users {
   id            String   @id
   fingerprint   String   @unique
-  perfUsed      Int      @default(0)
-  buildUsed     Int      @default(0)
-  imageUsed     Int      @default(0)
+  tokens        Int      @default(10)
   communityUsed Int      @default(0)
   resetDate     DateTime @default(now())
   createdAt     DateTime @default(now())

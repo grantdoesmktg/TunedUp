@@ -96,11 +96,9 @@ async function handleSendLink(req: VercelRequest, res: VercelResponse) {
       create: {
         email,
         planCode: isDemoAccount ? 'ULTRA' : 'FREE',
-        perfUsed: 0,
-        buildUsed: 0,
-        imageUsed: 0
+        tokens: isDemoAccount ? 500 : 30 // ULTRA gets 500, FREE gets 30
       },
-      update: isDemoAccount ? { planCode: 'ULTRA' } : {}
+      update: isDemoAccount ? { planCode: 'ULTRA', tokens: 500 } : {}
     })
 
     res.status(200).json({
@@ -257,9 +255,7 @@ async function createUserSession(email: string, res: VercelResponse, sendHtml: b
           planCode: user.planCode,
           planRenewsAt: user.planRenewsAt,
           extraCredits: user.extraCredits,
-          perfUsed: user.perfUsed,
-          buildUsed: user.buildUsed,
-          imageUsed: user.imageUsed,
+          tokens: user.tokens,
           communityUsed: user.communityUsed,
           resetDate: user.resetDate,
           createdAt: user.createdAt,
@@ -308,9 +304,7 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
         planCode: true,
         planRenewsAt: true,
         extraCredits: true,
-        perfUsed: true,
-        buildUsed: true,
-        imageUsed: true,
+        tokens: true,
         communityUsed: true,
         resetDate: true,
         createdAt: true,
@@ -334,12 +328,14 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
     const daysSinceReset = Math.floor((now.getTime() - user.resetDate.getTime()) / (1000 * 60 * 60 * 24))
 
     if (daysSinceReset >= 30) {
+      // Calculate new token amount with carryover
+      const { calculateMonthlyRefill } = await import('../lib/tokens.js')
+      const newTokens = calculateMonthlyRefill(user.planCode, user.tokens)
+
       const updatedUser = await prisma.user.update({
         where: { email },
         data: {
-          perfUsed: 0,
-          buildUsed: 0,
-          imageUsed: 0,
+          tokens: newTokens,
           communityUsed: 0,
           resetDate: now
         },
@@ -349,9 +345,7 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
           planCode: true,
           planRenewsAt: true,
           extraCredits: true,
-          perfUsed: true,
-          buildUsed: true,
-          imageUsed: true,
+          tokens: true,
           communityUsed: true,
           resetDate: true,
           createdAt: true,
