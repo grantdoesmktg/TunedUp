@@ -1,6 +1,6 @@
 // NATIVE APP - Profile screen with saved performance and images
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, TextInput, Alert, ActivityIndicator, ImageBackground, Animated, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, TextInput, Alert, ActivityIndicator, ImageBackground, Animated, RefreshControl, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,6 +14,9 @@ import ImageViewerModal from '../components/ImageViewerModal';
 import BackgroundPickerModal from '../components/BackgroundPickerModal';
 import { getBackgroundConfig, parseBackgroundTheme } from '../theme/backgrounds';
 import { getTextureConfig, TexturePattern } from '../theme/textures';
+
+const { width } = Dimensions.get('window');
+const IMAGE_SIZE = (width - 60) / 3; // 3 columns with padding
 
 // Anonymous Profile View Component - Must be defined before ProfileScreen
 const AnonymousProfileView = ({ navigation }: any) => {
@@ -199,7 +202,7 @@ const AnonymousProfileView = ({ navigation }: any) => {
 
 const ProfileScreen = ({ navigation }: any) => {
   const { user, isAuthenticated, logout, refreshUser } = useAuth();
-  const { quotaInfo } = useQuota();
+  const { tokenInfo } = useQuota();
   const [pricingModalVisible, setPricingModalVisible] = useState(false);
   const [backgroundPickerVisible, setBackgroundPickerVisible] = useState(false);
   const [selectedProfileIcon, setSelectedProfileIcon] = useState('👤');
@@ -508,10 +511,11 @@ const ProfileScreen = ({ navigation }: any) => {
               {savedImages.length > 0 ? (
                 <View style={styles.garageImagesSection}>
                   <Text style={styles.garageImagesTitle}>Community Images ({savedImages.length})</Text>
-                  <View style={styles.garageImages}>
+                  <View style={styles.imagesGrid}>
                     {savedImages.map((image) => (
                       <TouchableOpacity
                         key={image.id}
+                        style={styles.imageContainer}
                         onPress={() => {
                           setSelectedImageUri(image.imageUrl);
                           setImageViewerVisible(true);
@@ -519,9 +523,12 @@ const ProfileScreen = ({ navigation }: any) => {
                       >
                         <Image
                           source={{ uri: image.imageUrl }}
-                          style={styles.garageImage}
+                          style={styles.communityImage}
                           resizeMode="cover"
                         />
+                        <View style={styles.imageOverlay}>
+                          <Text style={styles.imageLikes}>❤️ {image.likesCount}</Text>
+                        </View>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -577,7 +584,7 @@ const ProfileScreen = ({ navigation }: any) => {
         <PricingModal
           visible={pricingModalVisible}
           onClose={() => setPricingModalVisible(false)}
-          currentPlan={quotaInfo?.planCode}
+          currentPlan={tokenInfo?.planCode}
           onSelectPlan={handleSelectPlan}
         />
 
@@ -876,6 +883,35 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 12,
     backgroundColor: colors.secondary,
+  },
+  imagesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  imageContainer: {
+    width: IMAGE_SIZE,
+    height: IMAGE_SIZE,
+    position: 'relative',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  communityImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 6,
+  },
+  imageLikes: {
+    color: colors.textPrimary,
+    fontSize: 11,
+    fontWeight: '600',
   },
   emptyGarage: {
     backgroundColor: 'rgba(26, 31, 58, 0.85)',
