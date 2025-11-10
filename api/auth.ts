@@ -329,8 +329,11 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
 
     if (daysSinceReset >= 30) {
       // Calculate new token amount with carryover
-      const { calculateMonthlyRefill } = await import('../lib/tokens.js')
-      const newTokens = calculateMonthlyRefill(user.planCode, user.tokens)
+      const { calculateMonthlyRefill, PLAN_TOKENS } = await import('../lib/tokens.js')
+
+      // If user.tokens is null/undefined, set to plan default
+      const currentTokens = user.tokens ?? PLAN_TOKENS[user.planCode as keyof typeof PLAN_TOKENS] ?? PLAN_TOKENS.FREE
+      const newTokens = calculateMonthlyRefill(user.planCode, currentTokens)
 
       const updatedUser = await prisma.user.update({
         where: { email },
@@ -350,6 +353,36 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
           resetDate: true,
           createdAt: true,
           // Profile customization fields
+          name: true,
+          nickname: true,
+          location: true,
+          instagramHandle: true,
+          profileIcon: true,
+          backgroundTheme: true
+        }
+      })
+
+      return res.status(200).json({ user: updatedUser })
+    }
+
+    // If user has null tokens (legacy user from before token system), set default tokens
+    if (user.tokens === null || user.tokens === undefined) {
+      const { PLAN_TOKENS } = await import('../lib/tokens.js')
+      const defaultTokens = PLAN_TOKENS[user.planCode as keyof typeof PLAN_TOKENS] ?? PLAN_TOKENS.FREE
+
+      const updatedUser = await prisma.user.update({
+        where: { email },
+        data: { tokens: defaultTokens },
+        select: {
+          id: true,
+          email: true,
+          planCode: true,
+          planRenewsAt: true,
+          extraCredits: true,
+          tokens: true,
+          communityUsed: true,
+          resetDate: true,
+          createdAt: true,
           name: true,
           nickname: true,
           location: true,
