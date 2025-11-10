@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Share, Alert, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { colors } from '../theme/colors';
 import { useAuth } from '../contexts/AuthContext';
-import { savedImagesAPI } from '../services/api';
+import { carsAPI, communityAPI } from '../services/api';
 import type { ImageGeneratorResponse, CarSpec } from '../types';
 import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system';
@@ -17,6 +17,7 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
   const [saving, setSaving] = useState(false);
   const [savedCount, setSavedCount] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     loadSavedCount();
@@ -25,10 +26,10 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
   const loadSavedCount = async () => {
     if (!user) return;
     try {
-      const response = await savedImagesAPI.getSavedImages();
-      setSavedCount(response.images?.length || 0);
+      const response = await carsAPI.getSavedCars();
+      setSavedCount(response.cars?.length || 0);
     } catch (error: any) {
-      console.error('Failed to load saved images count:', error);
+      console.error('Failed to load saved cars count:', error);
       // Set to 0 if API doesn't exist yet
       setSavedCount(0);
     }
@@ -94,7 +95,7 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
     if (!user) {
       Alert.alert(
         'Login Required',
-        'Please sign in to save images to your profile.',
+        'Please sign in to save cars to your profile.',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Go to Login', onPress: () => navigation.navigate('Profile') }
@@ -106,7 +107,7 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
     if (savedCount >= 3 && !isSaved) {
       Alert.alert(
         'Limit Reached',
-        'You can only save up to 3 images. Delete an existing image from your profile to save a new one.',
+        'You can only save up to 3 cars. Delete an existing car from your profile to save a new one.',
         [{ text: 'OK' }]
       );
       return;
@@ -119,13 +120,26 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
         ? results.image
         : `data:image/png;base64,${results.image}`;
 
-      await savedImagesAPI.saveImage(imageUrl, carSpec, results.prompt);
+      // Create a name for this car build
+      const carName = `${carSpec.year} ${carSpec.make} ${carSpec.model}`;
+
+      // Save to saved_cars with the image
+      await carsAPI.saveCar({
+        name: carName,
+        make: carSpec.make,
+        model: carSpec.model,
+        year: carSpec.year,
+        trim: '', // Image generator doesn't have trim
+        imageUrl: imageUrl,
+        isActive: savedCount === 0 // Make it active if it's the first car
+      });
+
       setIsSaved(true);
       setSavedCount(prev => prev + 1);
-      Alert.alert('Success', 'Image saved to your profile!');
+      Alert.alert('Success', 'Car saved to your profile!');
     } catch (error: any) {
       console.error('Save to profile error:', error);
-      Alert.alert('Error', error.message || 'Failed to save image to profile');
+      Alert.alert('Error', error.message || 'Failed to save car to profile');
     } finally {
       setSaving(false);
     }
@@ -145,9 +159,32 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
       return;
     }
 
-    // TODO: Implement API call to share image to community
-    setShowDescriptionModal(false);
-    Alert.alert('Coming Soon', 'Share to Community feature will be available soon!');
+    setUploading(true);
+    try {
+      // Convert base64 to data URL if needed
+      const imageUrl = results.image.startsWith('data:')
+        ? results.image
+        : `data:image/png;base64,${results.image}`;
+
+      await communityAPI.uploadImage(imageUrl, description);
+
+      setShowDescriptionModal(false);
+      setDescription('');
+
+      Alert.alert(
+        'Success!',
+        'Your image has been shared to the community!',
+        [
+          { text: 'View Community', onPress: () => navigation.navigate('Community') },
+          { text: 'OK', style: 'cancel' }
+        ]
+      );
+    } catch (error: any) {
+      console.error('Upload to community error:', error);
+      Alert.alert('Error', error.message || 'Failed to upload to community');
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -267,10 +304,15 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
               {description.length}/35 characters
             </Text>
             <TouchableOpacity
-              style={styles.modalButton}
+              style={[styles.modalButton, uploading && styles.buttonDisabled]}
               onPress={submitToCommunity}
+              disabled={uploading}
             >
-              <Text style={styles.modalButtonText}>Share to Community</Text>
+              {uploading ? (
+                <ActivityIndicator color={colors.background} />
+              ) : (
+                <Text style={styles.modalButtonText}>Share to Community</Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.modalCancelButton}

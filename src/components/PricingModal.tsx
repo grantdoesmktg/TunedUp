@@ -11,13 +11,22 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../theme/colors';
 import { PLAN_LIMITS, getPlanName } from '../types/quota';
-import { STRIPE_PRICE_IDS } from '../services/stripe';
+import { STRIPE_PRICE_IDS, cancelSubscription, reactivateSubscription } from '../services/stripe';
 import type { PlanCode } from '../types/quota';
+import { useAuth } from '../contexts/AuthContext';
 
 const { width, height } = Dimensions.get('window');
+
+// Debug: Log Stripe price IDs on module load
+console.log('💰 STRIPE_PRICE_IDS loaded:', {
+  PLUS: STRIPE_PRICE_IDS.PLUS,
+  PRO: STRIPE_PRICE_IDS.PRO,
+  ULTRA: STRIPE_PRICE_IDS.ULTRA
+});
 
 interface PricingModalProps {
   visible: boolean;
@@ -45,11 +54,12 @@ const PLAN_TIERS: PlanTier[] = [
     priceId: '', // No Stripe price ID for free
     period: 'Forever',
     features: [
-      '3 Performance Calculations',
-      '3 Build Plans',
-      '5 AI Images',
-      '5 Community Posts',
-      'Basic Support',
+      '30 Tokens/month',
+      'Resets Monthly (No Carryover)',
+      'Performance Calculator (3 tokens)',
+      'Build Planner (2 tokens)',
+      'Image Generator (5 tokens)',
+      'Unlimited Community Posts',
     ],
     gradient: [colors.secondary, colors.divider],
   },
@@ -60,10 +70,9 @@ const PLAN_TIERS: PlanTier[] = [
     priceId: STRIPE_PRICE_IDS.PLUS,
     period: 'per month',
     features: [
-      '10 Performance Calculations',
-      '10 Build Plans',
-      '25 AI Images',
-      '10 Community Posts',
+      '100 Tokens/month',
+      '50% Token Carryover',
+      'All Tools Included',
       'Priority Support',
       'Early Access Features',
     ],
@@ -77,11 +86,11 @@ const PLAN_TIERS: PlanTier[] = [
     period: 'per month',
     popular: true,
     features: [
-      '15 Performance Calculations',
-      '15 Build Plans',
-      '60 AI Images',
-      '20 Community Posts',
+      '250 Tokens/month',
+      '50% Token Carryover',
+      'All Tools Included',
       'Premium Support',
+      'Exclusive Features',
     ],
     gradient: ['#A855F7', '#EC4899'],
   },
@@ -92,10 +101,9 @@ const PLAN_TIERS: PlanTier[] = [
     priceId: STRIPE_PRICE_IDS.ULTRA,
     period: 'per month',
     features: [
-      '25 Performance Calculations',
-      '25 Build Plans',
-      '100 AI Images',
-      '30 Community Posts',
+      '500 Tokens/month',
+      '50% Token Carryover',
+      'All Tools Included',
       'VIP Support',
       'Shape Future Development',
     ],
@@ -110,10 +118,63 @@ export const PricingModal: React.FC<PricingModalProps> = ({
   onSelectPlan,
 }) => {
   const [loading, setLoading] = useState<string | null>(null);
+  const { refreshUser } = useAuth();
+
+  // Debug: Check token when modal opens
+  React.useEffect(() => {
+    if (visible) {
+      AsyncStorage.getItem('auth_token').then(token => {
+        console.log('💳 PricingModal opened - Token status:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
+      });
+    }
+  }, [visible]);
 
   const handleSelectPlan = async (plan: PlanTier) => {
+    console.log('🎯 handleSelectPlan called with plan:', {
+      code: plan.code,
+      name: plan.name,
+      priceId: plan.priceId,
+      hasPriceId: !!plan.priceId
+    });
+
+    // Handle FREE plan (cancellation)
     if (plan.code === 'FREE') {
-      Alert.alert('Free Plan', 'You can downgrade to the free plan from your account settings.');
+      if (currentPlan === 'FREE' || currentPlan === 'ANONYMOUS') {
+        Alert.alert('Current Plan', 'You are already on the Free plan.');
+        return;
+      }
+
+      // Show confirmation dialog
+      Alert.alert(
+        'Switch to Free Plan',
+        'This will cancel your subscription at the end of your current billing period. You\'ll keep access until then.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Confirm',
+            style: 'destructive',
+            onPress: async () => {
+              setLoading('FREE');
+              try {
+                const result = await cancelSubscription();
+                const endDate = new Date(result.currentPeriodEnd).toLocaleDateString();
+
+                await refreshUser();
+
+                Alert.alert(
+                  'Subscription Cancelled',
+                  `Your subscription will end on ${endDate}. You'll keep ${getPlanName(currentPlan)} access until then.`,
+                  [{ text: 'OK', onPress: onClose }]
+                );
+              } catch (error: any) {
+                Alert.alert('Error', error.message || 'Failed to cancel subscription');
+              } finally {
+                setLoading(null);
+              }
+            },
+          },
+        ]
+      );
       return;
     }
 
@@ -127,12 +188,18 @@ export const PricingModal: React.FC<PricingModalProps> = ({
       return;
     }
 
+    console.log('💳 About to call onSelectPlan with:', {
+      planCode: plan.code,
+      priceId: plan.priceId
+    });
+
     setLoading(plan.code);
     try {
       await onSelectPlan(plan.code, plan.priceId);
       Alert.alert('Success', `Successfully upgraded to ${plan.name} plan!`);
       onClose();
     } catch (error: any) {
+      console.error('❌ Payment error in handleSelectPlan:', error);
       Alert.alert('Error', error.message || 'Failed to process payment');
     } finally {
       setLoading(null);
@@ -254,14 +321,15 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'flex-start',
-    paddingTop: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   modalContainer: {
     backgroundColor: colors.background,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    borderRadius: 24,
     maxHeight: height * 0.85,
+    width: '100%',
     paddingTop: 24,
   },
   modalHeader: {

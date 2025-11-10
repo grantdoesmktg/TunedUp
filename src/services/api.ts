@@ -78,9 +78,22 @@ export const authAPI = {
       body: JSON.stringify({ email, code }),
     });
 
+    console.log('🔐 Verify code response:', {
+      success: response.success,
+      hasToken: !!response.token,
+      hasUser: !!response.user,
+      tokenPreview: response.token ? `${response.token.substring(0, 30)}...` : 'NO TOKEN'
+    });
+
     // Store token if login successful
     if (response.success && response.token) {
+      console.log('💾 Saving token to AsyncStorage...');
       await setToken(response.token);
+      // Verify it was saved
+      const savedToken = await getToken();
+      console.log('✅ Token saved successfully:', savedToken ? `${savedToken.substring(0, 30)}...` : 'FAILED TO SAVE');
+    } else {
+      console.warn('⚠️ No token received from server! Response:', response);
     }
 
     return response;
@@ -119,6 +132,13 @@ export const communityAPI = {
 
   getPublicProfile: async (userId: string) => {
     return apiRequest(`/api/community?action=public-profile&userId=${userId}`);
+  },
+
+  uploadImage: async (image: string, description: string) => {
+    return apiRequest('/api/community?action=upload', {
+      method: 'POST',
+      body: JSON.stringify({ image, description }),
+    });
   },
 };
 

@@ -1,6 +1,6 @@
 // NATIVE APP - Profile screen with saved performance and images
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, TextInput, Alert, ActivityIndicator, ImageBackground } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, TextInput, Alert, ActivityIndicator, ImageBackground, Animated, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,6 +15,188 @@ import BackgroundPickerModal from '../components/BackgroundPickerModal';
 import { getBackgroundConfig, parseBackgroundTheme } from '../theme/backgrounds';
 import { getTextureConfig, TexturePattern } from '../theme/textures';
 
+// Anonymous Profile View Component - Must be defined before ProfileScreen
+const AnonymousProfileView = ({ navigation }: any) => {
+  const { sendMagicLink } = useAuth();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const handleSendCode = async () => {
+    if (!email.trim()) {
+      setError('Please enter your email');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    const result = await sendMagicLink(email.toLowerCase().trim());
+    setLoading(false);
+
+    if (result.success) {
+      navigation.navigate('VerifyCode', { email: email.toLowerCase().trim() });
+    } else {
+      setError(result.message);
+    }
+  };
+
+  const features = [
+    {
+      icon: '🚗',
+      title: 'Save Your Builds',
+      description: 'Store performance calculations and build plans for all your cars',
+    },
+    {
+      icon: '🎨',
+      title: 'AI Image Generation',
+      description: 'Create stunning AI-generated images of your dream cars',
+    },
+    {
+      icon: '👤',
+      title: 'Profile Customization',
+      description: 'Personalize your profile with custom icons, banners, and themes',
+    },
+    {
+      icon: '❤️',
+      title: 'Community Features',
+      description: 'Post to the community feed, like images, and connect with car enthusiasts',
+    },
+    {
+      icon: '⚡',
+      title: 'Increased Credits',
+      description: 'Unlock more monthly credits for performance calcs, builds, and images',
+    },
+    {
+      icon: '🎯',
+      title: 'Track Your Progress',
+      description: 'See your usage stats and manage your automotive journey',
+    },
+  ];
+
+  return (
+    <View style={styles.anonymousContainer}>
+      <ImageBackground
+        source={{ uri: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1200&q=80' }}
+        style={styles.anonymousBackgroundImage}
+        blurRadius={3}
+      >
+        <LinearGradient
+          colors={['rgba(18, 18, 18, 0.85)', 'rgba(18, 18, 18, 0.95)', colors.background]}
+          style={styles.anonymousGradient}
+        >
+          <ScrollView
+            contentContainerStyle={styles.anonymousScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <Animated.View
+              style={[
+                styles.anonymousContent,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              {/* Header */}
+              <View style={styles.anonymousHeader}>
+                <Image
+                  source={require('../../assets/logo-horizontal.png')}
+                  style={styles.anonymousLogo}
+                  resizeMode="contain"
+                />
+                <Text style={styles.anonymousHeroTitle}>Unlock Your Full Experience</Text>
+                <Text style={styles.anonymousHeroSubtitle}>
+                  Sign in to save your builds, customize your profile, and join our community of car enthusiasts
+                </Text>
+              </View>
+
+              {/* Sign In Form */}
+              <View style={styles.anonymousFormContainer}>
+                <View style={styles.anonymousFormCard}>
+                  <Text style={styles.anonymousFormTitle}>Ready to Get Started?</Text>
+                  <Text style={styles.anonymousFormSubtitle}>
+                    Enter your email to receive a verification code
+                  </Text>
+
+                  <TextInput
+                    style={styles.anonymousInput}
+                    placeholder="Enter your email"
+                    placeholderTextColor={colors.textSecondary}
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    autoCorrect={false}
+                    editable={!loading}
+                  />
+
+                  {error ? <Text style={styles.anonymousError}>{error}</Text> : null}
+
+                  <TouchableOpacity
+                    style={[styles.anonymousSignInButton, loading && styles.anonymousSignInButtonDisabled]}
+                    onPress={handleSendCode}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color={colors.background} />
+                    ) : (
+                      <Text style={styles.anonymousSignInButtonText}>Sign In with Email</Text>
+                    )}
+                  </TouchableOpacity>
+
+                  {/* Legal Footer */}
+                  <View style={styles.anonymousLegalFooter}>
+                    <Text style={styles.anonymousLegalText}>By signing in, you agree to our</Text>
+                    <View style={styles.anonymousLegalLinks}>
+                      <TouchableOpacity onPress={() => navigation.navigate('TermsOfService')}>
+                        <Text style={styles.anonymousLegalLink}>Terms of Service</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.anonymousLegalText}> and </Text>
+                      <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')}>
+                        <Text style={styles.anonymousLegalLink}>Privacy Policy</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Features Grid */}
+              <View style={styles.anonymousFeaturesContainer}>
+                {features.map((feature, index) => (
+                  <View key={index} style={styles.anonymousFeatureCard}>
+                    <Text style={styles.anonymousFeatureIcon}>{feature.icon}</Text>
+                    <Text style={styles.anonymousFeatureTitle}>{feature.title}</Text>
+                    <Text style={styles.anonymousFeatureDescription}>{feature.description}</Text>
+                  </View>
+                ))}
+              </View>
+            </Animated.View>
+          </ScrollView>
+        </LinearGradient>
+      </ImageBackground>
+    </View>
+  );
+};
+
 const ProfileScreen = ({ navigation }: any) => {
   const { user, isAuthenticated, logout, refreshUser } = useAuth();
   const { quotaInfo } = useQuota();
@@ -27,6 +209,7 @@ const ProfileScreen = ({ navigation }: any) => {
   const [location, setLocation] = useState('');
   const [instagramHandle, setInstagramHandle] = useState('');
   const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Saved content state
   const [savedPerformance, setSavedPerformance] = useState<any>(null);
@@ -72,6 +255,22 @@ const ProfileScreen = ({ navigation }: any) => {
     }
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Refresh user data and saved content
+      await Promise.all([
+        refreshUser(),
+        loadSavedContent()
+      ]);
+      console.log('✅ Profile refreshed');
+    } catch (error) {
+      console.error('Failed to refresh profile:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
@@ -111,28 +310,29 @@ const ProfileScreen = ({ navigation }: any) => {
   };
 
   const handleSelectPlan = async (planCode: PlanCode, priceId: string) => {
-    // Initialize Stripe payment flow
-    await initializeStripePayment(planCode, priceId, user?.email);
+    console.log('📋 ProfileScreen handleSelectPlan received:', {
+      planCode,
+      priceId,
+      userEmail: user?.email,
+      hasUser: !!user
+    });
+    try {
+      // Initialize Stripe payment flow
+      await initializeStripePayment(planCode, priceId, user?.email);
+
+      // After successful payment, refresh user data to show updated plan
+      console.log('🔄 Payment completed, refreshing user data...');
+      await refreshUser();
+      console.log('✅ User data refreshed after payment');
+    } catch (error) {
+      console.error('❌ Payment or refresh error:', error);
+      // Don't throw - initializeStripePayment already shows error alerts
+    }
   };
 
   if (!isAuthenticated) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>👤</Text>
-          <Text style={styles.emptyTitle}>Sign In Required</Text>
-          <Text style={styles.emptyText}>
-            Sign in to view your profile, saved cars, and build history
-          </Text>
-          <TouchableOpacity
-            style={styles.signInButton}
-            onPress={() => navigation.navigate('Login')}
-          >
-            <Text style={styles.signInButtonText}>Sign In</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
+    // Render exciting login view directly in profile for anonymous users
+    return <AnonymousProfileView navigation={navigation} />;
   }
 
   // Parse the combined background theme (gradient-texture)
@@ -160,7 +360,17 @@ const ProfileScreen = ({ navigation }: any) => {
         )}
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Header with background picker button */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -173,9 +383,6 @@ const ProfileScreen = ({ navigation }: any) => {
 
         {/* User Info Card */}
         <View style={styles.card}>
-          <View style={styles.avatarContainer}>
-            <Text style={styles.profileIconText}>{selectedProfileIcon}</Text>
-          </View>
           <Text style={styles.email}>{user?.email}</Text>
           {user?.planCode && ( // Ensure planCode exists before rendering badge
             <View style={styles.planBadge}>
@@ -355,6 +562,17 @@ const ProfileScreen = ({ navigation }: any) => {
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
 
+        {/* Legal Section */}
+        <View style={styles.legalSection}>
+          <TouchableOpacity onPress={() => navigation.navigate('TermsOfService')}>
+            <Text style={styles.legalLinkText}>Terms of Service</Text>
+          </TouchableOpacity>
+          <Text style={styles.legalSeparator}> • </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')}>
+            <Text style={styles.legalLinkText}>Privacy Policy</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Pricing Modal */}
         <PricingModal
           visible={pricingModalVisible}
@@ -470,38 +688,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  avatarContainer: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: colors.background,
-  },
-  profileIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary, // Fallback background
-    borderWidth: 2,
-    borderColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileIconText: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: colors.background,
-  },
   email: {
     fontSize: 18,
     color: colors.textPrimary,
@@ -566,6 +752,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  legalSection: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  legalLinkText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textDecorationLine: 'underline',
+  },
+  legalSeparator: {
+    fontSize: 12,
+    color: colors.textSecondary,
   },
   input: {
     width: '100%',
@@ -694,6 +897,173 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  // Anonymous Profile View Styles
+  anonymousContainer: {
+    flex: 1,
+  },
+  anonymousBackgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  anonymousGradient: {
+    flex: 1,
+  },
+  anonymousScrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  anonymousContent: {
+    paddingHorizontal: 24,
+    paddingTop: 0,
+    marginTop: -70,
+  },
+  anonymousHeader: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  anonymousLogo: {
+    width: 250,
+    height: 60,
+    marginBottom: 20,
+  },
+  anonymousHeroTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 12,
+    letterSpacing: -0.5,
+  },
+  anonymousHeroSubtitle: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 20,
+  },
+  anonymousFeaturesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 32,
+    marginBottom: 40,
+    gap: 12,
+  },
+  anonymousFeatureCard: {
+    width: '48%',
+    backgroundColor: 'rgba(31, 31, 31, 0.8)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    alignItems: 'center',
+  },
+  anonymousFeatureIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  anonymousFeatureTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  anonymousFeatureDescription: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  anonymousFormContainer: {
+    marginTop: 20,
+  },
+  anonymousFormCard: {
+    backgroundColor: 'rgba(31, 31, 31, 0.9)',
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  anonymousFormTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  anonymousFormSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  anonymousInput: {
+    backgroundColor: colors.secondary,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: colors.textPrimary,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.divider,
+  },
+  anonymousError: {
+    color: colors.error,
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  anonymousSignInButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 12,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  anonymousSignInButtonDisabled: {
+    opacity: 0.6,
+  },
+  anonymousSignInButtonText: {
+    color: colors.background,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  anonymousLegalFooter: {
+    marginTop: 24,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+    alignItems: 'center',
+  },
+  anonymousLegalText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  anonymousLegalLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  anonymousLegalLink: {
+    fontSize: 12,
+    color: colors.primary,
+    textDecorationLine: 'underline',
+  },
 });
 
+// Export ProfileScreen as default
 export default ProfileScreen;

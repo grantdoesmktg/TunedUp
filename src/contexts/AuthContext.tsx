@@ -79,9 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await authAPI.getMe();
       console.log('✅ User data refreshed:', {
-        perfUsed: response.user.perfUsed,
-        buildUsed: response.user.buildUsed,
-        imageUsed: response.user.imageUsed,
+        tokens: response.user.tokens,
         communityUsed: response.user.communityUsed,
         name: response.user.name,
         nickname: response.user.nickname,

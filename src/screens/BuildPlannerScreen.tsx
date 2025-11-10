@@ -1,11 +1,11 @@
 // NATIVE APP - Build Planner Screen
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import { buildPlannerAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuota } from '../contexts/QuotaContext';
-import { QuotaDisplay } from '../components/QuotaDisplay';
 import { colors } from '../theme/colors';
 import type { VehicleSpec, BuildPlanResponse } from '../types';
 
@@ -26,7 +26,7 @@ const BUDGET_OPTIONS = [
 
 const BuildPlannerScreen = ({ navigation }: any) => {
   const { refreshUser, isAuthenticated } = useAuth();
-  const { checkQuota, refreshQuota, incrementAnonymousUsage, quotaInfo } = useQuota();
+  const { checkTokens, refreshTokens, incrementAnonymousUsage, tokenInfo } = useQuota();
   const [vehicleSpec, setVehicleSpec] = useState<VehicleSpec>({
     make: '',
     model: '',
@@ -43,12 +43,12 @@ const BuildPlannerScreen = ({ navigation }: any) => {
       return;
     }
 
-    // Check quota before making the request
-    const quotaCheck = await checkQuota('build');
-    if (!quotaCheck.allowed) {
+    // Check tokens before making the request
+    const tokenCheck = await checkTokens('build');
+    if (!tokenCheck.allowed) {
       Alert.alert(
-        'Usage Limit Reached',
-        quotaCheck.message || 'You\'ve reached your monthly usage limit. Sign in for more credits or wait until next month.',
+        'Insufficient Tokens',
+        tokenCheck.error || 'You don\'t have enough tokens. Upgrade your plan for more tokens.',
         [{ text: 'OK' }]
       );
       return;
@@ -59,24 +59,24 @@ const BuildPlannerScreen = ({ navigation }: any) => {
       const response: BuildPlanResponse = await buildPlannerAPI.generateBuildPlan(vehicleSpec);
 
       // Increment usage for anonymous users
-      if (!isAuthenticated && quotaInfo?.planCode === 'ANONYMOUS') {
+      if (!isAuthenticated && tokenInfo?.planCode === 'ANONYMOUS') {
         await incrementAnonymousUsage('build');
       }
 
-      // Refresh quota and user data to update usage counts
+      // Refresh tokens and user data to update usage counts
       await Promise.all([
-        refreshQuota(),
+        refreshTokens(),
         refreshUser().catch(() => {}) // Ignore errors for unauthenticated users
       ]);
       navigation.navigate('BuildPlanResults', { results: response, vehicleSpec });
     } catch (error: any) {
-      if (error.message?.includes('QUOTA_EXCEEDED') || error.message?.includes('quota')) {
+      if (error.message?.includes('QUOTA_EXCEEDED') || error.message?.includes('quota') || error.message?.includes('tokens')) {
         Alert.alert(
-          'Usage Limit Reached',
-          'You\'ve reached your monthly usage limit. Sign in for more credits or wait until next month.',
+          'Insufficient Tokens',
+          'You don\'t have enough tokens. Upgrade your plan for more tokens.',
           [{ text: 'OK' }]
         );
-        await refreshQuota();
+        await refreshTokens();
       } else {
         Alert.alert('Error', error.message || 'Failed to generate build plan');
       }
@@ -95,6 +95,11 @@ const BuildPlannerScreen = ({ navigation }: any) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={0}
     >
+      <SafeAreaView style={styles.safeArea}>
+        <TouchableOpacity style={styles.backButtonTop} onPress={() => navigation.goBack()}>
+          <Text style={styles.backButtonIcon}>←</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -102,16 +107,8 @@ const BuildPlannerScreen = ({ navigation }: any) => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>← Back</Text>
-          </TouchableOpacity>
           <Text style={styles.title}>Build Planner</Text>
           <Text style={styles.subtitle}>Get AI-powered build recommendations</Text>
-        </View>
-
-        {/* Quota Display */}
-        <View style={styles.quotaContainer}>
-          <QuotaDisplay toolType="build" onUpgradePress={handleUpgradePress} />
         </View>
 
         {/* Form */}
@@ -245,15 +242,34 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
   },
+  safeArea: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  backButtonTop: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  backButtonIcon: {
+    fontSize: 28,
+    color: colors.textPrimary,
+    fontWeight: 'bold',
+  },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 70,
+    paddingTop: 100,
     paddingBottom: 24,
-  },
-  backButton: {
-    fontSize: 16,
-    color: colors.primary,
-    marginBottom: 16,
   },
   title: {
     fontSize: 32,
@@ -264,9 +280,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
-  },
-  quotaContainer: {
-    paddingHorizontal: 20,
   },
   form: {
     paddingHorizontal: 20,

@@ -1,6 +1,6 @@
 // NATIVE APP - Dashboard Home screen with Featured Community
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Animated } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Animated, FlatList } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,6 +9,7 @@ import { colors } from '../theme/colors';
 import { ColorValue } from 'react-native'; // Import ColorValue for LinearGradient
 import { ArticleModal } from '../components/ArticleModal';
 import { ARTICLES, type Article } from '../data/articles';
+import { Ionicons } from '@expo/vector-icons';
 
 // Define interfaces for API responses
 interface SavedImage {
@@ -22,11 +23,329 @@ interface CommunityResponse {
   images: SavedImage[];
 }
 
+// Particle component for each floating particle
+const Particle = ({ delay, tool }: { delay: number; tool: any }) => {
+  const progress = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const sequence = Animated.loop(
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.parallel([
+          Animated.timing(progress, {
+            toValue: 1,
+            duration: 2000 + Math.random() * 1000,
+            useNativeDriver: true,
+          }),
+          Animated.sequence([
+            Animated.timing(opacity, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.delay(1400),
+            Animated.timing(opacity, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+          ]),
+        ]),
+        Animated.timing(progress, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    sequence.start();
+    return () => sequence.stop();
+  }, []);
+
+  const translateX = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-10, 150],
+  });
+
+  const translateY = progress.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [70, 35, 0],
+  });
+
+  const particleColor = tool.gradientColors[1];
+
+  return (
+    <Animated.View
+      style={[
+        styles.particle,
+        {
+          backgroundColor: particleColor,
+          opacity,
+          transform: [{ translateX }, { translateY }],
+        },
+      ]}
+    />
+  );
+};
+
+// Animated Tool Button Component for Home Screen
+const AnimatedToolButton = ({ tool, index, onPress }: { tool: any; index: number; onPress: () => void }) => {
+  const float1 = useRef(new Animated.Value(0)).current;
+  const float2 = useRef(new Animated.Value(0)).current;
+  const float3 = useRef(new Animated.Value(0)).current;
+  const rotate = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(1)).current;
+  const scanline = useRef(new Animated.Value(0)).current;
+  const glow = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Floating animation for geometric shapes
+    const floatAnim1 = Animated.loop(
+      Animated.sequence([
+        Animated.timing(float1, {
+          toValue: 1,
+          duration: 1200 + index * 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(float1, {
+          toValue: 0,
+          duration: 1200 + index * 200,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    const floatAnim2 = Animated.loop(
+      Animated.sequence([
+        Animated.timing(float2, {
+          toValue: 1,
+          duration: 1500 + index * 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(float2, {
+          toValue: 0,
+          duration: 1500 + index * 150,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    const floatAnim3 = Animated.loop(
+      Animated.sequence([
+        Animated.timing(float3, {
+          toValue: 1,
+          duration: 1800 + index * 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(float3, {
+          toValue: 0,
+          duration: 1800 + index * 100,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    // Rotation animation
+    const rotateAnim = Animated.loop(
+      Animated.timing(rotate, {
+        toValue: 1,
+        duration: 8000,
+        useNativeDriver: true,
+      })
+    );
+
+    // Pulse animation
+    const pulseAnim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1.15,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    // Scanline animation
+    const scanlineAnim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanline, {
+          toValue: 1,
+          duration: 2500,
+          useNativeDriver: true,
+        }),
+        Animated.delay(500),
+        Animated.timing(scanline, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    // Glow pulse
+    const glowAnim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glow, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glow, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    floatAnim1.start();
+    floatAnim2.start();
+    floatAnim3.start();
+    rotateAnim.start();
+    pulseAnim.start();
+    scanlineAnim.start();
+    glowAnim.start();
+
+    return () => {
+      floatAnim1.stop();
+      floatAnim2.stop();
+      floatAnim3.stop();
+      rotateAnim.stop();
+      pulseAnim.stop();
+      scanlineAnim.stop();
+      glowAnim.stop();
+    };
+  }, []);
+
+  const translateY1 = float1.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -20],
+  });
+
+  const translateY2 = float2.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 25],
+  });
+
+  const translateY3 = float3.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -15],
+  });
+
+  const translateX1 = float1.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 10],
+  });
+
+  const translateX2 = float2.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -15],
+  });
+
+  const rotateZ = rotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const scanlineTranslateX = scanline.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-50, 200],
+  });
+
+  const glowOpacity = glow.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.3, 0.8, 0.3],
+  });
+
+  // Get icon based on tool name
+  const getIcon = () => {
+    if (tool.name === 'Performance') {
+      return 'speedometer';
+    } else if (tool.name === 'Build') {
+      return 'construct';
+    } else if (tool.name === 'Image') {
+      return 'camera';
+    }
+    return 'flash';
+  };
+
+  return (
+    <TouchableOpacity
+      style={styles.toolButton}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <LinearGradient
+        colors={tool.gradientColors as ColorValue[]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.toolButtonGradient}
+      >
+        {/* Animated geometric shapes */}
+        <Animated.View
+          style={[
+            styles.geometricShape,
+            styles.circle1Small,
+            { transform: [{ translateY: translateY1 }, { translateX: translateX1 }] },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.geometricShape,
+            styles.circle2Small,
+            { transform: [{ translateY: translateY2 }, { translateX: translateX2 }, { rotate: rotateZ }] },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.geometricShape,
+            styles.square1Small,
+            { transform: [{ translateY: translateY3 }, { rotate: rotateZ }] },
+          ]}
+        />
+
+        {/* Particle system */}
+        <Particle delay={0} tool={tool} />
+        <Particle delay={300} tool={tool} />
+        <Particle delay={600} tool={tool} />
+
+        {/* Scanline sweep */}
+        <Animated.View
+          style={[
+            styles.scanlineSmall,
+            {
+              transform: [{ translateX: scanlineTranslateX }],
+            },
+          ]}
+        />
+
+        {/* Glassmorphism overlay */}
+        <View style={styles.glassOverlaySmall} />
+
+        {/* Animated Icon with glow */}
+        <Animated.View style={{ transform: [{ scale: pulse }], alignItems: 'center' }}>
+          <Animated.View style={[styles.iconGlowSmall, { opacity: glowOpacity }]} />
+          <View style={styles.iconContainerSmall}>
+            <Ionicons name={getIcon() as any} size={32} color="#FFFFFF" />
+          </View>
+        </Animated.View>
+
+        <Text style={styles.toolButtonName}>{tool.name}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+};
+
 const HomeScreen = ({ navigation }: any) => {
   const { isAuthenticated } = useAuth();
   const [featuredCommunity, setFeaturedCommunity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const scrollX = useRef(new Animated.Value(0)).current;
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
 
   // Reload data when screen comes into focus
@@ -39,7 +358,7 @@ const HomeScreen = ({ navigation }: any) => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Load 6 random community images for the auto-scrolling banner
+      // Load 6 random community images for horizontal swipe
       const communityResponse = await communityAPI.getRandomImages(6) as CommunityResponse;
       setFeaturedCommunity(communityResponse.images || []);
     } catch (error) {
@@ -48,35 +367,6 @@ const HomeScreen = ({ navigation }: any) => {
       setLoading(false);
     }
   };
-
-  // Auto-scroll effect using Animated API (doesn't block touches)
-  useEffect(() => {
-    if (featuredCommunity.length === 0) return;
-
-    const CARD_WIDTH = 280; // Width of each card + gap
-    const totalWidth = CARD_WIDTH * featuredCommunity.length;
-    const duration = totalWidth * 50; // milliseconds (slower = longer duration)
-
-    // Animate from 0 to totalWidth
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scrollX, {
-          toValue: totalWidth,
-          duration: duration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scrollX, {
-          toValue: 0,
-          duration: 0, // Instant reset
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    animation.start();
-
-    return () => animation.stop();
-  }, [featuredCommunity, scrollX]);
 
   console.log('HomeScreen render - ARTICLES count:', ARTICLES.length);
   console.log('HomeScreen render - selectedArticle:', selectedArticle?.title || 'null');
@@ -110,46 +400,45 @@ const HomeScreen = ({ navigation }: any) => {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Featured Community Section - Auto-scrolling Banner */}
+        {/* Featured Community Section - Horizontal Swipeable */}
         <View style={styles.bannerSection}>
+          <Text style={styles.sectionTitle}>Community Highlights</Text>
           {loading ? (
             <ActivityIndicator color={colors.primary} style={styles.loader} />
           ) : featuredCommunity.length > 0 ? (
-            <Animated.View
-              style={[
-                styles.bannerScroll,
-                {
-                  transform: [{ translateX: Animated.multiply(scrollX, -1) }],
-                  flexDirection: 'row',
-                },
-              ]}
-            >
-              {/* Duplicate images for seamless looping effect */}
-              {[...featuredCommunity, ...featuredCommunity].map((image, index) => (
+            <FlatList
+              data={featuredCommunity}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
                 <TouchableOpacity
-                  key={`${image.id}-${index}`}
                   style={styles.bannerCard}
                   onPress={() => navigation.navigate('Community')}
                   activeOpacity={0.9}
                 >
                   <Image
-                    source={{ uri: image.imageUrl }}
+                    source={{ uri: item.imageUrl }}
                     style={styles.bannerImage}
                     resizeMode="cover"
                   />
-                  {image.description && (
+                  {item.description && (
                     <View style={styles.bannerOverlay}>
                       <Text style={styles.bannerDescription} numberOfLines={2}>
-                        {image.description}
+                        {item.description}
                       </Text>
                     </View>
                   )}
                   <View style={styles.bannerLikes}>
-                    <Text style={styles.bannerLikesText}>❤️ {image.likesCount}</Text>
+                    <Text style={styles.bannerLikesText}>❤️ {item.likesCount}</Text>
                   </View>
                 </TouchableOpacity>
-              ))}
-            </Animated.View>
+              )}
+              contentContainerStyle={styles.bannerScrollContent}
+              snapToInterval={280}
+              decelerationRate="fast"
+              pagingEnabled={false}
+            />
           ) : (
             <View style={styles.emptyGarage}>
               <Text style={styles.emptyText}>No community posts yet</Text>
@@ -162,22 +451,12 @@ const HomeScreen = ({ navigation }: any) => {
           <Text style={styles.quickActionsTitle}>Quick Actions</Text>
           <View style={styles.toolButtons}>
             {tools.map((tool, index) => (
-              <TouchableOpacity
+              <AnimatedToolButton
                 key={index}
-                style={styles.toolButton}
+                tool={tool}
+                index={index}
                 onPress={() => navigation.navigate(tool.route)}
-                activeOpacity={0.7}
-              >
-                <LinearGradient
-                  colors={tool.gradientColors as ColorValue[]} // Explicitly cast to ColorValue[]
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.toolButtonGradient}
-                >
-                  <Text style={styles.toolButtonIcon}>{tool.icon}</Text>
-                  <Text style={styles.toolButtonName}>{tool.name}</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+              />
             ))}
           </View>
         </View>
@@ -287,13 +566,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 32,
   },
-  bannerSection: {
-    marginBottom: 32,
-    height: 320,
-    overflow: 'hidden',
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    paddingHorizontal: 20,
+    marginBottom: 12,
   },
-  bannerScroll: {
-    height: 320,
+  bannerSection: {
+    marginBottom: 24,
+  },
+  bannerScrollContent: {
+    paddingHorizontal: 20,
   },
   loader: {
     marginVertical: 20,
@@ -479,6 +763,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 100,
+    position: 'relative',
+    overflow: 'hidden',
   },
   toolButtonIcon: {
     fontSize: 32,
@@ -488,6 +774,72 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 14,
     fontWeight: 'bold',
+    zIndex: 10,
+  },
+  // Animation styles for home screen tool buttons
+  particle: {
+    position: 'absolute',
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    shadowColor: '#FFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+  },
+  geometricShape: {
+    position: 'absolute',
+    opacity: 0.15,
+  },
+  circle1Small: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    top: 10,
+    left: 10,
+  },
+  circle2Small: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#FFFFFF',
+    bottom: 15,
+    right: 15,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  square1Small: {
+    width: 25,
+    height: 25,
+    backgroundColor: '#FFFFFF',
+    top: 60,
+    right: 20,
+  },
+  scanlineSmall: {
+    position: 'absolute',
+    width: 30,
+    height: '150%',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    transform: [{ rotate: '25deg' }],
+    left: -50,
+  },
+  glassOverlaySmall: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  iconContainerSmall: {
+    zIndex: 10,
+    marginBottom: 8,
+  },
+  iconGlowSmall: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFFFFF',
+    top: -9,
+    left: -9,
   },
   articlesSection: {
     paddingHorizontal: 20,

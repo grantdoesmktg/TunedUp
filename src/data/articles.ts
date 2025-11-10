@@ -8,6 +8,42 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'whats-coming',
+    title: 'What\'s Coming - Roadmap',
+    preview: 'Upcoming features we\'re building for you.',
+    content: `We're just getting started. Here's what's coming to TunedUp in the next few months.
+
+**Within 3 Months:**
+
+• **Integrated Partnership Links** - Shop for parts directly related to your build plan recommendations, often for cheaper than list price
+
+• **Forum Pages** - Dedicated discussion spaces for popular platforms where you can share knowledge and connect with other enthusiasts
+
+• **Enhanced Image Generation** - More customization options to fine-tune your generated images exactly how you want them
+
+• **Video Generation** - Create videos using your generated images as reference material to bring your builds to life
+
+• **Direct Messaging** - Connect with other users to discuss builds, share tips, and plan meetups (not races 😉)
+
+• **Advanced Profile Customization** - More robust options to personalize your profile and make it truly yours
+
+
+**Within 3-6 Months:**
+
+• **Tuner Area** - Dedicated section with dyno results and graphics showing realistic performance expectations added to the calculator
+
+• **Event Organization** - Discover car meets, popular hotspots, and event times displayed on an intuitive map
+
+• **Gamification & Rewards** - Earn rewards for app participation and engagement (Yes, usage will be backdated to your account creation date, so start being active now!)
+
+
+These features aren't set in stone—they're based on what I think you'll find most valuable. If you have ideas or want to see something specific, reach out at support@tunedup.com.
+
+This is just the beginning.
+
+— The Dev`,
+  },
+  {
     id: 'why-i-built-this',
     title: 'Why I Built This - From Dev',
     preview: 'The journey from frustration to creation.',

@@ -1,50 +1,50 @@
-// NATIVE APP - Quota types and constants
+// NATIVE APP - Token system types and constants
 
 export type PlanCode = 'ANONYMOUS' | 'FREE' | 'PLUS' | 'PRO' | 'ULTRA' | 'ADMIN';
 export type ToolType = 'performance' | 'build' | 'image' | 'community';
 
-export interface PlanLimits {
-  perf: number;
-  build: number;
-  image: number;
-  community: number;
-}
+// Token costs for each tool
+export const TOKEN_COSTS: Record<ToolType, number> = {
+  performance: 3,
+  build: 2,
+  image: 5,
+  community: 0, // Free to encourage sharing
+};
 
-export interface QuotaStatus {
+// Plan token allocations (monthly)
+export const PLAN_TOKENS: Record<PlanCode, number> = {
+  ANONYMOUS: 10,
+  FREE: 30,
+  PLUS: 100,
+  PRO: 250,
+  ULTRA: 500,
+  ADMIN: Infinity,
+};
+
+export interface TokenStatus {
   allowed: boolean;
+  tokens?: number;
+  cost?: number;
   plan?: PlanCode;
-  used?: number;
-  limit?: number;
   message?: string;
   error?: string;
 }
 
-export interface QuotaInfo {
+export interface TokenInfo {
   planCode: PlanCode;
-  perfUsed: number;
-  perfLimit: number;
-  buildUsed: number;
-  buildLimit: number;
-  imageUsed: number;
-  imageLimit: number;
+  tokens: number;
   communityUsed: number;
-  communityLimit: number;
   resetDate: Date;
 }
 
-// Plan limits matching backend
-export const PLAN_LIMITS: Record<PlanCode, PlanLimits> = {
-  ANONYMOUS: { perf: 1, build: 1, image: 3, community: 0 },
-  FREE: { perf: 3, build: 3, image: 5, community: 5 },
-  PLUS: { perf: 10, build: 10, image: 25, community: 10 },
-  PRO: { perf: 15, build: 15, image: 60, community: 20 },
-  ULTRA: { perf: 25, build: 25, image: 100, community: 30 },
-  ADMIN: { perf: Infinity, build: Infinity, image: Infinity, community: Infinity },
+// Get tokens for a plan
+export const getPlanTokens = (planCode: PlanCode): number => {
+  return PLAN_TOKENS[planCode] || PLAN_TOKENS.FREE;
 };
 
-// Get limits for a plan
-export const getPlanLimits = (planCode: PlanCode): PlanLimits => {
-  return PLAN_LIMITS[planCode] || PLAN_LIMITS.FREE;
+// Get cost for a tool
+export const getToolCost = (toolType: ToolType): number => {
+  return TOKEN_COSTS[toolType] || 0;
 };
 
 // Get friendly plan name
@@ -63,7 +63,7 @@ export const getPlanName = (planCode: PlanCode): string => {
 // Get tool display name
 export const getToolName = (toolType: ToolType): string => {
   const names: Record<ToolType, string> = {
-    performance: 'Performance',
+    performance: 'Performance Calculator',
     build: 'Build Planner',
     image: 'Image Generator',
     community: 'Community',

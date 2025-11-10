@@ -1,23 +1,22 @@
 // NATIVE APP - AI Image Generator Screen
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Switch } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { imageGeneratorAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuota } from '../contexts/QuotaContext';
-import { QuotaDisplay } from '../components/QuotaDisplay';
 import { colors } from '../theme/colors';
 import type { CarSpec, ImageGeneratorResponse } from '../types';
 
 const ImageGeneratorScreen = ({ navigation }: any) => {
   const { refreshUser, user, isAuthenticated } = useAuth();
-  const { checkQuota, refreshQuota, incrementAnonymousUsage, quotaInfo } = useQuota();
+  const { checkTokens, refreshTokens, incrementAnonymousUsage, tokenInfo } = useQuota();
   const [carSpec, setCarSpec] = useState<CarSpec>({
     year: '',
     make: '',
     model: '',
-    color: 'Red',
-    wheelsColor: 'Black',
+    color: '',
+    wheelsColor: '',
     addModel: false,
     deBadged: false,
     chromeDelete: false,
@@ -26,57 +25,70 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
     details: '',
   });
   const [location, setLocation] = useState('tokyo_shibuya');
-  const [timeOfDay, setTimeOfDay] = useState('dusk');
+  const [expandedCountry, setExpandedCountry] = useState<string | null>(null);
   const [style, setStyle] = useState('photoreal');
-  const [colorPalette, setColorPalette] = useState('warm_sunset');
   const [loading, setLoading] = useState(false);
 
   // Location options grouped by country
-  const locations = [
-    { label: '🇯🇵 Tokyo - Shibuya', value: 'tokyo_shibuya' },
-    { label: '🇯🇵 Mount Fuji - Hakone', value: 'mount_fuji_hakone' },
-    { label: '🇯🇵 Osaka Bay', value: 'osaka_bay' },
-    { label: '🇯🇵 Kyoto Outskirts', value: 'kyoto_outskirts' },
-    { label: '🇩🇪 Munich Alps', value: 'munich_alps' },
-    { label: '🇩🇪 Stuttgart', value: 'stuttgart' },
-    { label: '🇩🇪 Berlin', value: 'berlin' },
-    { label: '🇩🇪 Nürburgring', value: 'nurburgring' },
-    { label: '🇺🇸 Los Angeles', value: 'los_angeles' },
-    { label: '🇺🇸 Detroit', value: 'detroit' },
-    { label: '🇺🇸 Las Vegas Desert', value: 'las_vegas_desert' },
-    { label: '🇺🇸 Miami', value: 'miami' },
-    { label: '🇰🇷 Seoul - Gangnam', value: 'seoul_gangnam' },
-    { label: '🇰🇷 Busan', value: 'busan' },
-    { label: '🇰🇷 Incheon', value: 'incheon' },
-    { label: '🇰🇷 Jeju Island', value: 'jeju_island' },
-    { label: '🇮🇹 Maranello', value: 'maranello' },
-    { label: '🇮🇹 Sant\'Agata Bolognese', value: 'santagata_bolognese' },
-    { label: '🇮🇹 Modena', value: 'modena' },
-    { label: '🇮🇹 Amalfi Coast', value: 'amalfi_coast' },
-  ];
-
-  const times = [
-    { label: '🌅 Dawn', value: 'dawn' },
-    { label: '🌇 Dusk (Golden Hour)', value: 'dusk' },
-    { label: '☀️ Midday', value: 'midday' },
-    { label: '🌙 Midnight', value: 'midnight' },
-  ];
+  const locationsByCountry: Record<string, { flag: string; name: string; locations: Array<{ label: string; value: string }> }> = {
+    japan: {
+      flag: '🇯🇵',
+      name: 'Japan',
+      locations: [
+        { label: 'Tokyo - Shibuya', value: 'tokyo_shibuya' },
+        { label: 'Mount Fuji - Hakone', value: 'mount_fuji_hakone' },
+        { label: 'Osaka Bay', value: 'osaka_bay' },
+        { label: 'Kyoto Outskirts', value: 'kyoto_outskirts' },
+      ]
+    },
+    usa: {
+      flag: '🇺🇸',
+      name: 'United States',
+      locations: [
+        { label: 'Los Angeles', value: 'los_angeles' },
+        { label: 'Detroit', value: 'detroit' },
+        { label: 'Las Vegas Desert', value: 'las_vegas_desert' },
+        { label: 'Miami', value: 'miami' },
+      ]
+    },
+    germany: {
+      flag: '🇩🇪',
+      name: 'Germany',
+      locations: [
+        { label: 'Munich Alps', value: 'munich_alps' },
+        { label: 'Stuttgart', value: 'stuttgart' },
+        { label: 'Berlin', value: 'berlin' },
+        { label: 'Nürburgring', value: 'nurburgring' },
+      ]
+    },
+    korea: {
+      flag: '🇰🇷',
+      name: 'South Korea',
+      locations: [
+        { label: 'Seoul - Gangnam', value: 'seoul_gangnam' },
+        { label: 'Busan', value: 'busan' },
+        { label: 'Incheon', value: 'incheon' },
+        { label: 'Jeju Island', value: 'jeju_island' },
+      ]
+    },
+    italy: {
+      flag: '🇮🇹',
+      name: 'Italy',
+      locations: [
+        { label: 'Maranello', value: 'maranello' },
+        { label: 'Sant\'Agata Bolognese', value: 'santagata_bolognese' },
+        { label: 'Modena', value: 'modena' },
+        { label: 'Amalfi Coast', value: 'amalfi_coast' },
+      ]
+    },
+  };
 
   const artStyles = [
-    { label: '📷 Photorealistic', value: 'photoreal' },
-    { label: '🎨 Borderlands', value: 'borderlands' },
-    { label: '🌊 Vaporwave', value: 'vaporwave' },
-    { label: '✏️ Concept Sketch', value: 'concept_art' },
+    { label: '📷 Photorealistic', value: 'photoreal', description: 'Ultra-realistic photography with natural lighting and authentic details' },
+    { label: '🎨 Borderlands', value: 'borderlands', description: 'Bold cel-shaded comic style with thick outlines and vibrant colors' },
+    { label: '🌊 Vaporwave', value: 'vaporwave', description: 'Retro 80s aesthetic with neon pinks, purples, and cyberpunk vibes' },
+    { label: '✏️ Concept Sketch', value: 'concept_art', description: 'Professional automotive design sketch with pencil and marker rendering' },
   ];
-
-  const palettes = [
-    { label: '🌅 Warm Sunset', value: 'warm_sunset' },
-    { label: '🌃 Neo Tokyo', value: 'neo_tokyo' },
-    { label: '🥂 Champagne Gold', value: 'champagne_gold' },
-    { label: '🎨 Graffiti Pop', value: 'graffiti_pop' },
-  ];
-
-  const colors_list = ['Red', 'Blue', 'Black', 'White', 'Silver', 'Gray', 'Green', 'Yellow', 'Orange', 'Purple', 'Brown', 'Gold'];
   const positions = [
     { label: 'Front View', value: 'front' },
     { label: 'Front Quarter', value: 'quarter' },
@@ -90,12 +102,12 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
       return;
     }
 
-    // Check quota before making the request
-    const quotaCheck = await checkQuota('image');
-    if (!quotaCheck.allowed) {
+    // Check tokens before making the request
+    const tokenCheck = await checkTokens('image');
+    if (!tokenCheck.allowed) {
       Alert.alert(
-        'Usage Limit Reached',
-        quotaCheck.message || 'You\'ve reached your monthly usage limit. Sign in for more credits or wait until next month.',
+        'Insufficient Tokens',
+        tokenCheck.error || 'You don\'t have enough tokens. Upgrade your plan for more tokens.',
         [{ text: 'OK' }]
       );
       return;
@@ -107,9 +119,7 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
         car: carSpec,
         scene: {
           locationKey: location,
-          timeKey: timeOfDay,
           styleKey: style,
-          paletteKey: colorPalette,
         },
       };
 
@@ -121,25 +131,25 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
       const response: ImageGeneratorResponse = await imageGeneratorAPI.generateImage(promptSpec, imageParams);
 
       // Increment usage for anonymous users, refresh for authenticated users
-      if (!isAuthenticated && quotaInfo?.planCode === 'ANONYMOUS') {
+      if (!isAuthenticated && tokenInfo?.planCode === 'ANONYMOUS') {
         await incrementAnonymousUsage('image');
       }
 
-      // Refresh quota and user data to update usage counts
+      // Refresh tokens and user data to update usage counts
       await Promise.all([
-        refreshQuota(),
+        refreshTokens(),
         refreshUser().catch(() => {}) // Ignore errors for unauthenticated users
       ]);
 
       navigation.navigate('ImageResults', { results: response, carSpec });
     } catch (error: any) {
-      if (error.message?.includes('QUOTA_EXCEEDED') || error.message?.includes('quota')) {
+      if (error.message?.includes('QUOTA_EXCEEDED') || error.message?.includes('quota') || error.message?.includes('tokens')) {
         Alert.alert(
-          'Usage Limit Reached',
-          'You\'ve reached your monthly usage limit. Sign in for more credits or wait until next month.',
+          'Insufficient Tokens',
+          'You don\'t have enough tokens. Upgrade your plan for more tokens.',
           [{ text: 'OK' }]
         );
-        await refreshQuota();
+        await refreshTokens();
       } else {
         Alert.alert('Error', error.message || 'Failed to generate image');
       }
@@ -182,6 +192,11 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={0}
     >
+      <SafeAreaView style={styles.safeArea}>
+        <TouchableOpacity style={styles.backButtonTop} onPress={() => navigation.goBack()}>
+          <Text style={styles.backButtonIcon}>←</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -189,16 +204,8 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>AI Image Generator</Text>
+          <Text style={styles.title}>Image Generator</Text>
           <Text style={styles.subtitle}>Create stunning car visuals</Text>
-        </View>
-
-        {/* Quota Display */}
-        <View style={styles.quotaContainer}>
-          <QuotaDisplay toolType="image" onUpgradePress={handleUpgradePress} />
         </View>
 
         {/* Form */}
@@ -213,8 +220,13 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
               placeholder="e.g., Honda"
               placeholderTextColor={colors.textSecondary}
               value={carSpec.make}
-              onChangeText={(text) => setCarSpec({ ...carSpec, make: text })}
+              onChangeText={(text) => {
+                if (text.length <= 25) {
+                  setCarSpec({ ...carSpec, make: text });
+                }
+              }}
               editable={!loading}
+              maxLength={25}
             />
           </View>
 
@@ -225,8 +237,13 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
               placeholder="e.g., Civic"
               placeholderTextColor={colors.textSecondary}
               value={carSpec.model}
-              onChangeText={(text) => setCarSpec({ ...carSpec, model: text })}
+              onChangeText={(text) => {
+                if (text.length <= 25) {
+                  setCarSpec({ ...carSpec, model: text });
+                }
+              }}
               editable={!loading}
+              maxLength={25}
             />
           </View>
 
@@ -237,44 +254,49 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
               placeholder="e.g., 2023"
               placeholderTextColor={colors.textSecondary}
               value={carSpec.year}
-              onChangeText={(text) => setCarSpec({ ...carSpec, year: text })}
+              onChangeText={(text) => {
+                if (text.length <= 25) {
+                  setCarSpec({ ...carSpec, year: text });
+                }
+              }}
               keyboardType="number-pad"
               editable={!loading}
+              maxLength={25}
             />
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Car Color</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={carSpec.color}
-                onValueChange={(value) => setCarSpec({ ...carSpec, color: value })}
-                style={styles.picker}
-                mode="dropdown"
-                enabled={!loading}
-              >
-                {colors_list.map((color) => (
-                  <Picker.Item key={color} label={color} value={color} color={colors.textPrimary} />
-                ))}
-              </Picker>
-            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Red, Blue Metallic"
+              placeholderTextColor={colors.textSecondary}
+              value={carSpec.color}
+              onChangeText={(text) => {
+                if (text.length <= 25) {
+                  setCarSpec({ ...carSpec, color: text });
+                }
+              }}
+              editable={!loading}
+              maxLength={25}
+            />
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Wheel Color</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={carSpec.wheelsColor}
-                onValueChange={(value) => setCarSpec({ ...carSpec, wheelsColor: value })}
-                style={styles.picker}
-                mode="dropdown"
-                enabled={!loading}
-              >
-                {colors_list.map((color) => (
-                  <Picker.Item key={color} label={color} value={color} color={colors.textPrimary} />
-                ))}
-              </Picker>
-            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Black, Chrome"
+              placeholderTextColor={colors.textSecondary}
+              value={carSpec.wheelsColor}
+              onChangeText={(text) => {
+                if (text.length <= 25) {
+                  setCarSpec({ ...carSpec, wheelsColor: text });
+                }
+              }}
+              editable={!loading}
+              maxLength={25}
+            />
           </View>
 
           {/* Scene Settings Section */}
@@ -282,87 +304,92 @@ const ImageGeneratorScreen = ({ navigation }: any) => {
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Location</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={location}
-                onValueChange={setLocation}
-                style={styles.picker}
-                mode="dropdown"
-                enabled={!loading}
-              >
-                {locations.map((loc) => (
-                  <Picker.Item key={loc.value} label={loc.label} value={loc.value} color={colors.textPrimary} />
-                ))}
-              </Picker>
-            </View>
-          </View>
+            <Text style={styles.locationSubtext}>Select a country, then choose your location</Text>
+            <View style={styles.countriesContainer}>
+              {Object.entries(locationsByCountry).map(([countryKey, country]) => {
+                const isExpanded = expandedCountry === countryKey;
+                const isCountrySelected = country.locations.some(loc => loc.value === location);
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Time of Day</Text>
-            <View style={styles.buttonGrid}>
-              {times.map((time) => (
-                <TouchableOpacity
-                  key={time.value}
-                  style={[
-                    styles.optionButton,
-                    timeOfDay === time.value && styles.optionButtonSelected
-                  ]}
-                  onPress={() => setTimeOfDay(time.value)}
-                  disabled={loading}
-                >
-                  <Text style={[
-                    styles.optionButtonText,
-                    timeOfDay === time.value && styles.optionButtonTextSelected
-                  ]}>
-                    {time.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                return (
+                  <View key={countryKey} style={styles.countryCard}>
+                    <TouchableOpacity
+                      style={[
+                        styles.countryHeader,
+                        isCountrySelected && styles.countryHeaderActive
+                      ]}
+                      onPress={() => setExpandedCountry(isExpanded ? null : countryKey)}
+                      disabled={loading}
+                    >
+                      <View style={styles.countryHeaderLeft}>
+                        <Text style={styles.countryFlag}>{country.flag}</Text>
+                        <Text style={[
+                          styles.countryName,
+                          isCountrySelected && styles.countryNameActive
+                        ]}>
+                          {country.name}
+                        </Text>
+                      </View>
+                      <Text style={[
+                        styles.expandIcon,
+                        isCountrySelected && styles.expandIconActive
+                      ]}>
+                        {isExpanded ? '▼' : '▶'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {isExpanded && (
+                      <View style={styles.locationsGrid}>
+                        {country.locations.map((loc) => (
+                          <TouchableOpacity
+                            key={loc.value}
+                            style={[
+                              styles.locationButton,
+                              location === loc.value && styles.locationButtonSelected
+                            ]}
+                            onPress={() => setLocation(loc.value)}
+                            disabled={loading}
+                          >
+                            <Text style={[
+                              styles.locationButtonText,
+                              location === loc.value && styles.locationButtonTextSelected
+                            ]}>
+                              {loc.label}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
             </View>
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Art Style</Text>
-            <View style={styles.buttonGrid}>
+            <Text style={styles.artStyleSubtext}>Choose your visual style</Text>
+            <View style={styles.artStyleGrid}>
               {artStyles.map((s) => (
                 <TouchableOpacity
                   key={s.value}
                   style={[
-                    styles.optionButton,
-                    style === s.value && styles.optionButtonSelected
+                    styles.artStyleCard,
+                    style === s.value && styles.artStyleCardSelected
                   ]}
                   onPress={() => setStyle(s.value)}
                   disabled={loading}
                 >
                   <Text style={[
-                    styles.optionButtonText,
-                    style === s.value && styles.optionButtonTextSelected
+                    styles.artStyleLabel,
+                    style === s.value && styles.artStyleLabelSelected
                   ]}>
                     {s.label}
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Color Palette</Text>
-            <View style={styles.buttonGrid}>
-              {palettes.map((p) => (
-                <TouchableOpacity
-                  key={p.value}
-                  style={[
-                    styles.optionButton,
-                    colorPalette === p.value && styles.optionButtonSelected
-                  ]}
-                  onPress={() => setColorPalette(p.value)}
-                  disabled={loading}
-                >
                   <Text style={[
-                    styles.optionButtonText,
-                    colorPalette === p.value && styles.optionButtonTextSelected
+                    styles.artStyleDescription,
+                    style === s.value && styles.artStyleDescriptionSelected
                   ]}>
-                    {p.label}
+                    {s.description}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -555,15 +582,34 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
   },
+  safeArea: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  backButtonTop: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  backButtonIcon: {
+    fontSize: 28,
+    color: colors.textPrimary,
+    fontWeight: 'bold',
+  },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 70,
+    paddingTop: 100,
     paddingBottom: 24,
-  },
-  backButton: {
-    fontSize: 16,
-    color: colors.primary,
-    marginBottom: 16,
   },
   title: {
     fontSize: 32,
@@ -574,9 +620,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
-  },
-  quotaContainer: {
-    paddingHorizontal: 20,
   },
   form: {
     paddingHorizontal: 20,
@@ -649,6 +692,124 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   optionButtonTextSelected: {
+    color: colors.background,
+  },
+  artStyleSubtext: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 12,
+    fontStyle: 'italic',
+  },
+  artStyleGrid: {
+    gap: 12,
+  },
+  artStyleCard: {
+    backgroundColor: colors.secondary,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: colors.divider,
+  },
+  artStyleCardSelected: {
+    backgroundColor: colors.primary + '20',
+    borderColor: colors.primary,
+  },
+  artStyleLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 6,
+  },
+  artStyleLabelSelected: {
+    color: colors.primary,
+  },
+  artStyleDescription: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  artStyleDescriptionSelected: {
+    color: colors.textPrimary,
+  },
+  locationSubtext: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 12,
+    fontStyle: 'italic',
+  },
+  countriesContainer: {
+    gap: 12,
+  },
+  countryCard: {
+    backgroundColor: colors.secondary,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    overflow: 'hidden',
+  },
+  countryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: colors.secondary,
+  },
+  countryHeaderActive: {
+    backgroundColor: colors.primary + '15',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  countryHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  countryFlag: {
+    fontSize: 32,
+  },
+  countryName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  countryNameActive: {
+    color: colors.primary,
+  },
+  expandIcon: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  expandIconActive: {
+    color: colors.primary,
+  },
+  locationsGrid: {
+    padding: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    backgroundColor: colors.background,
+  },
+  locationButton: {
+    backgroundColor: colors.secondary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    width: '48%',
+    alignItems: 'center',
+  },
+  locationButtonSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  locationButtonText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  locationButtonTextSelected: {
     color: colors.background,
   },
   multiSelectButton: {

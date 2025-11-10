@@ -144,7 +144,6 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
         onPress={() => navigateToProfile(item.userId)}
         activeOpacity={0.7}
       >
-        <Text style={styles.userIcon}>{item.profileIcon || '👤'}</Text>
         <View style={styles.userInfo}>
           <View style={styles.userNameRow}>
             <Text style={styles.userName}>{getDisplayName(item)}</Text>
@@ -152,6 +151,7 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
               <Text style={styles.tierBadge}>{getTierBadge(item.planCode)}</Text>
             )}
           </View>
+          <Text style={styles.viewProfileText}>Tap to view profile →</Text>
         </View>
       </TouchableOpacity>
 
@@ -215,15 +215,6 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
         onRefresh={handleRefresh}
         showsVerticalScrollIndicator={false}
       />
-
-      {/* Sign in prompt for non-authenticated users */}
-      {!isAuthenticated && (
-        <View style={styles.signInPrompt}>
-          <Text style={styles.promptText}>
-            Sign in to like images and share your own!
-          </Text>
-        </View>
-      )}
     </View>
   );
 };
@@ -246,8 +237,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingTop: 50,
+    paddingBottom: 12,
   },
   title: {
     fontSize: 32,
@@ -267,19 +258,20 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 20,
     borderRadius: 16,
-    overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.divider,
+    padding: 12,
+    paddingBottom: 0,
   },
   userHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
     backgroundColor: colors.background,
-  },
-  userIcon: {
-    fontSize: 32,
-    marginRight: 12,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderRadius: 8,
+    marginBottom: 12,
   },
   userInfo: {
     flex: 1,
@@ -297,22 +289,29 @@ const styles = StyleSheet.create({
   tierBadge: {
     fontSize: 16,
   },
+  viewProfileText: {
+    fontSize: 12,
+    color: colors.primary,
+    marginTop: 4,
+    fontWeight: '500',
+  },
   feedImage: {
     width: '100%',
     aspectRatio: 1,
+    borderRadius: 8,
+    marginBottom: 12,
   },
   feedDescription: {
     fontSize: 16,
     color: colors.textPrimary,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 4,
     paddingBottom: 8,
   },
   feedLikeButton: {
     backgroundColor: colors.background,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    margin: 12,
+    marginBottom: 12,
     borderRadius: 20,
     borderWidth: 2,
     borderColor: colors.divider,
@@ -329,22 +328,6 @@ const styles = StyleSheet.create({
   },
   feedLikeTextActive: {
     color: colors.background,
-  },
-  signInPrompt: {
-    position: 'absolute',
-    bottom: 80,
-    left: 20,
-    right: 20,
-    backgroundColor: colors.secondary,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  promptText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    textAlign: 'center',
   },
 });
 

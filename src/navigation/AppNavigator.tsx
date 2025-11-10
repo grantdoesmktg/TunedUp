@@ -10,6 +10,8 @@ import { colors } from '../theme/colors';
 import { PricingModal } from '../components/PricingModal';
 import { initializeStripePayment } from '../services/stripe';
 import type { PlanCode } from '../types/quota';
+import { TokenDisplay } from '../components/TokenIcon';
+import { useQuota } from '../contexts/QuotaContext';
 
 // Placeholder screens - will build these next
 import HomeScreen from '../screens/HomeScreen';
@@ -25,6 +27,8 @@ import BuildPlanResultsScreen from '../screens/BuildPlanResultsScreen';
 import ImageGeneratorScreen from '../screens/ImageGeneratorScreen';
 import ImageResultsScreen from '../screens/ImageResultsScreen';
 import PublicProfileScreen from '../screens/PublicProfileScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -40,6 +44,7 @@ const HeaderLeft = () => (
 
 const HeaderRight = ({ navigation }: any) => {
   const { user, isAuthenticated } = useAuth();
+  const { tokenInfo } = useQuota();
   const [showPricingModal, setShowPricingModal] = useState(false);
 
   const getPlanBadgeStyle = (planCode: PlanCode) => {
@@ -65,9 +70,15 @@ const HeaderRight = ({ navigation }: any) => {
     }
   };
 
-  const handleUpgrade = async (planCode: PlanCode) => {
+  const handleUpgrade = async (planCode: PlanCode, priceId: string) => {
+    console.log('📋 AppNavigator handleUpgrade received:', {
+      planCode,
+      priceId,
+      userEmail: user?.email,
+      hasUser: !!user
+    });
     try {
-      await initializeStripePayment(planCode);
+      await initializeStripePayment(planCode, priceId, user?.email);
       setShowPricingModal(false);
     } catch (error) {
       console.error('Payment initialization failed:', error);
@@ -90,9 +101,11 @@ const HeaderRight = ({ navigation }: any) => {
   const planCode = user.planCode || 'FREE';
   const badgeStyle = getPlanBadgeStyle(planCode);
   const isUpgradeable = ['FREE', 'PRO', 'PLUS', 'ADMIN'].includes(planCode);
+  const tokens = tokenInfo?.tokens ?? 0;
 
   return (
     <View style={styles.headerRight}>
+      <TokenDisplay amount={tokens} size="small" style={styles.tokenDisplay} />
       <TouchableOpacity
         style={[styles.planBadge, { backgroundColor: badgeStyle.bg }]}
         onPress={handleBadgePress}
@@ -140,75 +153,81 @@ const RootNavigator = () => (
     <RootStack.Screen name="ImageGenerator" component={ImageGeneratorScreen} />
     <RootStack.Screen name="ImageResults" component={ImageResultsScreen} />
     <RootStack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ headerShown: false }} />
+    <RootStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+    <RootStack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
   </RootStack.Navigator>
 );
 
-// Main app tabs (available to all users, auth optional)
-const MainTabs = () => (
-  <Tab.Navigator
-    screenOptions={({ navigation }) => ({
-      headerShown: true,
-      headerTitle: '',
-      headerLeft: () => <HeaderLeft />,
-      headerRight: () => <HeaderRight navigation={navigation} />,
-      headerStyle: {
-        backgroundColor: colors.background,
-      },
-      headerShadowVisible: false,
-      tabBarStyle: {
-        backgroundColor: colors.secondary,
-        borderTopColor: colors.divider,
-        borderTopWidth: 1,
-        paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-        paddingTop: 8,
-        height: Platform.OS === 'ios' ? 88 : 60,
-      },
-      tabBarActiveTintColor: colors.primary,
-      tabBarInactiveTintColor: colors.textSecondary,
-      tabBarLabelStyle: {
-        fontSize: 12,
-        fontWeight: '600',
-      },
-    })}
-  >
-    <Tab.Screen
-      name="Home"
-      component={HomeScreen}
-      options={{
-        tabBarIcon: ({ color, size }) => (
-          <Ionicons name="home" size={size} color={color} />
-        ),
-      }}
-    />
-    <Tab.Screen
-      name="Tools"
-      component={ToolsScreen}
-      options={{
-        tabBarIcon: ({ color, size }) => (
-          <Ionicons name="construct" size={size} color={color} />
-        ),
-      }}
-    />
-    <Tab.Screen
-      name="Community"
-      component={CommunityScreen}
-      options={{
-        tabBarIcon: ({ color, size }) => (
-          <Ionicons name="people" size={size} color={color} />
-        ),
-      }}
-    />
-    <Tab.Screen
-      name="Profile"
-      component={ProfileScreen}
-      options={{
-        tabBarIcon: ({ color, size }) => (
-          <Ionicons name="person-circle" size={size} color={color} />
-        ),
-      }}
-    />
-  </Tab.Navigator>
-);
+// Main app tabs with swipe gesture support
+const MainTabs = () => {
+  const tabNavigationRef = React.useRef<any>(null);
+
+  return (
+    <Tab.Navigator
+      screenOptions={({ navigation }) => ({
+        headerShown: true,
+        headerTitle: '',
+        headerLeft: () => <HeaderLeft />,
+        headerRight: () => <HeaderRight navigation={navigation} />,
+        headerStyle: {
+          backgroundColor: colors.background,
+        },
+        headerShadowVisible: false,
+        tabBarStyle: {
+          backgroundColor: colors.secondary,
+          borderTopColor: colors.divider,
+          borderTopWidth: 1,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+          paddingTop: 8,
+          height: Platform.OS === 'ios' ? 88 : 60,
+        },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+        },
+      })}
+    >
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Tools"
+        component={ToolsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="construct" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Community"
+        component={CommunityScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-circle" size={size} color={color} />
+          ),
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
 
 export const AppNavigator = () => {
   return (
@@ -226,6 +245,12 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     marginRight: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  tokenDisplay: {
+    // Additional spacing for token display to the left of plan badge
   },
   signInButton: {
     backgroundColor: colors.primary,

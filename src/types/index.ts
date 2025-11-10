@@ -66,6 +66,10 @@ export interface PublicProfileResponse {
     likesCount: number;
     createdAt: string;
   }>;
+  savedPerformance?: {
+    carInput: CarInput;
+    results: AIResponse;
+  } | null;
   stats: {
     totalImages: number;
     totalLikes: number;
