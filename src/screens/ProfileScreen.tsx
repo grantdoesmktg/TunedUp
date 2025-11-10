@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useQuota } from '../contexts/QuotaContext';
 import { PricingModal } from '../components/PricingModal';
 import { initializeStripePayment } from '../services/stripe';
-import { profileAPI } from '../services/api';
+import { profileAPI, communityAPI } from '../services/api';
 import { colors } from '../theme/colors';
 import type { PlanCode } from '../types/quota';
 import ImageViewerModal from '../components/ImageViewerModal';
@@ -238,16 +238,16 @@ const ProfileScreen = ({ navigation }: any) => {
   );
 
   const loadSavedContent = async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !user) return;
 
     setLoadingContent(true);
     try {
-      const [perfResponse, imagesResponse] = await Promise.all([
+      const [perfResponse, profileResponse] = await Promise.all([
         profileAPI.getSavedPerformance().catch(() => ({ performance: null })),
-        profileAPI.getSavedImages().catch(() => ({ images: [] })),
+        communityAPI.getPublicProfile(user.id).catch(() => ({ images: [] })),
       ]);
       setSavedPerformance((perfResponse as any).performance);
-      setSavedImages((imagesResponse as any).images || []);
+      setSavedImages((profileResponse as any).images || []);
     } catch (error) {
       console.error('Failed to load saved content:', error);
     } finally {
@@ -504,10 +504,10 @@ const ProfileScreen = ({ navigation }: any) => {
                 </View>
               )}
 
-              {/* Saved Images */}
+              {/* Community Images */}
               {savedImages.length > 0 ? (
                 <View style={styles.garageImagesSection}>
-                  <Text style={styles.garageImagesTitle}>Saved Images ({savedImages.length}/3)</Text>
+                  <Text style={styles.garageImagesTitle}>Community Images ({savedImages.length})</Text>
                   <View style={styles.garageImages}>
                     {savedImages.map((image) => (
                       <TouchableOpacity
@@ -528,7 +528,7 @@ const ProfileScreen = ({ navigation }: any) => {
                 </View>
               ) : (
                 <View style={styles.emptyGarage}>
-                  <Text style={styles.emptyText}>No saved images yet</Text>
+                  <Text style={styles.emptyText}>No community images yet</Text>
                   <TouchableOpacity
                     style={styles.emptyButton}
                     onPress={() => navigation.navigate('ImageGenerator')}
