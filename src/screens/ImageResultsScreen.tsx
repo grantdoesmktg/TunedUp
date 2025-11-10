@@ -1,9 +1,9 @@
 // NATIVE APP - Image Results Screen
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Share, Alert, Modal, TextInput, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Alert, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { colors } from '../theme/colors';
 import { useAuth } from '../contexts/AuthContext';
-import { carsAPI, communityAPI } from '../services/api';
+import { communityAPI } from '../services/api';
 import type { ImageGeneratorResponse, CarSpec } from '../types';
 import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system';
@@ -14,26 +14,7 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [description, setDescription] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [savedCount, setSavedCount] = useState(0);
-  const [isSaved, setIsSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
-
-  useEffect(() => {
-    loadSavedCount();
-  }, []);
-
-  const loadSavedCount = async () => {
-    if (!user) return;
-    try {
-      const response = await carsAPI.getSavedCars();
-      setSavedCount(response.cars?.length || 0);
-    } catch (error: any) {
-      console.error('Failed to load saved cars count:', error);
-      // Set to 0 if API doesn't exist yet
-      setSavedCount(0);
-    }
-  };
 
   const handleSaveImage = async () => {
     try {
@@ -75,75 +56,10 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
     }
   };
 
-  const handleShareImage = async () => {
-    try {
-      await Share.share({
-        message: `Check out my ${carSpec.year} ${carSpec.make} ${carSpec.model} generated with TunedUp!`,
-        url: results.image,
-      });
-    } catch (error) {
-      console.error('Share error:', error);
-    }
-  };
-
   // Format image URI
   const imageUri = results.image.startsWith('data:')
     ? results.image
     : `data:image/png;base64,${results.image}`;
-
-  const handleSaveToProfile = async () => {
-    if (!user) {
-      Alert.alert(
-        'Login Required',
-        'Please sign in to save cars to your profile.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Go to Login', onPress: () => navigation.navigate('Profile') }
-        ]
-      );
-      return;
-    }
-
-    if (savedCount >= 3 && !isSaved) {
-      Alert.alert(
-        'Limit Reached',
-        'You can only save up to 3 cars. Delete an existing car from your profile to save a new one.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
-    setSaving(true);
-    try {
-      // Convert base64 to data URL if needed
-      const imageUrl = results.image.startsWith('data:')
-        ? results.image
-        : `data:image/png;base64,${results.image}`;
-
-      // Create a name for this car build
-      const carName = `${carSpec.year} ${carSpec.make} ${carSpec.model}`;
-
-      // Save to saved_cars with the image
-      await carsAPI.saveCar({
-        name: carName,
-        make: carSpec.make,
-        model: carSpec.model,
-        year: carSpec.year,
-        trim: '', // Image generator doesn't have trim
-        imageUrl: imageUrl,
-        isActive: savedCount === 0 // Make it active if it's the first car
-      });
-
-      setIsSaved(true);
-      setSavedCount(prev => prev + 1);
-      Alert.alert('Success', 'Car saved to your profile!');
-    } catch (error: any) {
-      console.error('Save to profile error:', error);
-      Alert.alert('Error', error.message || 'Failed to save car to profile');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleShareToCommunity = () => {
     if (!user) {
@@ -210,17 +126,10 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
         {/* Action Buttons */}
         <View style={styles.actions}>
           <TouchableOpacity
-            style={[styles.primaryButton, (saving || isSaved) && styles.buttonDisabled]}
-            onPress={handleSaveToProfile}
-            disabled={saving || isSaved}
+            style={styles.primaryButton}
+            onPress={handleShareToCommunity}
           >
-            {saving ? (
-              <ActivityIndicator color={colors.background} />
-            ) : (
-              <Text style={styles.primaryButtonText}>
-                {isSaved ? '✓ Saved to Profile' : `Save to Profile (${savedCount}/3)`}
-              </Text>
-            )}
+            <Text style={styles.primaryButtonText}>Share to Community</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -228,13 +137,6 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
             onPress={handleSaveImage}
           >
             <Text style={styles.secondaryButtonText}>Save to Photos</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={handleShareToCommunity}
-          >
-            <Text style={styles.secondaryButtonText}>Share to Community</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
