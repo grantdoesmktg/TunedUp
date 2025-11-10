@@ -173,10 +173,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const savedImage = await prisma.saved_images.create({
           data: {
+            id: `img_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
             userEmail,
             imageUrl,
             carSpec,
-            prompt
+            prompt,
+            createdAt: new Date()
           }
         })
 
