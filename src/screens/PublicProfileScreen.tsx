@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Image, StyleSheet, ActivityIndicator, TouchableOpacity, Dimensions, Linking, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { communityAPI } from '../services/api';
 import { colors } from '../theme/colors';
 import type { PublicProfileResponse } from '../types';
-import { getBackgroundConfig, parseBackgroundTheme } from '../theme/backgrounds';
-import { getTextureConfig, TexturePattern } from '../theme/textures';
+import { getBackgroundById, DEFAULT_BACKGROUND_ID } from '../theme/imageBackgrounds';
 
 const { width } = Dimensions.get('window');
 const IMAGE_SIZE = (width - 60) / 3; // 3 columns with padding
@@ -74,21 +72,17 @@ const PublicProfileScreen = ({ route, navigation }: PublicProfileScreenProps) =>
 
   const { user, images, stats, savedPerformance } = profile;
 
-  // Parse background theme
-  const { gradient: gradientKey, texture: textureKey } = parseBackgroundTheme(user.backgroundTheme || 'midnight');
-  const backgroundConfig = getBackgroundConfig(gradientKey);
-  const textureConfig = textureKey ? getTextureConfig(textureKey as TexturePattern) : null;
+  // Get the user's background image
+  const backgroundImage = getBackgroundById(user.backgroundTheme || DEFAULT_BACKGROUND_ID) || getBackgroundById(DEFAULT_BACKGROUND_ID);
 
   return (
-    <LinearGradient colors={backgroundConfig.colors} style={styles.container}>
-      {textureConfig && (
-        <ImageBackground
-          source={textureConfig.source}
-          style={styles.textureOverlay}
-          imageStyle={{ opacity: textureConfig.opacity }}
-          resizeMode="repeat"
-        />
-      )}
+    <View style={styles.container}>
+      {/* Full-screen background image */}
+      <ImageBackground
+        source={backgroundImage?.source}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
       <SafeAreaView style={styles.safeArea}>
         {/* Back Button */}
         <TouchableOpacity style={styles.backButtonTop} onPress={() => navigation.goBack()}>
@@ -202,7 +196,7 @@ const PublicProfileScreen = ({ route, navigation }: PublicProfileScreenProps) =>
         )}
       </View>
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -210,12 +204,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  textureOverlay: {
+  backgroundImage: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
+    width: '100%',
+    height: '100%',
   },
   safeArea: {
     zIndex: 10,

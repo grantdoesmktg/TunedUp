@@ -1,35 +1,33 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, ScrollView, StyleSheet, ImageBackground } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, Modal, TouchableOpacity, ScrollView, StyleSheet, ImageBackground, Dimensions } from 'react-native';
 import { colors } from '../theme/colors';
-import { BACKGROUND_THEMES, BackgroundTheme, parseBackgroundTheme, combineBackgroundTheme } from '../theme/backgrounds';
-import { TEXTURE_PATTERNS, TexturePattern, getTextureConfig } from '../theme/textures';
+import { imageBackgrounds, getAllCategories, getBackgroundById, CategoryInfo, DEFAULT_BACKGROUND_ID } from '../theme/imageBackgrounds';
+
+const { width } = Dimensions.get('window');
+const TILE_SIZE = (width - 80) / 3; // 3 columns with padding
 
 interface BackgroundPickerModalProps {
   visible: boolean;
   onClose: () => void;
-  onSelectBackground: (combinedTheme: string) => void;
-  currentTheme?: string; // Combined format like "midnight-diamonds"
+  onSelectBackground: (backgroundId: string) => void;
+  currentTheme?: string; // Background ID
 }
 
 const BackgroundPickerModal: React.FC<BackgroundPickerModalProps> = ({
   visible,
   onClose,
   onSelectBackground,
-  currentTheme = 'midnight'
+  currentTheme = DEFAULT_BACKGROUND_ID
 }) => {
-  const parsed = parseBackgroundTheme(currentTheme);
-  const [selectedGradient, setSelectedGradient] = useState<BackgroundTheme>(parsed.gradient);
-  const [selectedTexture, setSelectedTexture] = useState<TexturePattern>(parsed.texture as TexturePattern);
+  const [selectedBackground, setSelectedBackground] = useState<string>(currentTheme);
 
   const handleApply = () => {
-    const combined = combineBackgroundTheme(selectedGradient, selectedTexture);
-    onSelectBackground(combined);
+    onSelectBackground(selectedBackground);
     onClose();
   };
 
-  const gradientConfig = BACKGROUND_THEMES.find(t => t.id === selectedGradient) || BACKGROUND_THEMES[0];
-  const textureConfig = getTextureConfig(selectedTexture);
+  const selectedBg = getBackgroundById(selectedBackground);
+  const categories = getAllCategories();
 
   return (
     <Modal
@@ -40,121 +38,76 @@ const BackgroundPickerModal: React.FC<BackgroundPickerModalProps> = ({
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          {/* Header with Live Preview */}
+          {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Customize Background</Text>
+            <Text style={styles.title}>Choose Your Vibe</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Live Preview Card */}
+          {/* Live Preview */}
           <View style={styles.previewCard}>
-            <LinearGradient
-              colors={gradientConfig.colors as any}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.previewGradient}
+            <ImageBackground
+              source={selectedBg?.source || imageBackgrounds[0].source}
+              style={styles.previewImage}
+              resizeMode="cover"
             >
-              {textureConfig.source && (
-                <ImageBackground
-                  source={textureConfig.source}
-                  style={styles.previewTexture}
-                  resizeMode="repeat"
-                  imageStyle={{ opacity: textureConfig.opacity }}
-                >
-                  <Text style={styles.previewLabel}>PREVIEW</Text>
-                </ImageBackground>
-              )}
-              {!textureConfig.source && (
+              <View style={styles.previewOverlay}>
                 <Text style={styles.previewLabel}>PREVIEW</Text>
-              )}
-            </LinearGradient>
-            <Text style={styles.previewDescription}>
-              {gradientConfig.name} {textureConfig.id !== 'none' && `• ${textureConfig.name}`}
-            </Text>
+              </View>
+            </ImageBackground>
+            <View style={styles.previewInfo}>
+              <Text style={styles.previewName}>{selectedBg?.name || 'Select Background'}</Text>
+              <Text style={styles.previewDescription}>{selectedBg?.description || ''}</Text>
+            </View>
           </View>
 
           <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-            {/* Gradient Selection */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>1. Choose Color Gradient</Text>
-              <View style={styles.gridContainer}>
-                {BACKGROUND_THEMES.map((theme) => (
-                  <TouchableOpacity
-                    key={theme.id}
-                    style={[
-                      styles.gradientTile,
-                      selectedGradient === theme.id && styles.tileSelected
-                    ]}
-                    onPress={() => setSelectedGradient(theme.id)}
-                  >
-                    <LinearGradient
-                      colors={theme.colors as any}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.gradientPreview}
-                    >
-                      {selectedGradient === theme.id && (
-                        <View style={styles.checkmark}>
-                          <Text style={styles.checkmarkText}>✓</Text>
-                        </View>
-                      )}
-                    </LinearGradient>
-                    <Text style={styles.tileName}>{theme.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+            {/* Categories */}
+            {categories.map((category: CategoryInfo) => {
+              const categoryBackgrounds = imageBackgrounds.filter(bg => bg.category === category.id);
 
-            {/* Texture Selection */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>2. Choose Pattern Overlay</Text>
-              <View style={styles.gridContainer}>
-                {TEXTURE_PATTERNS.map((texture) => (
-                  <TouchableOpacity
-                    key={texture.id}
-                    style={[
-                      styles.textureTile,
-                      selectedTexture === texture.id && styles.tileSelected
-                    ]}
-                    onPress={() => setSelectedTexture(texture.id)}
-                  >
-                    <LinearGradient
-                      colors={gradientConfig.colors as any}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.texturePreview}
-                    >
-                      {texture.source ? (
+              return (
+                <View key={category.id} style={styles.categorySection}>
+                  {/* Category Header */}
+                  <View style={styles.categoryHeader}>
+                    <Text style={styles.categoryEmoji}>{category.emoji}</Text>
+                    <View style={styles.categoryTextContainer}>
+                      <Text style={styles.categoryName}>{category.displayName}</Text>
+                      <Text style={styles.categoryDescription}>{category.description}</Text>
+                    </View>
+                  </View>
+
+                  {/* Background Tiles */}
+                  <View style={styles.tilesContainer}>
+                    {categoryBackgrounds.map((bg) => (
+                      <TouchableOpacity
+                        key={bg.id}
+                        style={[
+                          styles.tile,
+                          selectedBackground === bg.id && styles.tileSelected
+                        ]}
+                        onPress={() => setSelectedBackground(bg.id)}
+                      >
                         <ImageBackground
-                          source={texture.source}
-                          style={styles.texturePreviewImage}
-                          resizeMode="repeat"
-                          imageStyle={{ opacity: texture.opacity }}
+                          source={bg.source}
+                          style={styles.tileImage}
+                          resizeMode="cover"
                         >
-                          {selectedTexture === texture.id && (
+                          {selectedBackground === bg.id && (
                             <View style={styles.checkmark}>
                               <Text style={styles.checkmarkText}>✓</Text>
                             </View>
                           )}
                         </ImageBackground>
-                      ) : (
-                        <>
-                          {selectedTexture === texture.id && (
-                            <View style={styles.checkmark}>
-                              <Text style={styles.checkmarkText}>✓</Text>
-                            </View>
-                          )}
-                          <Text style={styles.noneLabel}>None</Text>
-                        </>
-                      )}
-                    </LinearGradient>
-                    <Text style={styles.tileName}>{texture.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+                        <Text style={styles.tileName} numberOfLines={1}>{bg.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              );
+            })}
           </ScrollView>
 
           {/* Apply Button */}
@@ -172,7 +125,7 @@ const BackgroundPickerModal: React.FC<BackgroundPickerModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -188,18 +141,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: colors.textPrimary,
   },
   closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.background,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -210,132 +163,144 @@ const styles = StyleSheet.create({
   },
   previewCard: {
     marginHorizontal: 24,
-    marginBottom: 12,
-    borderRadius: 12,
+    marginBottom: 20,
+    borderRadius: 16,
     overflow: 'hidden',
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: colors.primary,
+    backgroundColor: colors.background,
   },
-  previewGradient: {
-    height: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  previewTexture: {
+  previewImage: {
     width: '100%',
-    height: '100%',
-    justifyContent: 'center',
+    height: 140,
+    justifyContent: 'flex-end',
+  },
+  previewOverlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    padding: 12,
     alignItems: 'center',
   },
   previewLabel: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: 'white',
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    letterSpacing: 2,
+  },
+  previewInfo: {
+    backgroundColor: colors.background,
+    padding: 12,
+  },
+  previewName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 4,
   },
   previewDescription: {
-    fontSize: 12,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: colors.background,
-    textAlign: 'center',
+    fontSize: 13,
+    color: colors.textSecondary,
   },
   scrollView: {
     flexGrow: 1,
     flexShrink: 1,
   },
-  section: {
-    marginBottom: 24,
+  categorySection: {
+    marginBottom: 32,
   },
-  sectionTitle: {
-    fontSize: 16,
+  categoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  categoryEmoji: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  categoryTextContainer: {
+    flex: 1,
+  },
+  categoryName: {
+    fontSize: 20,
     fontWeight: '700',
     color: colors.textPrimary,
-    paddingHorizontal: 24,
-    marginBottom: 12,
+    marginBottom: 2,
   },
-  gridContainer: {
+  categoryDescription: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  tilesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 12,
-    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    justifyContent: 'flex-start',
   },
-  gradientTile: {
-    width: '31%',
-    marginBottom: 12,
-  },
-  textureTile: {
-    width: '31%',
-    marginBottom: 12,
+  tile: {
+    width: TILE_SIZE,
+    marginHorizontal: 8,
+    marginBottom: 16,
   },
   tileSelected: {
     transform: [{ scale: 1.05 }],
   },
-  gradientPreview: {
-    width: '100%',
-    height: 70,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  texturePreview: {
-    width: '100%',
-    height: 70,
+  tileImage: {
+    width: TILE_SIZE,
+    height: TILE_SIZE * 1.3, // Portrait aspect ratio
     borderRadius: 12,
     overflow: 'hidden',
-    marginBottom: 6,
-  },
-  texturePreviewImage: {
-    width: '100%',
-    height: '100%',
+    marginBottom: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'transparent',
   },
   checkmark: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
   },
   checkmarkText: {
     color: colors.background,
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
   },
-  noneLabel: {
-    fontSize: 12,
-    color: 'white',
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
   tileName: {
-    fontSize: 11,
-    color: colors.textSecondary,
+    fontSize: 12,
+    color: colors.textPrimary,
     textAlign: 'center',
     fontWeight: '600',
   },
   footer: {
     paddingHorizontal: 24,
     paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   applyButton: {
     backgroundColor: colors.primary,
-    paddingVertical: 16,
+    paddingVertical: 18,
     borderRadius: 12,
     alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   applyButtonText: {
     color: colors.background,
     fontSize: 18,
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });
 

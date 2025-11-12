@@ -12,8 +12,7 @@ import { colors } from '../theme/colors';
 import type { PlanCode } from '../types/quota';
 import ImageViewerModal from '../components/ImageViewerModal';
 import BackgroundPickerModal from '../components/BackgroundPickerModal';
-import { getBackgroundConfig, parseBackgroundTheme } from '../theme/backgrounds';
-import { getTextureConfig, TexturePattern } from '../theme/textures';
+import { getBackgroundById, DEFAULT_BACKGROUND_ID } from '../theme/imageBackgrounds';
 
 const { width } = Dimensions.get('window');
 const IMAGE_SIZE = (width - 60) / 3; // 3 columns with padding
@@ -338,30 +337,17 @@ const ProfileScreen = ({ navigation }: any) => {
     return <AnonymousProfileView navigation={navigation} />;
   }
 
-  // Parse the combined background theme (gradient-texture)
-  const parsed = parseBackgroundTheme(selectedBackground);
-  const gradientConfig = getBackgroundConfig(parsed.gradient);
-  const textureConfig = getTextureConfig(parsed.texture as TexturePattern);
+  // Get the selected background image
+  const backgroundImage = getBackgroundById(selectedBackground) || getBackgroundById(DEFAULT_BACKGROUND_ID);
 
   return (
     <View style={styles.container}>
-      {/* Full-screen gradient background */}
-      <LinearGradient
-        colors={gradientConfig.colors as any}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradientBackground}
-      >
-        {/* Texture overlay if selected */}
-        {textureConfig.source && (
-          <ImageBackground
-            source={textureConfig.source}
-            style={styles.textureOverlay}
-            resizeMode="repeat"
-            imageStyle={{ opacity: textureConfig.opacity }}
-          />
-        )}
-      </LinearGradient>
+      {/* Full-screen background image */}
+      <ImageBackground
+        source={backgroundImage?.source}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -612,14 +598,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  gradientBackground: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  },
-  textureOverlay: {
+  backgroundImage: {
     position: 'absolute',
     left: 0,
     right: 0,
@@ -653,7 +632,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   card: {
-    backgroundColor: 'rgba(26, 31, 58, 0.85)',
+    backgroundColor: 'rgba(18, 18, 18, 0.85)',
     borderRadius: 16,
     padding: 20,
     marginHorizontal: 20,
@@ -819,7 +798,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   garageCard: {
-    backgroundColor: 'rgba(26, 31, 58, 0.85)',
+    backgroundColor: 'rgba(18, 18, 18, 0.85)',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -914,7 +893,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   emptyGarage: {
-    backgroundColor: 'rgba(26, 31, 58, 0.85)',
+    backgroundColor: 'rgba(18, 18, 18, 0.85)',
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
