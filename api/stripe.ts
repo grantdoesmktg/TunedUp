@@ -1115,10 +1115,23 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     // Check if this is an upgrade (plan change) or renewal (same plan)
     const isUpgrade = user.planCode !== planCode
     const isNewSubscription = !user.planRenewsAt
+    const isMonthlyRenewal = !isUpgrade && !isNewSubscription
 
     // Get token amount for the plan
-    const { PLAN_TOKENS } = await import('../lib/tokens.js')
+    const { PLAN_TOKENS, calculateMonthlyRefill } = await import('../lib/tokens.js')
     const tokens = PLAN_TOKENS[planCode as keyof typeof PLAN_TOKENS] || PLAN_TOKENS.FREE
+
+    // Calculate new token amount
+    let newTokens = tokens
+    if (isMonthlyRenewal) {
+      // Monthly renewal - apply carryover rules
+      newTokens = calculateMonthlyRefill(user.planCode, user.tokens)
+      console.log(`💰 Monthly renewal: ${user.tokens} tokens → ${newTokens} tokens (with ${Math.floor(user.tokens * 0.5)} carryover)`)
+    } else {
+      // New subscription or upgrade - full token grant
+      newTokens = tokens
+      console.log(`🎉 New subscription/upgrade: Granting ${newTokens} tokens`)
+    }
 
     // Update user plan in database
     const updatedUser = await prisma.user.update({
@@ -1127,12 +1140,9 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
         planCode: planCode,
         planRenewsAt,
         stripeSubscriptionId: subscription.id,
-        // Only reset tokens on initial purchase or upgrade, not on monthly renewals
-        ...(isUpgrade || isNewSubscription ? {
-          tokens,
-          communityUsed: 0,
-          resetDate: new Date()
-        } : {})
+        tokens: newTokens,
+        communityUsed: 0,
+        resetDate: new Date()
       }
     })
 
