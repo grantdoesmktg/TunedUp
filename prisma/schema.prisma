@@ -26,7 +26,7 @@ model User {
   name                 String?
   nickname             String?
   profileIcon          String?            @default("👤")
-  backgroundTheme      String?            @default("midnight")
+  backgroundTheme      String?            @default("neutral-1")
   communityImages      CommunityImage[]
   saved_cars           saved_cars[]
   saved_images         saved_images[]
