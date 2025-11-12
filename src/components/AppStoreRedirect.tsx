@@ -5,7 +5,7 @@ const APP_STORE_URL = 'https://apps.apple.com/us/app/tunedup-garage/id6755053244
 
 const AppStoreRedirect = () => {
   const location = useLocation();
-  const [shouldShow, setShouldShow] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   // Pages that should NOT show the overlay
   const allowedPaths = ['/terms-of-service', '/privacy-policy'];
@@ -16,21 +16,39 @@ const AppStoreRedirect = () => {
     return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
   };
 
+  // Check if current path is allowed
+  const isAllowed = allowedPaths.includes(location.pathname);
+
   useEffect(() => {
-    // Check if current path is allowed
-    const isAllowed = allowedPaths.includes(location.pathname);
-
     // If on mobile and not on an allowed path, redirect immediately to App Store
-    if (!isAllowed && isMobileDevice()) {
+    if (!isAllowed && isMobileDevice() && !hasRedirected) {
+      setHasRedirected(true);
       window.location.href = APP_STORE_URL;
-      return;
     }
+  }, [location.pathname, isAllowed, hasRedirected]);
 
-    setShouldShow(!isAllowed);
-  }, [location.pathname]);
+  // Prevent back button from bypassing the wall after redirect
+  useEffect(() => {
+    if (!isAllowed && hasRedirected) {
+      const handlePopState = () => {
+        window.history.pushState(null, '', window.location.href);
+      };
 
-  if (!shouldShow) return null;
+      window.history.pushState(null, '', window.location.href);
+      window.addEventListener('popstate', handlePopState);
 
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [isAllowed, hasRedirected]);
+
+  // Show modal if: not on allowed page AND (desktop user OR mobile user who came back)
+  const shouldShowModal = !isAllowed;
+
+  if (!shouldShowModal) return null;
+
+  // IMMOVABLE WALL - Blocks access to web version
   return (
     <div
       style={{
@@ -39,8 +57,7 @@ const AppStoreRedirect = () => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(15, 15, 35, 0.98)',
-        backdropFilter: 'blur(10px)',
+        backgroundColor: '#0f0f23',
         zIndex: 999999,
         display: 'flex',
         alignItems: 'center',
@@ -102,7 +119,7 @@ const AppStoreRedirect = () => {
             lineHeight: '1.6',
           }}
         >
-          The web version has been deprecated. Download our new mobile app for the best experience!
+          Try it on the App Store while we work on the web version!
         </p>
 
         {/* Features */}
