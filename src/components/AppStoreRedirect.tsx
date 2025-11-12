@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
+const APP_STORE_URL = 'https://apps.apple.com/us/app/tunedup-garage/id6755053244';
+
 const AppStoreRedirect = () => {
   const location = useLocation();
   const [shouldShow, setShouldShow] = useState(false);
@@ -8,9 +10,22 @@ const AppStoreRedirect = () => {
   // Pages that should NOT show the overlay
   const allowedPaths = ['/terms-of-service', '/privacy-policy'];
 
+  // Detect if user is on a mobile device
+  const isMobileDevice = () => {
+    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+    return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+  };
+
   useEffect(() => {
     // Check if current path is allowed
     const isAllowed = allowedPaths.includes(location.pathname);
+
+    // If on mobile and not on an allowed path, redirect immediately to App Store
+    if (!isAllowed && isMobileDevice()) {
+      window.location.href = APP_STORE_URL;
+      return;
+    }
+
     setShouldShow(!isAllowed);
   }, [location.pathname]);
 
@@ -116,7 +131,7 @@ const AppStoreRedirect = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* App Store Button */}
           <a
-            href="https://apps.apple.com/app/tunedup-garage/idXXXXXXXXX"
+            href={APP_STORE_URL}
             target="_blank"
             rel="noopener noreferrer"
             style={{
