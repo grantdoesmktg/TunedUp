@@ -543,15 +543,51 @@ async function handleCancelSubscription(req: VercelRequest, res: VercelResponse)
         const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId)
         console.log('✅ Subscription found:', { id: subscription.id, status: subscription.status })
 
+        // Check if subscription is already canceled/expired
+        if (subscription.status === 'canceled') {
+          console.log('ℹ️ Subscription already canceled')
+          return res.status(200).json({
+            success: true,
+            alreadyCanceled: true,
+            message: 'Your subscription has already been canceled and you are on the Free plan.',
+            userMessage: 'You are already on the Free plan. No active subscription to cancel.'
+          })
+        }
+
+        if (subscription.status === 'incomplete_expired' || subscription.status === 'unpaid') {
+          console.log('ℹ️ Subscription expired/unpaid - user already on Free plan')
+          return res.status(200).json({
+            success: true,
+            alreadyCanceled: true,
+            message: 'Your subscription has expired and you are on the Free plan.',
+            userMessage: 'You are already on the Free plan. Your previous subscription expired.'
+          })
+        }
+
+        // Check if already scheduled to cancel
+        if ((subscription as any).cancel_at_period_end) {
+          const periodEnd = (subscription as any).current_period_end
+          const currentPeriodEnd = periodEnd && typeof periodEnd === 'number'
+            ? new Date(periodEnd * 1000)
+            : null
+
+          console.log('ℹ️ Subscription already scheduled to cancel at:', currentPeriodEnd)
+          return res.status(200).json({
+            success: true,
+            alreadyScheduled: true,
+            currentPeriodEnd: currentPeriodEnd?.toISOString(),
+            message: 'Your subscription is already scheduled to cancel.',
+            userMessage: `Your subscription will end on ${currentPeriodEnd?.toLocaleDateString()}. You'll keep your current plan benefits until then.`
+          })
+        }
+
         // Allow cancellation for active, trialing, or incomplete (paid but not yet activated) subscriptions
         if (subscription.status !== 'active' && subscription.status !== 'trialing' && subscription.status !== 'incomplete') {
           console.error('❌ Subscription cannot be cancelled:', subscription.status)
-          return res.status(400).json({ error: `Subscription is ${subscription.status}` })
-        }
-
-        if ((subscription as any).cancel_at_period_end) {
-          console.error('❌ Subscription already set to cancel')
-          return res.status(400).json({ error: 'Subscription is already set to cancel' })
+          return res.status(400).json({
+            error: `Cannot cancel subscription with status: ${subscription.status}`,
+            userMessage: 'Unable to cancel this subscription. Please contact support if you need assistance.'
+          })
         }
 
         // Cancel subscription at period end
@@ -607,7 +643,25 @@ async function handleCancelSubscription(req: VercelRequest, res: VercelResponse)
 
     if (!cancelableSubscription) {
       console.error('❌ No cancelable subscriptions found. Statuses:', subscriptions.data.map(s => s.status))
-      return res.status(400).json({ error: 'No active subscription found' })
+
+      // Check if user already has canceled/expired subscriptions
+      const hasCanceledOrExpired = subscriptions.data.some(s =>
+        s.status === 'canceled' || s.status === 'incomplete_expired' || s.status === 'unpaid'
+      )
+
+      if (hasCanceledOrExpired) {
+        return res.status(200).json({
+          success: true,
+          alreadyCanceled: true,
+          message: 'You are already on the Free plan.',
+          userMessage: 'You are already on the Free plan. No active subscription to cancel.'
+        })
+      }
+
+      return res.status(400).json({
+        error: 'No active subscription found',
+        userMessage: 'No active subscription found. You may already be on the Free plan.'
+      })
     }
 
     // Cancel subscription at period end (user keeps access until billing date)
