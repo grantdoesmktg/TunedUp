@@ -18,7 +18,8 @@
       "buildNumber": "3",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "TunedUp needs access to your photo library to save your custom car images.",
-        "NSPhotoLibraryAddUsageDescription": "TunedUp needs access to save your custom car images to your photo library."
+        "NSPhotoLibraryAddUsageDescription": "TunedUp needs access to save your custom car images to your photo library.",
+        "NSCameraUsageDescription": "TunedUp does not use the camera. This permission is required by third-party dependencies."
       }
     },
     "android": {
