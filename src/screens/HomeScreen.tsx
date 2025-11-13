@@ -282,7 +282,7 @@ const AnimatedToolButton = ({ tool, index, onPress }: { tool: any; index: number
       activeOpacity={0.7}
     >
       <LinearGradient
-        colors={tool.gradientColors as ColorValue[]}
+        colors={tool.gradientColors as [ColorValue, ColorValue, ...ColorValue[]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.toolButtonGradient}
@@ -414,7 +414,7 @@ const HomeScreen = ({ navigation }: any) => {
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.bannerCard}
-                  onPress={() => navigation.navigate('Community')}
+                  onPress={() => navigation.navigate('Community', { highlightImageId: item.id })}
                   activeOpacity={0.9}
                 >
                   <Image

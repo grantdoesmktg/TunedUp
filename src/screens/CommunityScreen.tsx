@@ -1,5 +1,5 @@
 // NATIVE APP - Community screen (Social media scrollable feed)
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Dimensions, Alert } from 'react-native';
 import { communityAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,19 +9,43 @@ import type { CommunityImage } from '../types';
 const { width } = Dimensions.get('window');
 
 interface CommunityScreenProps {
+  route?: any;
   navigation: any;
 }
 
-const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
+const CommunityScreen = ({ route, navigation }: CommunityScreenProps) => {
   const [images, setImages] = useState<CommunityImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [likedImages, setLikedImages] = useState<Set<string>>(new Set());
+  const [highlightedImageId, setHighlightedImageId] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
+  const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     loadImages();
   }, []);
+
+  // Handle highlight from navigation params
+  useEffect(() => {
+    if (route?.params?.highlightImageId && images.length > 0) {
+      const imageIndex = images.findIndex(img => img.id === route.params.highlightImageId);
+      if (imageIndex !== -1) {
+        // Scroll to the image after a short delay to ensure layout is complete
+        setTimeout(() => {
+          flatListRef.current?.scrollToIndex({
+            index: imageIndex,
+            animated: true,
+            viewPosition: 0.5 // Center the item
+          });
+        }, 300);
+        // Highlight it temporarily
+        setHighlightedImageId(route.params.highlightImageId);
+        // Remove highlight after 3 seconds
+        setTimeout(() => setHighlightedImageId(null), 3000);
+      }
+    }
+  }, [route?.params?.highlightImageId, images]);
 
   // Shuffle array using Fisher-Yates algorithm
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -114,8 +138,11 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
     navigation.navigate('PublicProfile', { userId });
   };
 
-  const renderFeedCard = ({ item }: { item: CommunityImage }) => (
-    <View style={styles.feedCard}>
+  const renderFeedCard = ({ item }: { item: CommunityImage }) => {
+    const isHighlighted = highlightedImageId === item.id;
+
+    return (
+    <View style={[styles.feedCard, isHighlighted && styles.feedCardHighlighted]}>
       {/* User info header */}
       <TouchableOpacity
         style={styles.userHeader}
@@ -162,7 +189,8 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
         </Text>
       </TouchableOpacity>
     </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -185,6 +213,7 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
 
       {/* Scrollable Feed */}
       <FlatList
+        ref={flatListRef}
         data={images}
         renderItem={renderFeedCard}
         keyExtractor={(item) => item.id}
@@ -192,6 +221,12 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
         refreshing={refreshing}
         onRefresh={handleRefresh}
         showsVerticalScrollIndicator={false}
+        onScrollToIndexFailed={(info) => {
+          // Fallback if scroll fails - wait and try again
+          setTimeout(() => {
+            flatListRef.current?.scrollToIndex({ index: info.index, animated: true });
+          }, 500);
+        }}
       />
     </View>
   );
@@ -240,6 +275,15 @@ const styles = StyleSheet.create({
     borderColor: colors.divider,
     padding: 12,
     paddingBottom: 0,
+  },
+  feedCardHighlighted: {
+    borderColor: colors.primary,
+    borderWidth: 3,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 8,
   },
   userHeader: {
     flexDirection: 'row',
