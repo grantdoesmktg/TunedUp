@@ -127,6 +127,7 @@ const LoginScreen = ({ navigation }: any) => {
                 <View style={styles.formCard}>
                   <Text style={styles.formTitle}>Ready to Get Started?</Text>
                   <Text style={styles.formSubtitle}>Enter your email to receive a verification code</Text>
+                  <Text style={styles.spamFolderNote}>💡 Check your spam folder if you don't see the code</Text>
 
                   <TextInput
                     style={styles.input}
@@ -298,7 +299,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 12,
+  },
+  spamFolderNote: {
+    fontSize: 13,
+    color: colors.primary,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontStyle: 'italic',
+    fontWeight: '500',
   },
   input: {
     backgroundColor: colors.secondary,

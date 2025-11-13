@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { communityAPI } from '../services/api';
 import type { ImageGeneratorResponse, CarSpec } from '../types';
 import * as MediaLibrary from 'expo-media-library';
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 
 const ImageResultsScreen = ({ route, navigation }: any) => {
   const { results, carSpec }: { results: ImageGeneratorResponse; carSpec: CarSpec } = route.params;
@@ -15,6 +15,7 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [description, setDescription] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [hasUploaded, setHasUploaded] = useState(false);
 
   const handleSaveImage = async () => {
     try {
@@ -25,21 +26,37 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
         return;
       }
 
-      // Convert base64 to file
+      // Create file in cache directory using new API
       const filename = `tunedup_${Date.now()}.png`;
-      const fileUri = `${FileSystem.cacheDirectory}${filename}`;
+      const file = new File(Paths.cache, filename);
 
-      // Remove data:image prefix if present
-      const base64Data = results.image.includes('base64,')
-        ? results.image.split('base64,')[1]
-        : results.image;
+      // Extract clean base64 data
+      let base64Data = results.image;
 
-      await FileSystem.writeAsStringAsync(fileUri, base64Data, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
+      // Remove data URL prefix if present (e.g., "data:image/png;base64,")
+      if (base64Data.includes(',')) {
+        base64Data = base64Data.split(',')[1];
+      }
 
-      // Save to media library
-      const asset = await MediaLibrary.createAssetAsync(fileUri);
+      // Remove any whitespace or newlines that might be in the base64 string
+      base64Data = base64Data.replace(/\s/g, '');
+
+      // Validate base64 string
+      if (!base64Data || base64Data.length === 0) {
+        throw new Error('Invalid base64 data');
+      }
+
+      // Convert base64 to binary and write to file
+      const binaryString = atob(base64Data);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      await file.write(bytes);
+
+      // Save to media library using the file URI
+      const asset = await MediaLibrary.createAssetAsync(file.uri);
 
       // Try to create album, but don't fail if it already exists
       try {
@@ -50,9 +67,9 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
       }
 
       Alert.alert('Success', 'Image saved to your photo library!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Save error:', error);
-      Alert.alert('Error', `Failed to save image: ${error}`);
+      Alert.alert('Error', `Failed to save image: ${error.message || 'Please try again'}`);
     }
   };
 
@@ -62,6 +79,11 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
     : `data:image/png;base64,${results.image}`;
 
   const handleShareToCommunity = () => {
+    if (hasUploaded) {
+      Alert.alert('Already Shared', 'This image has already been shared to the community.');
+      return;
+    }
+
     if (!user) {
       setShowLoginModal(true);
     } else {
@@ -83,6 +105,9 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
         : `data:image/png;base64,${results.image}`;
 
       await communityAPI.uploadImage(imageUrl, description);
+
+      // Mark as uploaded
+      setHasUploaded(true);
 
       setShowDescriptionModal(false);
       setDescription('');
@@ -126,10 +151,13 @@ const ImageResultsScreen = ({ route, navigation }: any) => {
         {/* Action Buttons */}
         <View style={styles.actions}>
           <TouchableOpacity
-            style={styles.primaryButton}
+            style={[styles.primaryButton, hasUploaded && styles.buttonDisabled]}
             onPress={handleShareToCommunity}
+            disabled={hasUploaded}
           >
-            <Text style={styles.primaryButtonText}>Share to Community</Text>
+            <Text style={styles.primaryButtonText}>
+              {hasUploaded ? 'Already Shared ✓' : 'Share to Community'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity

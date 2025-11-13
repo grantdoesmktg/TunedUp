@@ -1,12 +1,21 @@
 // NATIVE APP - Tools list screen
 import React, { useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { colors } from '../theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { TokenCost } from '../components/TokenIcon';
 import { TOKEN_COSTS } from '../types/quota';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Responsive font sizing based on screen width
+const getFontSize = (baseSize: number) => {
+  const scale = SCREEN_WIDTH / 375; // 375 is the base width (iPhone SE/8)
+  const newSize = baseSize * scale;
+  return Math.round(newSize);
+};
 
 // Particle component for each floating particle
 const Particle = ({ delay, tool }: { delay: number; tool: any }) => {
@@ -559,13 +568,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   toolName: {
-    fontSize: 18,
+    fontSize: getFontSize(18),
     fontWeight: 'bold',
     color: colors.textPrimary,
     marginBottom: 4,
   },
   toolDescription: {
-    fontSize: 14,
+    fontSize: getFontSize(14),
     color: colors.textSecondary,
   },
 });

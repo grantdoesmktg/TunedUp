@@ -20,8 +20,6 @@ const BUDGET_OPTIONS = [
   { label: '$15,000', value: '15000' },
   { label: '$20,000', value: '20000' },
   { label: '$30,000', value: '30000' },
-  { label: '$40,000', value: '40000' },
-  { label: '$50,000', value: '50000' },
 ];
 
 const BuildPlannerScreen = ({ navigation }: any) => {

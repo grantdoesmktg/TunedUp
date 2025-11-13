@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Dimensions, Alert } from 'react-native';
 import { communityAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { useQuota } from '../contexts/QuotaContext';
 import { colors } from '../theme/colors';
 import type { CommunityImage } from '../types';
 
@@ -19,7 +18,6 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
   const [refreshing, setRefreshing] = useState(false);
   const [likedImages, setLikedImages] = useState<Set<string>>(new Set());
   const { isAuthenticated } = useAuth();
-  const { checkQuota, refreshQuota } = useQuota();
 
   useEffect(() => {
     loadImages();
@@ -65,20 +63,9 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
       return;
     }
 
-    // Check if already liked
+    // Check if already liked locally
     if (likedImages.has(imageId)) {
       Alert.alert('Already Liked', 'You have already liked this image');
-      return;
-    }
-
-    // Check quota before liking
-    const quotaCheck = await checkQuota('community');
-    if (!quotaCheck.allowed) {
-      Alert.alert(
-        'Usage Limit Reached',
-        quotaCheck.message || 'You\'ve reached your monthly limit for community interactions.',
-        [{ text: 'OK' }]
-      );
       return;
     }
 
@@ -88,7 +75,7 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
       // Add to liked images set
       setLikedImages(prev => new Set(prev).add(imageId));
 
-      // Update local state
+      // Update local state - increment like count
       setImages(prevImages =>
         prevImages.map(img =>
           img.id === imageId
@@ -96,23 +83,14 @@ const CommunityScreen = ({ navigation }: CommunityScreenProps) => {
             : img
         )
       );
-
-      // Refresh quota
-      await refreshQuota();
     } catch (error: any) {
-      if (error.message?.includes('QUOTA_EXCEEDED') || error.message?.includes('quota')) {
-        Alert.alert(
-          'Usage Limit Reached',
-          'You\'ve reached your monthly limit for community interactions.',
-          [{ text: 'OK' }]
-        );
-        await refreshQuota();
-      } else if (error.message?.includes('already liked')) {
+      if (error.message?.includes('already liked')) {
         // Server says already liked, update local state
         setLikedImages(prev => new Set(prev).add(imageId));
         Alert.alert('Already Liked', 'You have already liked this image');
       } else {
         console.error('Failed to like image:', error);
+        Alert.alert('Error', 'Failed to like image. Please try again.');
       }
     }
   };

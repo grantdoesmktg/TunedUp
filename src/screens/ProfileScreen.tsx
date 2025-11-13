@@ -138,6 +138,7 @@ const AnonymousProfileView = ({ navigation }: any) => {
                   <Text style={styles.anonymousFormSubtitle}>
                     Enter your email to receive a verification code
                   </Text>
+                  <Text style={styles.anonymousSpamFolderNote}>💡 Check your spam folder if you don't see the code</Text>
 
                   <TextInput
                     style={styles.anonymousInput}
@@ -1017,7 +1018,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 12,
+  },
+  anonymousSpamFolderNote: {
+    fontSize: 13,
+    color: colors.primary,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontStyle: 'italic',
+    fontWeight: '500',
   },
   anonymousInput: {
     backgroundColor: colors.secondary,
