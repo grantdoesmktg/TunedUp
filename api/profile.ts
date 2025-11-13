@@ -291,7 +291,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             location: location || null,
             instagramHandle: instagramHandle || null,
             profileIcon: profileIcon || '👤',
-            backgroundTheme: backgroundTheme || 'midnight',
+            backgroundTheme: backgroundTheme || 'neutral-1',
           },
           select: {
             id: true,
