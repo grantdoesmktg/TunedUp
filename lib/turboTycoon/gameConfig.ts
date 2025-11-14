@@ -31,7 +31,7 @@ export const FACTORIES: Record<FactoryType, FactoryConfig> = {
     unlockCostHp: 0n, // Free/unlocked by default
     defaultUnlocked: true,
     upgradeBaseCost: 1000n,
-    upgradeCostMultiplier: 1.5,
+    upgradeCostMultiplier: 1.15, // 1.15x cost per level
   },
   TURBO_ASSEMBLY: {
     type: 'TURBO_ASSEMBLY',
@@ -44,7 +44,7 @@ export const FACTORIES: Record<FactoryType, FactoryConfig> = {
     unlockCostHp: 500000n, // ~1-2 hours active or ~1 day idle
     defaultUnlocked: false,
     upgradeBaseCost: 25000n,
-    upgradeCostMultiplier: 1.6,
+    upgradeCostMultiplier: 1.15, // 1.15x cost per level
   },
   ECU_FLASH: {
     type: 'ECU_FLASH',
@@ -57,7 +57,7 @@ export const FACTORIES: Record<FactoryType, FactoryConfig> = {
     unlockCostHp: 50000000n, // ~1 week idle or ~1-2 days active
     defaultUnlocked: false,
     upgradeBaseCost: 500000n,
-    upgradeCostMultiplier: 1.7,
+    upgradeCostMultiplier: 1.15, // 1.15x cost per level
   },
 };
 
@@ -211,6 +211,9 @@ export const DOUBLE_PRODUCT_CHANCES: Record<PlanTier, number> = {
 
 // Offline Progress Cap (in hours)
 export const BASE_OFFLINE_CAP_HOURS = 6;
+
+// Factory Max Level
+export const MAX_FACTORY_LEVEL = 10;
 
 // Helper function: Get minimum time for a factory
 export function getMinimumTime(factoryType: FactoryType): number {

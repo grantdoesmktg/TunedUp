@@ -71,10 +71,15 @@ export function combineResearchEffects(ownedResearch: ResearchEffect[]): Researc
 // Calculate effective HP per part for a factory
 export function calculateHpPerPart(
   factoryType: FactoryType,
+  level: number,
   researchEffects: ResearchEffect
 ): number {
   const config = FACTORIES[factoryType];
   let hp = config.hpPerPart;
+
+  // Apply level scaling: +10% HP per level
+  // Level 1 = 100%, Level 2 = 110%, Level 3 = 121%, etc.
+  hp *= Math.pow(1.10, level - 1);
 
   // Apply global multiplier
   hp *= researchEffects.globalHpPerPartMultiplier || 1.0;
@@ -113,12 +118,10 @@ export function applyTimeAndTapsToFactory(
   researchEffects: ResearchEffect,
   planTier: PlanTier
 ): ProductionResult {
-  const config = FACTORIES[factory.factoryType];
-
-  // Calculate effective values based on research
+  // Calculate effective values based on research and level
   const effectiveBaseTime = calculateEffectiveProductionTime(factory.factoryType, researchEffects);
   const floorTime = getMinimumTime(factory.factoryType);
-  const hpPerPart = calculateHpPerPart(factory.factoryType, researchEffects);
+  const hpPerPart = calculateHpPerPart(factory.factoryType, factory.level, researchEffects);
 
   // Initialize remaining time
   let remaining = factory.currentCycleRemainingSeconds;
@@ -243,9 +246,10 @@ export function calculateOfflineProgress(
 // Calculate estimated HP per minute for a factory
 export function calculateHpPerMinute(
   factoryType: FactoryType,
+  level: number,
   researchEffects: ResearchEffect
 ): number {
-  const hpPerPart = calculateHpPerPart(factoryType, researchEffects);
+  const hpPerPart = calculateHpPerPart(factoryType, level, researchEffects);
   const productionTime = calculateEffectiveProductionTime(factoryType, researchEffects);
 
   if (productionTime === 0) return 0;

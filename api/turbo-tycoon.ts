@@ -11,12 +11,14 @@ import {
   FactoryType,
   getUpgradeCost,
   getOfflineCapHours,
+  MAX_FACTORY_LEVEL,
 } from '../lib/turboTycoon/gameConfig.js';
 import {
   applyTimeAndTapsToFactory,
   calculateOfflineProgress,
   combineResearchEffects,
   calculateHpPerMinute,
+  calculateHpPerPart,
   FactoryState,
 } from '../lib/turboTycoon/gameLogic.js';
 
@@ -185,8 +187,8 @@ async function handleLoad(userEmail: string, res: VercelResponse) {
       level: f.level,
       totalPartsProduced: f.totalPartsProduced.toString(),
       currentCycleRemainingSeconds: f.currentCycleRemainingSeconds,
-      hpPerPart: FACTORIES[f.factoryType].hpPerPart,
-      hpPerMinute: calculateHpPerMinute(f.factoryType, researchEffects),
+      hpPerPart: calculateHpPerPart(f.factoryType, f.level, researchEffects),
+      hpPerMinute: calculateHpPerMinute(f.factoryType, f.level, researchEffects),
     })),
     ownedResearch: user.turboResearchOwnership.map((r) => r.researchKey),
     planCode: user.planCode,
@@ -382,6 +384,11 @@ async function handleUpgradeFactory(userEmail: string, params: any, res: VercelR
   const factory = user.turboFactoryProgresses.find((f) => f.factoryType === factoryType);
   if (!factory || !factory.isUnlocked) {
     return res.status(400).json({ error: 'Factory not unlocked' });
+  }
+
+  // Check if factory is already at max level
+  if (factory.level >= MAX_FACTORY_LEVEL) {
+    return res.status(400).json({ error: 'Factory already at max level' });
   }
 
   // Get research effects for cost calculation
