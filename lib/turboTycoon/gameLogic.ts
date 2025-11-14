@@ -134,11 +134,6 @@ export function applyTimeAndTapsToFactory(
   // Apply tap time reduction (1 second per tap)
   remaining -= tapsSinceLastSync;
 
-  // Enforce minimum time floor
-  if (remaining < floorTime) {
-    remaining = floorTime;
-  }
-
   let hpGained = 0n;
   let partsProduced = 0n;
   let doubleProductTriggered = 0;
@@ -163,6 +158,12 @@ export function applyTimeAndTapsToFactory(
 
     // Reset cycle for next part
     remaining += effectiveBaseTime;
+  }
+
+  // Enforce minimum time floor AFTER production cycles complete
+  // This prevents tapping below the minimum but allows production to complete
+  if (remaining < floorTime) {
+    remaining = floorTime;
   }
 
   return {
