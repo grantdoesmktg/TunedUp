@@ -3,7 +3,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { PrismaClient } from '@prisma/client';
-import { getUserFromRequest } from './lib/auth';
+import { getToken } from './lib/auth.js';
 import {
   FACTORIES,
   RESEARCH_NODES,
@@ -11,14 +11,14 @@ import {
   FactoryType,
   getUpgradeCost,
   getOfflineCapHours,
-} from '../lib/turboTycoon/gameConfig';
+} from '../lib/turboTycoon/gameConfig.js';
 import {
   applyTimeAndTapsToFactory,
   calculateOfflineProgress,
   combineResearchEffects,
   calculateHpPerMinute,
   FactoryState,
-} from '../lib/turboTycoon/gameLogic';
+} from '../lib/turboTycoon/gameLogic.js';
 
 const prisma = new PrismaClient();
 
@@ -28,8 +28,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const user = await getUserFromRequest(req);
-    if (!user) {
+    const token = await getToken(req);
+    const userEmail = token?.email as string || null;
+
+    if (!userEmail) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -37,19 +39,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     switch (action) {
       case 'load':
-        return await handleLoad(user.email, res);
+        return await handleLoad(userEmail, res);
       case 'sync':
-        return await handleSync(user.email, params, res);
+        return await handleSync(userEmail, params, res);
       case 'tap':
-        return await handleTap(user.email, params, res);
+        return await handleTap(userEmail, params, res);
       case 'unlock_factory':
-        return await handleUnlockFactory(user.email, params, res);
+        return await handleUnlockFactory(userEmail, params, res);
       case 'upgrade_factory':
-        return await handleUpgradeFactory(user.email, params, res);
+        return await handleUpgradeFactory(userEmail, params, res);
       case 'buy_research':
-        return await handleBuyResearch(user.email, params, res);
+        return await handleBuyResearch(userEmail, params, res);
       case 'convert_hp_to_tokens':
-        return await handleConvertHpToTokens(user.email, params, res);
+        return await handleConvertHpToTokens(userEmail, params, res);
       default:
         return res.status(400).json({ error: 'Invalid action' });
     }
