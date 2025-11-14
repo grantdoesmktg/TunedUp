@@ -8,7 +8,7 @@ import {
   getMinimumTime,
   getDoubleProductChance,
   ResearchEffect,
-} from './gameConfig';
+} from './gameConfig.js';
 
 export interface FactoryState {
   factoryType: FactoryType;
