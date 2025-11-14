@@ -8,7 +8,9 @@ import {
   FACTORIES,
   RESEARCH_NODES,
   TOKEN_CONVERSIONS,
+  WEEKLY_TOKEN_CAPS,
   FactoryType,
+  PlanTier,
   getUpgradeCost,
   getOfflineCapHours,
   MAX_FACTORY_LEVEL,
@@ -499,7 +501,17 @@ async function handleBuyResearch(userEmail: string, params: any, res: VercelResp
   });
 }
 
-// CONVERT_HP_TO_TOKENS: Convert HP to TunedUp tokens
+// Helper: Get start of current week (Monday 00:00:00 UTC)
+function getWeekStart(date: Date = new Date()): Date {
+  const d = new Date(date);
+  d.setUTCHours(0, 0, 0, 0);
+  const day = d.getUTCDay();
+  const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
+  d.setUTCDate(diff);
+  return d;
+}
+
+// CONVERT_HP_TO_TOKENS: Convert HP to TunedUp tokens (WITH WEEKLY CAPS)
 async function handleConvertHpToTokens(userEmail: string, params: any, res: VercelResponse) {
   const { conversionId } = params;
 
@@ -512,11 +524,41 @@ async function handleConvertHpToTokens(userEmail: string, params: any, res: Verc
     where: { email: userEmail },
     include: {
       turboTycoonState: true,
+      turboFactoryProgresses: true,
+      turboTokenConversions: true,
     },
   });
 
   if (!user || !user.turboTycoonState) {
     return res.status(404).json({ error: 'Game state not found' });
+  }
+
+  // Check if required factory is unlocked
+  const requiredFactory = user.turboFactoryProgresses.find(
+    (f) => f.factoryType === conversion.minFactoryRequirement
+  );
+  if (!requiredFactory || !requiredFactory.isUnlocked) {
+    return res.status(400).json({
+      error: `You must unlock ${conversion.minFactoryRequirement.replace('_', ' ')} to use this conversion`,
+    });
+  }
+
+  // Check weekly token cap
+  const weekStart = getWeekStart();
+  const tokensEarnedThisWeek = user.turboTokenConversions
+    .filter((tc) => tc.weekStart >= weekStart)
+    .reduce((sum, tc) => sum + tc.tokensEarned, 0);
+
+  const weeklyCapForPlan = WEEKLY_TOKEN_CAPS[user.planCode as PlanTier] || WEEKLY_TOKEN_CAPS.FREE;
+
+  if (tokensEarnedThisWeek + conversion.tokensReward > weeklyCapForPlan) {
+    const remaining = weeklyCapForPlan - tokensEarnedThisWeek;
+    return res.status(400).json({
+      error: `Weekly token cap reached`,
+      weeklyLimit: weeklyCapForPlan,
+      tokensEarnedThisWeek,
+      tokensRemaining: Math.max(0, remaining),
+    });
   }
 
   // Check if user has enough HP
@@ -538,10 +580,23 @@ async function handleConvertHpToTokens(userEmail: string, params: any, res: Verc
     data: { tokens: newTokens },
   });
 
+  // Record this conversion for weekly cap tracking
+  await prisma.turboTokenConversion.create({
+    data: {
+      userEmail: user.email,
+      conversionId: conversion.id,
+      hpSpent: conversion.hpCost,
+      tokensEarned: conversion.tokensReward,
+      weekStart: weekStart,
+    },
+  });
+
   return res.status(200).json({
     success: true,
     totalHp: newTotalHp.toString(),
     newTokens: newTokens,
     tokensAdded: conversion.tokensReward,
+    tokensEarnedThisWeek: tokensEarnedThisWeek + conversion.tokensReward,
+    weeklyLimit: weeklyCapForPlan,
   });
 }

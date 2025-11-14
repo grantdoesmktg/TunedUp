@@ -27,11 +27,11 @@ export const FACTORIES: Record<FactoryType, FactoryConfig> = {
     icon: '⚙️',
     baseProductionTimeSeconds: 10,
     minimumTimeFactor: 0.2, // 1/5 = 2 second minimum
-    hpPerPart: 150,
+    hpPerPart: 300, // Level 1 base: 300 HP/part → 1,800 HP/min
     unlockCostHp: 0n, // Free/unlocked by default
     defaultUnlocked: true,
-    upgradeBaseCost: 1000n,
-    upgradeCostMultiplier: 1.15, // 1.15x cost per level
+    upgradeBaseCost: 2000n, // Cost to go from Level 1 → 2
+    upgradeCostMultiplier: 1.12, // 1.12x cost per level (grows faster than power)
   },
   TURBO_ASSEMBLY: {
     type: 'TURBO_ASSEMBLY',
@@ -40,11 +40,11 @@ export const FACTORIES: Record<FactoryType, FactoryConfig> = {
     icon: '🔧',
     baseProductionTimeSeconds: 60,
     minimumTimeFactor: 0.2, // 12 second minimum
-    hpPerPart: 3500,
-    unlockCostHp: 500000n, // ~1-2 hours active or ~1 day idle
+    hpPerPart: 6000, // Level 1 base: 6,000 HP/part → 6,000 HP/min
+    unlockCostHp: 250000n, // Balanced unlock cost
     defaultUnlocked: false,
     upgradeBaseCost: 25000n,
-    upgradeCostMultiplier: 1.15, // 1.15x cost per level
+    upgradeCostMultiplier: 1.12, // 1.12x cost per level
   },
   ECU_FLASH: {
     type: 'ECU_FLASH',
@@ -53,11 +53,11 @@ export const FACTORIES: Record<FactoryType, FactoryConfig> = {
     icon: '💻',
     baseProductionTimeSeconds: 300,
     minimumTimeFactor: 0.2, // 60 second minimum
-    hpPerPart: 75000,
-    unlockCostHp: 50000000n, // ~1 week idle or ~1-2 days active
+    hpPerPart: 30000, // Level 1 base: 30,000 HP/part → 6,000 HP/min
+    unlockCostHp: 10000000n, // Late-game unlock
     defaultUnlocked: false,
-    upgradeBaseCost: 500000n,
-    upgradeCostMultiplier: 1.15, // 1.15x cost per level
+    upgradeBaseCost: 150000n,
+    upgradeCostMultiplier: 1.12, // 1.12x cost per level
   },
 };
 
@@ -85,7 +85,7 @@ export interface ResearchEffect {
 }
 
 export const RESEARCH_NODES: ResearchNode[] = [
-  // Tier 1 - Basic Improvements
+  // Tier 1 - Basic Improvements (50K - 150K HP)
   {
     id: 'basic-efficiency-1',
     name: 'Basic Efficiency',
@@ -98,11 +98,11 @@ export const RESEARCH_NODES: ResearchNode[] = [
   {
     id: 'compressor-specialist-1',
     name: 'Compressor Specialist I',
-    description: '+10% HP from Compressor parts',
+    description: '+5% HP from Compressor parts',
     tier: 1,
     costHp: 75000n,
     requires: [],
-    effect: { compressorHpMultiplier: 1.10 },
+    effect: { compressorHpMultiplier: 1.05 },
   },
   {
     id: 'speed-boost-1',
@@ -113,71 +113,99 @@ export const RESEARCH_NODES: ResearchNode[] = [
     requires: [],
     effect: { globalBaseTimeMultiplier: 0.95 },
   },
-
-  // Tier 2 - Advanced Improvements
-  {
-    id: 'advanced-automation',
-    name: 'Advanced Automation',
-    description: '-10% production time on all factories',
-    tier: 2,
-    costHp: 250000n,
-    requires: ['speed-boost-1'],
-    effect: { globalBaseTimeMultiplier: 0.90 },
-  },
   {
     id: 'turbo-specialist-1',
     name: 'Turbo Specialist I',
-    description: '+15% HP from Turbo Assembly parts',
+    description: '+5% HP from Turbo Assembly parts',
+    tier: 1,
+    costHp: 150000n,
+    requires: [],
+    effect: { turboAssemblyHpMultiplier: 1.05 },
+  },
+
+  // Tier 2 - Advanced Improvements (200K - 600K HP)
+  {
+    id: 'advanced-automation',
+    name: 'Advanced Automation',
+    description: '-5% production time on all factories',
+    tier: 2,
+    costHp: 250000n,
+    requires: ['speed-boost-1'],
+    effect: { globalBaseTimeMultiplier: 0.95 },
+  },
+  {
+    id: 'compressor-specialist-2',
+    name: 'Compressor Specialist II',
+    description: '+10% HP from Compressor parts',
     tier: 2,
     costHp: 300000n,
-    requires: ['basic-efficiency-1'],
-    effect: { turboAssemblyHpMultiplier: 1.15 },
+    requires: ['compressor-specialist-1'],
+    effect: { compressorHpMultiplier: 1.10 },
+  },
+  {
+    id: 'turbo-specialist-2',
+    name: 'Turbo Specialist II',
+    description: '+10% HP from Turbo Assembly parts',
+    tier: 2,
+    costHp: 400000n,
+    requires: ['turbo-specialist-1'],
+    effect: { turboAssemblyHpMultiplier: 1.10 },
   },
   {
     id: 'lucky-production-1',
     name: 'Lucky Production I',
     description: '+0.5% double-product chance',
     tier: 2,
-    costHp: 400000n,
+    costHp: 500000n,
     requires: ['basic-efficiency-1'],
     effect: { doubleProductChanceBonus: 0.005 },
   },
 
-  // Tier 3 - Expert Improvements
+  // Tier 3 - Expert Improvements (1M - 3M HP)
   {
     id: 'ecu-specialist-1',
     name: 'ECU Specialist I',
-    description: '+20% HP from ECU Flash parts',
+    description: '+10% HP from ECU Flash parts',
     tier: 3,
-    costHp: 2000000n,
-    requires: ['turbo-specialist-1'],
-    effect: { ecuFlashHpMultiplier: 1.20 },
+    costHp: 1000000n,
+    requires: ['turbo-specialist-2'],
+    effect: { ecuFlashHpMultiplier: 1.10 },
   },
   {
-    id: 'cost-reduction-1',
-    name: 'Cost Reduction I',
-    description: '-10% upgrade costs',
+    id: 'global-boost-1',
+    name: 'Global Production Boost',
+    description: '+10% HP from all parts',
     tier: 3,
-    costHp: 2500000n,
-    requires: ['advanced-automation'],
-    effect: { upgradeCostMultiplier: 0.90 },
+    costHp: 1500000n,
+    requires: ['basic-efficiency-1'],
+    effect: { globalHpPerPartMultiplier: 1.10 },
+  },
+  {
+    id: 'lucky-production-2',
+    name: 'Lucky Production II',
+    description: '+1% double-product chance',
+    tier: 3,
+    costHp: 2000000n,
+    requires: ['lucky-production-1'],
+    effect: { doubleProductChanceBonus: 0.01 },
   },
   {
     id: 'extended-offline',
     name: 'Extended Offline',
     description: '+2 hours offline progress cap',
     tier: 3,
-    costHp: 3000000n,
+    costHp: 2500000n,
     requires: ['advanced-automation'],
     effect: { offlineCapHoursBonus: 2 },
   },
 ];
 
-// HP to Token Conversion Configuration
+// HP to Token Conversion Configuration (WITH DIMINISHING RETURNS)
 export interface TokenConversion {
   id: string;
   hpCost: bigint;
   tokensReward: number;
+  minFactoryRequirement: FactoryType; // Must have this factory unlocked
   featured?: boolean; // Highlight as "best value"
 }
 
@@ -186,19 +214,31 @@ export const TOKEN_CONVERSIONS: TokenConversion[] = [
     id: 'small',
     hpCost: 100000n,
     tokensReward: 3,
+    minFactoryRequirement: 'COMPRESSOR', // Always available (33,333 HP/token - best rate!)
   },
   {
     id: 'medium',
     hpCost: 500000n,
-    tokensReward: 20,
-    featured: true, // Best value per HP
+    tokensReward: 12,
+    minFactoryRequirement: 'TURBO_ASSEMBLY', // Requires Factory 2 (41,667 HP/token - worse rate)
+    featured: true,
   },
   {
     id: 'large',
     hpCost: 2000000n,
-    tokensReward: 100,
+    tokensReward: 40,
+    minFactoryRequirement: 'ECU_FLASH', // Requires Factory 3 (50,000 HP/token - worst rate)
   },
 ];
+
+// Weekly Token Caps (prevents unlimited farming)
+export const WEEKLY_TOKEN_CAPS: Record<PlanTier, number> = {
+  FREE: 20,
+  PLUS: 30,
+  PRO: 40,
+  ULTRA: 50,
+  ADMIN: 50, // Same as Ultra
+};
 
 // Plan-based Double Product Chances
 export const DOUBLE_PRODUCT_CHANCES: Record<PlanTier, number> = {

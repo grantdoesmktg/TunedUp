@@ -34,6 +34,7 @@ model User {
   turboTycoonState        TurboTycoonState?
   turboFactoryProgresses  TurboFactoryProgress[]
   turboResearchOwnership  TurboResearchOwnership[]
+  turboTokenConversions   TurboTokenConversion[]
 
   @@map("users")
 }
@@ -208,4 +209,18 @@ model TurboResearchOwnership {
 
   @@unique([userEmail, researchKey])
   @@map("turbo_research_ownership")
+}
+
+model TurboTokenConversion {
+  id            String   @id @default(cuid())
+  userEmail     String
+  user          User     @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+  conversionId  String   // 'small', 'medium', or 'large'
+  hpSpent       BigInt   // HP cost of this conversion
+  tokensEarned  Int      // Tokens received from this conversion
+  weekStart     DateTime // Start of the week this conversion occurred (for cap tracking)
+  convertedAt   DateTime @default(now())
+
+  @@index([userEmail, weekStart])
+  @@map("turbo_token_conversion")
 }

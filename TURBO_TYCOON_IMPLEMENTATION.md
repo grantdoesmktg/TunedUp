@@ -193,6 +193,70 @@ Designed to supplement, not replace token purchases.
 - Social features (visit friends' factories)
 - Push notifications for offline progress
 
+## Economy Specification v1 (BALANCED)
+
+### Factory Base Values (Level 1)
+
+| Factory | Production Time | HP/Part | HP/Min (Idle) | Unlock Cost | Base Upgrade Cost |
+|---------|----------------|---------|---------------|-------------|-------------------|
+| Compressor Wheel | 10s | 300 | 1,800 | 0 (default) | 2,000 |
+| Turbo Assembly | 60s | 6,000 | 6,000 | 250,000 | 25,000 |
+| ECU Flashing | 300s | 30,000 | 6,000 | 10,000,000 | 150,000 |
+
+### Upgrade Scaling (Levels 1-10)
+
+- **Power per level**: +10% multiplicative (1.10^(level-1))
+  - Level 1: 1.00x base HP
+  - Level 10: 2.36x base HP
+- **Cost per level**: +12% multiplicative (1.12^(level-1))
+  - Costs grow faster than power to prevent inflation
+- **Max level**: 10 (hard cap)
+
+### Tapping Mechanics
+
+- **Tap effect**: -1 second per tap
+- **Floor limit**: baseTime / 5 (prevents abuse)
+  - Compressor: 2s minimum
+  - Turbo Assembly: 12s minimum
+  - ECU Flashing: 60s minimum
+
+### HP → Token Conversion (WITH WEEKLY CAPS)
+
+**Weekly Token Caps by Plan**:
+- FREE: 20 tokens/week max
+- PLUS: 30 tokens/week max
+- PRO: 40 tokens/week max
+- ULTRA: 50 tokens/week max
+
+**Conversion Bundles** (with diminishing returns):
+
+| Bundle | HP Cost | Tokens | HP/Token | Requires Factory |
+|--------|---------|--------|----------|------------------|
+| Small | 100,000 | 3 | 33,333 | Compressor (always) |
+| Medium | 500,000 | 12 | 41,667 | Turbo Assembly |
+| Large | 2,000,000 | 40 | 50,000 | ECU Flashing |
+
+**Economic Protection**:
+- Max 50 tokens/week even for Ultra users
+- 50 tokens = 10 images = ~$0.39/week cost
+- ≈ $1.56/month/user maximum from game rewards
+- Bundles have worse HP efficiency for larger purchases (anti-farming)
+
+### Research Node Costs (HP Sinks for Paid Users)
+
+| Tier | HP Cost Range | Effect Examples |
+|------|---------------|-----------------|
+| 1 | 50K - 150K | +5% global HP, +5% factory-specific HP |
+| 2 | 200K - 600K | +10% factory HP, -5% production time |
+| 3 | 1M - 3M | +10% global HP, +1% double-product chance |
+
+### Offline Progress & Anti-Cheat
+
+- **Cap**: 6 hours maximum offline production
+- **Time source**: Server time only (never client/device time)
+- **Cheat protection**: If elapsed < 0 (time went backwards), grant 0 production
+- **Tracking**: lastUpdatedAt stored per user, validated on each sync
+
 ## Design Decisions
 
 ### Why Single API Endpoint?
@@ -211,10 +275,17 @@ Designed to supplement, not replace token purchases.
 - Ensures fair offline progress
 - Source of truth for all calculations
 
-### Why Free to Play?
-- Monetization through HP → token conversion
-- Encourages engagement without barriers
-- Research tree provides paid upgrade path
+### Why Weekly Token Caps?
+- Prevents unlimited free token farming
+- Protects economic viability (Gemini costs $0.039/image)
+- Still rewards engaged players with meaningful bonuses
+- Caps scale with paid plan tier as additional perk
+
+### Why Diminishing Returns on Token Bundles?
+- Larger bundles give worse HP/token ratio
+- Discourages hoarding HP for mass conversions
+- Encourages spending HP on upgrades/research instead
+- Makes early small conversions feel rewarding
 
 ## Branding & Colors
 
