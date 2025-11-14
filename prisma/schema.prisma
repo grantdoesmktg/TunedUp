@@ -9,28 +9,31 @@ datasource db {
 }
 
 model User {
-  id                   String             @id @default(cuid())
-  email                String             @unique
-  stripeCustomerId     String?            @unique
-  stripeSubscriptionId String?
-  planCode             String             @default("FREE")
-  planRenewsAt         DateTime?
-  extraCredits         Json               @default("{}")
-  tokens               Int                @default(30)
-  resetDate            DateTime           @default(now())
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-  communityUsed        Int                @default(0)
-  instagramHandle      String?
-  location             String?
-  name                 String?
-  nickname             String?
-  profileIcon          String?            @default("👤")
-  backgroundTheme      String?            @default("neutral-1")
-  communityImages      CommunityImage[]
-  saved_cars           saved_cars[]
-  saved_images         saved_images[]
-  saved_performance    saved_performance?
+  id                      String                     @id @default(cuid())
+  email                   String                     @unique
+  stripeCustomerId        String?                    @unique
+  stripeSubscriptionId    String?
+  planCode                String                     @default("FREE")
+  planRenewsAt            DateTime?
+  extraCredits            Json                       @default("{}")
+  tokens                  Int                        @default(30)
+  resetDate               DateTime                   @default(now())
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
+  communityUsed           Int                        @default(0)
+  instagramHandle         String?
+  location                String?
+  name                    String?
+  nickname                String?
+  profileIcon             String?                    @default("👤")
+  backgroundTheme         String?                    @default("neutral-1")
+  communityImages         CommunityImage[]
+  saved_cars              saved_cars[]
+  saved_images            saved_images[]
+  saved_performance       saved_performance?
+  turboTycoonState        TurboTycoonState?
+  turboFactoryProgresses  TurboFactoryProgress[]
+  turboResearchOwnership  TurboResearchOwnership[]
 
   @@map("users")
 }
@@ -157,4 +160,52 @@ model tool_usage {
   @@index([fingerprint])
   @@index([toolType, createdAt])
   @@index([userEmail])
+}
+
+// Turbo Tycoon Game Models
+enum TurboFactoryType {
+  COMPRESSOR
+  TURBO_ASSEMBLY
+  ECU_FLASH
+}
+
+model TurboTycoonState {
+  id               String   @id @default(cuid())
+  userEmail        String   @unique
+  user             User     @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+  totalHp          BigInt   @default(0)
+  lifetimeHpEarned BigInt   @default(0)
+  lifetimePartsMade BigInt  @default(0)
+  lastUpdatedAt    DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("turbo_tycoon_state")
+}
+
+model TurboFactoryProgress {
+  id                           String           @id @default(cuid())
+  userEmail                    String
+  user                         User             @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+  factoryType                  TurboFactoryType
+  isUnlocked                   Boolean          @default(false)
+  level                        Int              @default(1)
+  totalPartsProduced           BigInt           @default(0)
+  currentCycleRemainingSeconds Int              @default(0)
+  createdAt                    DateTime         @default(now())
+  updatedAt                    DateTime         @updatedAt
+
+  @@unique([userEmail, factoryType])
+  @@map("turbo_factory_progress")
+}
+
+model TurboResearchOwnership {
+  id          String   @id @default(cuid())
+  userEmail   String
+  user        User     @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+  researchKey String
+  acquiredAt  DateTime @default(now())
+
+  @@unique([userEmail, researchKey])
+  @@map("turbo_research_ownership")
 }
