@@ -42,6 +42,7 @@ export interface GameState {
   parts: Record<string, number>; // PartId -> Level
 
   // Tokens
+  tokens?: number; // Optional: User's current token balance (from backend)
   tokensEarnedToday: number;
   lastTokenDate: string; // YYYY-MM-DD
 
