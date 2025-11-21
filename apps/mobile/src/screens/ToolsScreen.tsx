@@ -266,6 +266,8 @@ const AnimatedToolThumbnail = ({ tool, index }: { tool: any; index: number }) =>
       return 'construct';
     } else if (tool.name === 'AI Image Generator') {
       return 'camera';
+    } else if (tool.name === 'Turbo Tycoon') {
+      return 'business';
     }
     return 'flash';
   };
@@ -366,6 +368,14 @@ const ToolsScreen = ({ navigation }: any) => {
       comingSoon: false,
       tokenCost: TOKEN_COSTS.image,
     },
+    {
+      name: 'Turbo Tycoon',
+      description: 'Build your turbo empire!',
+      icon: '🏭',
+      gradientColors: ['#10B981', '#059669'],
+      comingSoon: false,
+      tokenCost: 0, // Free game!
+    },
   ];
 
   return (
@@ -392,6 +402,8 @@ const ToolsScreen = ({ navigation }: any) => {
                   navigation.navigate('BuildPlanner');
                 } else if (tool.name === 'AI Image Generator') {
                   navigation.navigate('ImageGenerator');
+                } else if (tool.name === 'Turbo Tycoon') {
+                  navigation.navigate('TurboTycoon');
                 }
               }}
               activeOpacity={0.8}
@@ -402,7 +414,13 @@ const ToolsScreen = ({ navigation }: any) => {
                   <Text style={styles.toolName}>{tool.name}</Text>
                   <Text style={styles.toolDescription}>{tool.description}</Text>
                 </View>
-                <TokenCost cost={tool.tokenCost} size="medium" />
+                {tool.tokenCost > 0 ? (
+                  <TokenCost cost={tool.tokenCost} size="medium" />
+                ) : (
+                  <View style={styles.freeBadge}>
+                    <Text style={styles.freeText}>FREE</Text>
+                  </View>
+                )}
               </View>
             </TouchableOpacity>
           ))}
@@ -576,6 +594,17 @@ const styles = StyleSheet.create({
   toolDescription: {
     fontSize: getFontSize(14),
     color: colors.textSecondary,
+  },
+  freeBadge: {
+    backgroundColor: colors.success,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  freeText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
 

@@ -40,18 +40,3 @@ yarn-error.*
 # generated native folders
 /ios
 /android
-
-# Next.js web app
-apps/web/.next/
-apps/web/out/
-apps/web/.swc/
-
-# Vercel
-.vercel/
-
-# Sensitive environment files
-.env.REAL_PROD
-.env.local.NEW
-.env.preview
-.env.production.only
-.env.vercel*

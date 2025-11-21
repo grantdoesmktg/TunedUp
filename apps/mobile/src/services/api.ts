@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User, AuthResponse } from '../types';
 import { getDeviceFingerprint } from './fingerprint';
 
-const API_BASE_URL = 'https://www.tunedup.dev';
+export const API_BASE_URL = 'https://www.tunedup.dev';
 
 // Token management
 export const getToken = async (): Promise<string | null> => {

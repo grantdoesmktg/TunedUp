@@ -29,6 +29,7 @@ import ImageResultsScreen from '../screens/ImageResultsScreen';
 import PublicProfileScreen from '../screens/PublicProfileScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
+import TurboTycoonScreen from '../screens/TurboTycoonScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -155,6 +156,7 @@ const RootNavigator = () => (
     <RootStack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ headerShown: false }} />
     <RootStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
     <RootStack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+    <RootStack.Screen name="TurboTycoon" component={TurboTycoonScreen} options={{ headerShown: false }} />
   </RootStack.Navigator>
 );
 
