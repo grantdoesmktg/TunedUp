@@ -1,0 +1,11 @@
+{
+  "buildCommand": null,
+  "outputDirectory": null,
+  "framework": null,
+  "installCommand": "npm install",
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@vercel/node@3"
+    }
+  }
+}
